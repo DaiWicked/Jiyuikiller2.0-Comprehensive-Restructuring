@@ -250,18 +250,8 @@ namespace JiYuKiller
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ClickCount == 2)
-            {
-                // 双击最大化/还原
-                if (WindowState == WindowState.Maximized)
-                    WindowState = WindowState.Normal;
-                else
-                    WindowState = WindowState.Maximized;
-            }
-            else
-            {
-                DragMove();
-            }
+            // 仅允许拖动窗口，不响应双击最大化（窗口固定大小不可最大化）
+            DragMove();
         }
 
         private void BtnMinimize_Click(object sender, RoutedEventArgs e)

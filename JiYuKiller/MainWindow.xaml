@@ -47,7 +47,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
-                    <Image Source="Assets/JiYuTrainerLogo.ico" Width="20" Height="20" Margin="0,0,8,0" />
+                    <Image Source="Assets/JiYuTrainerLogo16.png" Width="16" Height="16" Margin="0,0,8,0" />
                     <TextBlock Text="学习不通" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Foreground="#FF333333" />
                     <TextBlock x:Name="VersionText" Text="QD_V1.0" FontSize="11" VerticalAlignment="Center" Foreground="#FF888888" Margin="8,0,0,0" />
                 </StackPanel>
@@ -98,14 +98,16 @@
 
                 <!-- 关于页面 -->
                 <Grid x:Name="PageAbout" Visibility="Collapsed">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Image Source="Assets/JiYuTrainerLogo.ico" Width="96" Height="96" Margin="0,0,0,16" />
-                        <TextBlock Text="学习不通" FontSize="24" FontWeight="Bold" Foreground="#FF333333" HorizontalAlignment="Center" />
-                        <TextBlock x:Name="AboutVersion" Text="QD_V1.0_WPF-Rebuild" FontSize="14" Foreground="#FF888888" HorizontalAlignment="Center" Margin="0,4,0,16" />
-                        <TextBlock Text="基于 JiYuTrainer 重构的 C# WPF 版本" FontSize="12" Foreground="#FF666666" HorizontalAlignment="Center" />
-                        <TextBlock Text="原作者: imengyu / zsyn666" FontSize="12" Foreground="#FF666666" HorizontalAlignment="Center" Margin="0,4,0,0" />
-                        <TextBlock Text="重构: QD" FontSize="12" Foreground="#FF666666" HorizontalAlignment="Center" Margin="0,4,0,0" />
-                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel HorizontalAlignment="Center" Margin="0,20">
+                            <Image Source="Assets/about.png" Width="300" Margin="0,0,0,16" Stretch="Uniform" />
+                            <TextBlock Text="学习不通" FontSize="24" FontWeight="Bold" Foreground="#FF333333" HorizontalAlignment="Center" />
+                            <TextBlock x:Name="AboutVersion" Text="QD_V1.1_TrayIcon" FontSize="14" Foreground="#FF888888" HorizontalAlignment="Center" Margin="0,4,0,16" />
+                            <TextBlock Text="基于 JiYuTrainer 重构的 C# WPF 版本" FontSize="12" Foreground="#FF666666" HorizontalAlignment="Center" />
+                            <TextBlock Text="原作者: imengyu / zsyn666" FontSize="12" Foreground="#FF666666" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                            <TextBlock Text="重构: QD" FontSize="12" Foreground="#FF666666" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
 
                 <!-- 调试页面 -->
