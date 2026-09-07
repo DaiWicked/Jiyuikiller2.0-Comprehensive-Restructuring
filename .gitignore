@@ -12,6 +12,8 @@ x86/
 bld/
 [Bb]uild/
 publish/
+*.out
+*.appx
 
 # ==========================================
 # Visual Studio
@@ -27,6 +29,9 @@ publish/
 *.vsp
 *.vspx
 *.sap
+*.ide/
+*.swp
+*~
 
 # ==========================================
 # 日志和临时文件
@@ -41,6 +46,8 @@ logs/
 *.host
 *.aux
 *.cachefile
+*.lock
+*.pdb
 
 # ==========================================
 # 运行时生成的设置文件
@@ -48,6 +55,7 @@ logs/
 JiYuKillerSettings.xml
 *.config.user
 appsettings.local.json
+*.local.config
 
 # ==========================================
 # 测试和覆盖率
@@ -67,11 +75,45 @@ desktop.ini
 .DS_Store
 $RECYCLE.BIN/
 System Volume Information/
+ehthumbs.db
+ehthumbs_vista.db
 
 # ==========================================
-# 压缩包
+# 压缩包和安装包
 # ==========================================
 *.zip
 *.rar
 *.7z
 *.tar.gz
+*.iso
+*.msi
+
+# ==========================================
+# Node.js (如果有前端项目)
+# ==========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ==========================================
+# Python (如果有脚本)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.venv/
+venv/
+env/
+
+# ==========================================
+# 编辑器
+# ==========================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.iml
