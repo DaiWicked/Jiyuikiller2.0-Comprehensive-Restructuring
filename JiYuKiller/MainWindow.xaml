@@ -48,7 +48,7 @@
             <Border x:Name="GlassyLayer" CornerRadius="16" Background="{Binding Background, ElementName=BackdropLayer}" ClipToBounds="True" />
 
             <!-- 层3: 半透明白色覆盖层 + 内容（圆角裁剪） -->
-            <Border x:Name="ContentLayer" Background="#80FFFFFF" CornerRadius="16" ClipToBounds="True">
+            <Border x:Name="ContentLayer" Background="#A6FFFFFF" CornerRadius="16" ClipToBounds="True">
                 <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40" />
@@ -504,8 +504,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.05" Maximum="1" Value="0.5" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
-                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="50%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.05" Maximum="1" Value="0.65" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
+                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="65%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
