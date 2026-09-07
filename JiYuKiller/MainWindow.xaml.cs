@@ -635,6 +635,79 @@ namespace JiYuKiller
 
         #endregion
 
+        #region 电源控制
+
+        private void BtnShutdown_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("关闭计算机", "BtnShutdown");
+            var result = System.Windows.MessageBox.Show("你是否真的要关闭电脑？\n\n关机前会自动停止极域控制。", "电源控制 - 警告", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                Services.Logger.Instance.Info("用户确认关机，正在停止控制器...");
+                _controller.Stop();
+                Services.Logger.Instance.Info("执行关机命令: shutdown /s /t 0");
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("shutdown.exe", "/s /t 0") { CreateNoWindow = true, UseShellExecute = false });
+                    Services.Logger.Instance.Info("关机命令已发送，正在退出软件");
+                    ForceExit();
+                }
+                catch (Exception ex)
+                {
+                    Services.Logger.Instance.Error("执行关机命令失败", ex);
+                    System.Windows.MessageBox.Show("关机失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void BtnReboot_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("重新启动", "BtnReboot");
+            var result = System.Windows.MessageBox.Show("你是否真的要重启电脑？\n\n重启前会自动停止极域控制。", "电源控制 - 警告", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                Services.Logger.Instance.Info("用户确认重启，正在停止控制器...");
+                _controller.Stop();
+                Services.Logger.Instance.Info("执行重启命令: shutdown /r /t 0");
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("shutdown.exe", "/r /t 0") { CreateNoWindow = true, UseShellExecute = false });
+                    Services.Logger.Instance.Info("重启命令已发送，正在退出软件");
+                    ForceExit();
+                }
+                catch (Exception ex)
+                {
+                    Services.Logger.Instance.Error("执行重启命令失败", ex);
+                    System.Windows.MessageBox.Show("重启失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void BtnExitApp_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("退出软件", "BtnExitApp");
+            ExitApplication();
+        }
+
+        private void ForceExit()
+        {
+            Services.Logger.Instance.Info("强制退出应用程序");
+            try { _controller.Stop(); } catch { }
+            try
+            {
+                if (_trayIcon != null)
+                {
+                    _trayIcon.Visible = false;
+                    _trayIcon.Dispose();
+                }
+            }
+            catch { }
+            try { Services.Logger.Instance.Close(); } catch { }
+            System.Windows.Application.Current.Shutdown();
+        }
+
+        #endregion
+
         #region 帮助文档
 
         private void NavHelp_Click(object sender, RoutedEventArgs e)
