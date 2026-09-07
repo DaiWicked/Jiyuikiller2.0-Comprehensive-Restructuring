@@ -66,13 +66,13 @@
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
                     <Image Source="Assets/JiYuTrainerLogo16.png" Width="16" Height="16" Margin="0,0,8,0" />
-                    <TextBlock Text="学习不通" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Foreground="#FF333333" />
-                    <TextBlock x:Name="VersionText" Text="QD_V2.0" FontSize="12" VerticalAlignment="Center" Foreground="#FF888888" Margin="8,0,0,0" />
+                    <TextBlock Text="学习不通" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Foreground="#FF0A0A0A" />
+                    <TextBlock x:Name="VersionText" Text="QD_V2.0" FontSize="12" VerticalAlignment="Center" Foreground="#FF555555" Margin="8,0,0,0" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,0">
-                    <Button x:Name="BtnMinimize" Content="─" Width="32" Height="28" Click="BtnMinimize_Click" Style="{StaticResource GlassButton}" Padding="0" FontSize="13" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
-                    <Button x:Name="BtnClose" Content="✕" Width="32" Height="28" Click="BtnClose_Click" Style="{StaticResource GlassButton}" Padding="0" FontSize="13" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
+                    <Button x:Name="BtnMinimize" Content="─" Width="32" Height="28" Click="BtnMinimize_Click" Style="{StaticResource GlassButton}" Padding="0" FontSize="13" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" />
+                    <Button x:Name="BtnClose" Content="✕" Width="32" Height="28" Click="BtnClose_Click" Style="{StaticResource GlassButton}" Padding="0" FontSize="13" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" />
                 </StackPanel>
             </Grid>
 
@@ -85,7 +85,7 @@
                         <!-- 进程控制分组 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="进程控制" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                <TextBlock Text="进程控制" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                 <CheckBox x:Name="CheckMonitorProcess" Content="监控极域运行进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="监控极域运行进程，教师可通过极域远程执行应用程序" />
                                 <CheckBox x:Name="CheckBanRunOp" Content="禁止极域运行进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域在此电脑上运行程序" />
                                 <CheckBox x:Name="CheckProhibitKill" Content="禁止极域结束进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域结束您电脑上的进程" />
@@ -95,7 +95,7 @@
                         <!-- 窗口控制分组 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="窗口控制" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                <TextBlock Text="窗口控制" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                 <CheckBox x:Name="CheckAllowTop" Content="允许屏幕广播窗口置顶" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许屏幕广播窗口置顶，默认不允许" />
                                 <CheckBox x:Name="CheckProhibitClose" Content="禁止极域关闭窗口" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域关闭您电脑上的窗口" />
                             </StackPanel>
@@ -104,7 +104,7 @@
                         <!-- 教师权限分组 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="教师权限" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                <TextBlock Text="教师权限" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                 <CheckBox x:Name="CheckAllowMonitor" Content="允许教师监视你的电脑" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许教师通过极域查看你的电脑屏幕" />
                                 <CheckBox x:Name="CheckAllowControl" Content="允许老师控制你的电脑" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许教师通过极域控制您的电脑" />
                             </StackPanel>
@@ -116,11 +116,11 @@
                             <Button x:Name="BtnLocateJiYu" Content="选择极域路径" Style="{StaticResource GlassButton}" Click="BtnLocateJiYu_Click" Background="#FF6C757D" Margin="0,0,6,6" />
                             <Button x:Name="BtnAdvancedSettings" Content="软件高级设置" Style="{StaticResource GlassButton}" Click="BtnAdvancedSettings_Click" Background="#FFDC3545" Margin="0,0,6,6" />
                             <Button x:Name="BtnSaveSettings" Content="保存设置" Style="{StaticResource GlassButton}" Click="BtnSaveSettings_Click" Background="#FF28A745" Margin="0,0,6,6" />
-                            <Button x:Name="BtnResetSettings" Content="恢复默认" Style="{StaticResource GlassButton}" Click="BtnResetSettings_Click" Background="#FFFFC107" Foreground="#FF333333" Margin="0,0,6,6" />
+                            <Button x:Name="BtnResetSettings" Content="恢复默认" Style="{StaticResource GlassButton}" Click="BtnResetSettings_Click" Background="#FFFFC107" Foreground="#FF0A0A0A" Margin="0,0,6,6" />
                         </WrapPanel>
 
                         <!-- 极域路径显示 -->
-                        <TextBlock x:Name="JiYuPathText" Text="极域路径: 未设置" FontSize="11" Foreground="#FF999999" Margin="4,8,0,0" TextWrapping="Wrap" />
+                        <TextBlock x:Name="JiYuPathText" Text="极域路径: 未设置" FontSize="11" Foreground="#FF666666" Margin="4,8,0,0" TextWrapping="Wrap" />
                     </StackPanel>
                 </ScrollViewer>
 
@@ -130,27 +130,27 @@
                         <!-- 当前状态 -->
                         <Border Background="#20000000" CornerRadius="10" Padding="14" Margin="0,0,0,12">
                             <StackPanel>
-                                <TextBlock Text="当前状态" FontSize="12" Foreground="#FF888888" />
-                                <TextBlock x:Name="StatusText" Text="正在初始化..." FontSize="20" FontWeight="Bold" Foreground="#FF333333" Margin="0,4,0,0" />
+                                <TextBlock Text="当前状态" FontSize="12" Foreground="#FF555555" />
+                                <TextBlock x:Name="StatusText" Text="正在初始化..." FontSize="20" FontWeight="Bold" Foreground="#FF0A0A0A" Margin="0,4,0,0" />
                             </StackPanel>
                         </Border>
 
                         <!-- 极域控制 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="极域控制" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                <TextBlock Text="极域控制" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                 <UniformGrid Columns="2">
                                     <Button x:Name="BtnKillJiYu" Content="杀死极域" Style="{StaticResource GlassButton}" Click="BtnKillJiYu_Click" Background="#FFDC3545" Margin="0,0,4,0" />
                                     <Button x:Name="BtnRestartJiYu" Content="重启极域" Style="{StaticResource GlassButton}" Click="BtnRestartJiYu_Click" Background="#FF28A745" Margin="4,0,0,0" />
                                 </UniformGrid>
-                                <TextBlock x:Name="TextJiYuStatus" Text="极域状态: 检测中..." FontSize="11" Foreground="#FF999999" Margin="0,8,0,0" />
+                                <TextBlock x:Name="TextJiYuStatus" Text="极域状态: 检测中..." FontSize="11" Foreground="#FF666666" Margin="0,8,0,0" />
                             </StackPanel>
                         </Border>
 
                         <!-- 窗口控制 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="窗口控制" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                <TextBlock Text="窗口控制" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                 <Button x:Name="BtnTopMost" Content="本窗口置顶" Style="{StaticResource GlassButton}" Click="BtnTopMost_Click" Background="#FF007BFF" />
                             </StackPanel>
                         </Border>
@@ -158,13 +158,13 @@
                         <!-- 电源控制 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="电源控制" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                <TextBlock Text="电源控制" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                 <UniformGrid Columns="3">
                                     <Button x:Name="BtnShutdown" Content="关机" Style="{StaticResource GlassButton}" Click="BtnShutdown_Click" Background="#FFDC3545" Margin="0,0,4,0" />
-                                    <Button x:Name="BtnReboot" Content="重启" Style="{StaticResource GlassButton}" Click="BtnReboot_Click" Background="#FFFFC107" Foreground="#FF333333" Margin="4,0,4,0" />
+                                    <Button x:Name="BtnReboot" Content="重启" Style="{StaticResource GlassButton}" Click="BtnReboot_Click" Background="#FFFFC107" Foreground="#FF0A0A0A" Margin="4,0,4,0" />
                                     <Button x:Name="BtnExitApp" Content="退出" Style="{StaticResource GlassButton}" Click="BtnExitApp_Click" Background="#FF6C757D" Margin="4,0,0,0" />
                                 </UniformGrid>
-                                <TextBlock Text="注：关机/重启前会自动停止极域控制" FontSize="11" Foreground="#FF999999" Margin="0,8,0,0" TextWrapping="Wrap" />
+                                <TextBlock Text="注：关机/重启前会自动停止极域控制" FontSize="11" Foreground="#FF666666" Margin="0,8,0,0" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -175,15 +175,15 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel HorizontalAlignment="Center" Margin="0,20">
                             <Image Source="Assets/about.png" Width="280" Margin="0,0,0,16" Stretch="Uniform" />
-                            <TextBlock Text="学习不通" FontSize="24" FontWeight="Bold" Foreground="#FF333333" HorizontalAlignment="Center" />
-                            <TextBlock x:Name="AboutVersion" Text="QD_V2.0_JiYuRebuild-TEST" FontSize="14" Foreground="#FF888888" HorizontalAlignment="Center" Margin="0,4,0,16" />
-                            <TextBlock Text="基于 JiYuTrainer 重构的 C# WPF 版本" FontSize="12" Foreground="#FF666666" HorizontalAlignment="Center" />
+                            <TextBlock Text="学习不通" FontSize="24" FontWeight="Bold" Foreground="#FF0A0A0A" HorizontalAlignment="Center" />
+                            <TextBlock x:Name="AboutVersion" Text="QD_V2.0_JiYuRebuild-TEST" FontSize="14" Foreground="#FF555555" HorizontalAlignment="Center" Margin="0,4,0,16" />
+                            <TextBlock Text="基于 JiYuTrainer 重构的 C# WPF 版本" FontSize="12" Foreground="#FF3A3A3A" HorizontalAlignment="Center" />
 
                             <!-- 致谢 -->
-                            <TextBlock Text="致谢" FontSize="15" FontWeight="Bold" Foreground="#FF333333" HorizontalAlignment="Center" Margin="0,16,0,8" />
+                            <TextBlock Text="致谢" FontSize="15" FontWeight="Bold" Foreground="#FF0A0A0A" HorizontalAlignment="Center" Margin="0,16,0,8" />
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <TextBlock Text="原作者: imengyu" FontSize="12" Foreground="#FF666666" Margin="0,0,16,0" />
-                                <TextBlock Text="二改作者: zsyn666" FontSize="12" Foreground="#FF666666" />
+                                <TextBlock Text="原作者: imengyu" FontSize="12" Foreground="#FF3A3A3A" Margin="0,0,16,0" />
+                                <TextBlock Text="二改作者: zsyn666" FontSize="12" Foreground="#FF3A3A3A" />
                             </StackPanel>
 
                             <!-- 关于我入口 -->
@@ -205,16 +205,16 @@
                             </Border>
 
                             <!-- 标题 -->
-                            <TextBlock Text="关于我" FontSize="24" FontWeight="Bold" Foreground="#FF333333" HorizontalAlignment="Center" Margin="0,0,0,8" />
-                            <TextBlock Text="作者: Daitangxin" FontSize="15" Foreground="#FF555555" HorizontalAlignment="Center" Margin="0,0,0,16" />
+                            <TextBlock Text="关于我" FontSize="24" FontWeight="Bold" Foreground="#FF0A0A0A" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                            <TextBlock Text="作者: Daitangxin" FontSize="15" Foreground="#FF2A2A2A" HorizontalAlignment="Center" Margin="0,0,0,16" />
 
                             <!-- 内容简介 -->
                             <Border Background="#20000000" CornerRadius="8" Padding="16" Margin="16,0,16,0">
                                 <StackPanel>
-                                    <TextBlock Text="内容简介" FontSize="13" FontWeight="Bold" Foreground="#FF888888" Margin="0,0,0,8" />
-                                    <TextBlock Text="创始人 / 程序员 / 摄影师" FontSize="14" Foreground="#FF333333" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                                    <TextBlock Text="缺德组织 CEO" FontSize="14" Foreground="#FF333333" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                                    <TextBlock Text="缺德组织核心人员之一" FontSize="14" Foreground="#FF333333" HorizontalAlignment="Center" />
+                                    <TextBlock Text="内容简介" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <TextBlock Text="创始人 / 程序员 / 摄影师" FontSize="14" Foreground="#FF0A0A0A" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                    <TextBlock Text="缺德组织 CEO" FontSize="14" Foreground="#FF0A0A0A" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                    <TextBlock Text="缺德组织核心人员之一" FontSize="14" Foreground="#FF0A0A0A" HorizontalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
@@ -238,7 +238,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Button x:Name="BtnBackFromAdvanced" Content="← 返回" Style="{StaticResource GlassButton}" Click="BtnBackFromAdvanced_Click" Background="#FF6C757D" Padding="12,6" />
-                        <TextBlock Grid.Column="1" Text="软件高级参数配置" FontSize="18" FontWeight="Bold" Foreground="#FF333333" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="软件高级参数配置" FontSize="18" FontWeight="Bold" Foreground="#FF0A0A0A" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Grid>
 
                     <!-- 内容区域 -->
@@ -247,17 +247,17 @@
                             <!-- 驱动设置 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="驱动设置（需内核驱动支持）" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <TextBlock Text="驱动设置（需内核驱动支持）" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                     <CheckBox x:Name="CheckDisableDriver" Content="禁用软件内核驱动" Style="{StaticResource GlassCheckBox}" IsEnabled="False" ToolTip="64位系统强制启用驱动，无法禁用" />
                                     <CheckBox x:Name="CheckSelfProtect" Content="驱动层自我保护（32位系统有效）" Style="{StaticResource GlassCheckBox}" IsEnabled="False" ToolTip="64位系统不支持驱动层自我保护" />
-                                    <TextBlock Text="注：当前为64位系统，驱动相关设置暂不可用" FontSize="11" Foreground="#FF999999" Margin="4,4,0,0" />
+                                    <TextBlock Text="注：当前为64位系统，驱动相关设置暂不可用" FontSize="11" Foreground="#FF666666" Margin="4,4,0,0" />
                                 </StackPanel>
                             </Border>
 
                             <!-- 极域附加控制 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="极域附加控制" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <TextBlock Text="极域附加控制" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                     <CheckBox x:Name="CheckAutoForceKill" Content="不客气模式（自动强制清除）" Style="{StaticResource GlassCheckBox}" ToolTip="操作失败时直接清除极域有关进程，不建议使用" />
                                     <CheckBox x:Name="CheckAutoIncludeFullWindow" Content="严格窗口控制模式" Style="{StaticResource GlassCheckBox}" ToolTip="严格控制极域所有窗口，不仅仅是屏幕广播和黑屏窗口" />
                                 </StackPanel>
@@ -266,7 +266,7 @@
                             <!-- 程序隐藏 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="程序隐藏" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <TextBlock Text="程序隐藏" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                     <CheckBox x:Name="CheckDoNotShowVirusWindow" Content="隐藏极域端控制输出窗口" Style="{StaticResource GlassCheckBox}" ToolTip="隐藏屏幕左上角的极域控制输出窗口" />
                                     <CheckBox x:Name="CheckDoNotShowTrayIcon" Content="隐藏本软件任务栏图标" Style="{StaticResource GlassCheckBox}" ToolTip="隐藏后可使用快捷键显示或隐藏主窗口" Checked="CheckDoNotShowTrayIcon_Checked" Unchecked="CheckDoNotShowTrayIcon_Unchecked" />
                                 </StackPanel>
@@ -275,47 +275,47 @@
                             <!-- 快捷键 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="快捷键（修改后重启生效）" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <TextBlock Text="快捷键（修改后重启生效）" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                     <Grid Margin="0,4,0,4">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="100" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="紧急全屏快捷键" VerticalAlignment="Center" Foreground="#FF333333" FontSize="13" />
-                                        <TextBlock x:Name="TextHotKeyFakeFull" Grid.Column="1" Text="Ctrl+Alt+F" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FF555555" FontSize="13" />
+                                        <TextBlock Text="紧急全屏快捷键" VerticalAlignment="Center" Foreground="#FF0A0A0A" FontSize="13" />
+                                        <TextBlock x:Name="TextHotKeyFakeFull" Grid.Column="1" Text="Ctrl+Alt+F" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FF2A2A2A" FontSize="13" />
                                     </Grid>
                                     <Grid Margin="0,4,0,4">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="100" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="显示/隐藏窗口快捷键" VerticalAlignment="Center" Foreground="#FF333333" FontSize="13" />
-                                        <TextBlock x:Name="TextHotKeyShowHide" Grid.Column="1" Text="Ctrl+Alt+H" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FF555555" FontSize="13" />
+                                        <TextBlock Text="显示/隐藏窗口快捷键" VerticalAlignment="Center" Foreground="#FF0A0A0A" FontSize="13" />
+                                        <TextBlock x:Name="TextHotKeyShowHide" Grid.Column="1" Text="Ctrl+Alt+H" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FF2A2A2A" FontSize="13" />
                                     </Grid>
-                                    <TextBlock Text="注：快捷键自定义功能开发中，当前使用默认快捷键" FontSize="11" Foreground="#FF999999" Margin="4,4,0,0" />
+                                    <TextBlock Text="注：快捷键自定义功能开发中，当前使用默认快捷键" FontSize="11" Foreground="#FF666666" Margin="4,4,0,0" />
                                 </StackPanel>
                             </Border>
 
                             <!-- 结束进程模式 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="结束进程模式" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
-                                    <RadioButton x:Name="RadioKillTP" Content="TerminateProcess (Weak)" GroupName="KillProcess" Foreground="#FF333333" FontSize="13" Margin="0,2" />
-                                    <RadioButton x:Name="RadioKillNTP" Content="NtTerminateProcess (Default)" GroupName="KillProcess" Foreground="#FF333333" FontSize="13" Margin="0,2" />
-                                    <RadioButton x:Name="RadioKillKernel" Content="KernelMode (需驱动)" GroupName="KillProcess" Foreground="#FF333333" FontSize="13" Margin="0,2" IsEnabled="False" />
+                                    <TextBlock Text="结束进程模式" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
+                                    <RadioButton x:Name="RadioKillTP" Content="TerminateProcess (Weak)" GroupName="KillProcess" Foreground="#FF0A0A0A" FontSize="13" Margin="0,2" />
+                                    <RadioButton x:Name="RadioKillNTP" Content="NtTerminateProcess (Default)" GroupName="KillProcess" Foreground="#FF0A0A0A" FontSize="13" Margin="0,2" />
+                                    <RadioButton x:Name="RadioKillKernel" Content="KernelMode (需驱动)" GroupName="KillProcess" Foreground="#FF0A0A0A" FontSize="13" Margin="0,2" IsEnabled="False" />
                                 </StackPanel>
                             </Border>
 
                             <!-- 注入模式 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="病毒注入模式（需DLL支持）" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <TextBlock Text="病毒注入模式（需DLL支持）" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                     <Grid Margin="0,4,0,8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="注入模式:" VerticalAlignment="Center" Foreground="#FF333333" FontSize="13" Margin="0,0,8,0" />
+                                        <TextBlock Text="注入模式:" VerticalAlignment="Center" Foreground="#FF0A0A0A" FontSize="13" Margin="0,0,8,0" />
                                         <ComboBox x:Name="ComboInjectMode" Grid.Column="1" Height="28" FontSize="13">
                                             <ComboBoxItem Content="RemoteThread" />
                                             <ComboBoxItem Content="HookDllStub" />
@@ -323,14 +323,14 @@
                                     </Grid>
                                     <CheckBox x:Name="CheckInjectMasterHelper" Content="InjectMasterHelper" Style="{StaticResource GlassCheckBox}" IsEnabled="False" />
                                     <CheckBox x:Name="CheckInjectProcHelper64" Content="InjectProcHelper64" Style="{StaticResource GlassCheckBox}" IsEnabled="False" />
-                                    <TextBlock Text="注：DLL注入功能开发中，设置项暂保存" FontSize="11" Foreground="#FF999999" Margin="4,4,0,0" />
+                                    <TextBlock Text="注：DLL注入功能开发中，设置项暂保存" FontSize="11" Foreground="#FF666666" Margin="4,4,0,0" />
                                 </StackPanel>
                             </Border>
 
                             <!-- 高级程序配置 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="高级程序配置" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <TextBlock Text="高级程序配置" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                     <CheckBox x:Name="CheckAlwaysCheckUpdate" Content="总是检查更新" Style="{StaticResource GlassCheckBox}" />
                                     <CheckBox x:Name="CheckForceInstallInCurrentDir" Content="强制安装在当前目录" Style="{StaticResource GlassCheckBox}" />
                                     <CheckBox x:Name="CheckForceDisableWatchDog" Content="强制禁用看门狗" Style="{StaticResource GlassCheckBox}" />
@@ -340,9 +340,9 @@
                                             <ColumnDefinition Width="80" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="检查间隔(ms):" VerticalAlignment="Center" Foreground="#FF333333" FontSize="13" Margin="0,0,8,0" />
+                                        <TextBlock Text="检查间隔(ms):" VerticalAlignment="Center" Foreground="#FF0A0A0A" FontSize="13" Margin="0,0,8,0" />
                                         <TextBox x:Name="TextCKInterval" Grid.Column="1" Text="3100" Style="{StaticResource GlassTextBox}" Height="26" FontSize="13" VerticalContentAlignment="Center" />
-                                        <TextBlock Grid.Column="2" Text="范围: 1000-10000" VerticalAlignment="Center" Foreground="#FF999999" FontSize="11" Margin="8,0,0,0" />
+                                        <TextBlock Grid.Column="2" Text="范围: 1000-10000" VerticalAlignment="Center" Foreground="#FF666666" FontSize="11" Margin="8,0,0,0" />
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -350,9 +350,9 @@
                             <!-- 控制器启停 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="自动控制器启停" FontSize="14" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <TextBlock Text="自动控制器启停" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                     <CheckBox x:Name="CheckEnableController" Content="启用控制器" Style="{StaticResource GlassCheckBox}" Checked="CheckEnableController_Checked" Unchecked="CheckEnableController_Unchecked" />
-                                    <TextBlock Text="控制器负责检查和控制极域，关闭将导致极域脱离控制。不建议关闭，仅调试时使用。" FontSize="11" Foreground="#FF999999" Margin="4,4,0,0" TextWrapping="Wrap" />
+                                    <TextBlock Text="控制器负责检查和控制极域，关闭将导致极域脱离控制。不建议关闭，仅调试时使用。" FontSize="11" Foreground="#FF666666" Margin="4,4,0,0" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
 
@@ -371,14 +371,14 @@
                     </Grid.RowDefinitions>
 
                     <!-- 标题 -->
-                    <TextBlock Grid.Row="0" Text="帮助文档" FontSize="20" FontWeight="Bold" Foreground="#FF333333" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                    <TextBlock Grid.Row="0" Text="帮助文档" FontSize="20" FontWeight="Bold" Foreground="#FF0A0A0A" HorizontalAlignment="Center" Margin="0,0,0,8" />
 
                     <!-- 子页面导航 -->
                     <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,8">
                         <Button x:Name="HelpNavIntro" Content="介绍" Click="HelpNavIntro_Click" Style="{StaticResource GlassButton}" Background="#FF007BFF" Foreground="White" BorderBrush="Transparent" Padding="4,6" FontSize="12" />
-                        <Button x:Name="HelpNavKey" Content="快捷键" Click="HelpNavKey_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" Padding="4,6" FontSize="12" />
-                        <Button x:Name="HelpNavOthers" Content="其他" Click="HelpNavOthers_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" Padding="4,6" FontSize="12" />
-                        <Button x:Name="HelpNavDisclaimer" Content="免责声明" Click="HelpNavDisclaimer_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" Padding="4,6" FontSize="12" />
+                        <Button x:Name="HelpNavKey" Content="快捷键" Click="HelpNavKey_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" Padding="4,6" FontSize="12" />
+                        <Button x:Name="HelpNavOthers" Content="其他" Click="HelpNavOthers_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" Padding="4,6" FontSize="12" />
+                        <Button x:Name="HelpNavDisclaimer" Content="免责声明" Click="HelpNavDisclaimer_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" Padding="4,6" FontSize="12" />
                     </UniformGrid>
 
                     <!-- 内容区域 -->
@@ -389,23 +389,23 @@
                             <StackPanel x:Name="HelpContentIntro">
                                 <TextBlock Text="简介" FontSize="16" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,8" />
                                 <TextBlock Text="本软件研发目的就是为了对抗极域电子教室，如果您的学校机房使用极域电子教室来控制学生电脑的话，本软件很可能会帮到你。" FontSize="13" Foreground="#FF006BEF" TextWrapping="Wrap" Margin="0,0,0,6" />
-                                <TextBlock Text="这是一个可以使极域电子教室全屏广播失效的软件，也就是说，在被老师全屏广播时，会将其自动调整为窗口模式，你不仅可以自由操作电脑，也还可以看老师的演示，自由+学习两不误。其还可以防止被老师控制，以及自动关闭「黑屏安静」这种东西；由于本软件是将全屏调整为窗口，因此老师并不会发现你断线或是进行了非法操作。" FontSize="13" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <TextBlock Text="这是一个可以使极域电子教室全屏广播失效的软件，也就是说，在被老师全屏广播时，会将其自动调整为窗口模式，你不仅可以自由操作电脑，也还可以看老师的演示，自由+学习两不误。其还可以防止被老师控制，以及自动关闭「黑屏安静」这种东西；由于本软件是将全屏调整为窗口，因此老师并不会发现你断线或是进行了非法操作。" FontSize="13" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="0,0,0,8" />
 
                                 <TextBlock Text="主要功能" FontSize="14" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,6" />
-                                <TextBlock Text="• 在不影响极域正常运行的情况下将全屏的广播转为窗口广播模式" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
-                                <TextBlock Text="• 内置强杀、启停极域 StudentMain.exe 进程功能" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
-                                <TextBlock Text="• 内置破解极域解锁卸载密码功能，支持新版极域" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
-                                <TextBlock Text="• 防监视功能，开启反监视，教师端就无法监视您所用的电脑" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
-                                <TextBlock Text="• 防控制功能，防止教师通过极域控制您所用的电脑" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
-                                <TextBlock Text="• 监控极域远程执行命令，您可以自由选择是否允许" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
-                                <TextBlock Text="• 解除网络控制，防止教师限制您电脑的网络" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,8" />
+                                <TextBlock Text="• 在不影响极域正常运行的情况下将全屏的广播转为窗口广播模式" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 内置强杀、启停极域 StudentMain.exe 进程功能" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 内置破解极域解锁卸载密码功能，支持新版极域" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 防监视功能，开启反监视，教师端就无法监视您所用的电脑" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 防控制功能，防止教师通过极域控制您所用的电脑" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 监控极域远程执行命令，您可以自由选择是否允许" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 解除网络控制，防止教师限制您电脑的网络" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,8" />
 
                                 <TextBlock Text="安装方法" FontSize="14" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,6" />
-                                <TextBlock Text="本软件不依赖任何运行库，您只需复制一个 学习不通.exe 至目标电脑即可运行，本软件已将需要的DLL打包，它会自动进行安装。" FontSize="13" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <TextBlock Text="本软件不依赖任何运行库，您只需复制一个 学习不通.exe 至目标电脑即可运行，本软件已将需要的DLL打包，它会自动进行安装。" FontSize="13" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="0,0,0,8" />
 
                                 <TextBlock Text="操作方法" FontSize="14" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,6" />
                                 <TextBlock Text="本软件专为小白设计，默认情况下，您不需要修改任何参数，直接运行exe，并最小化即可，软件会自动进行操作。" FontSize="13" Foreground="#FF006BEF" TextWrapping="Wrap" Margin="0,0,0,4" />
-                                <TextBlock Text="如果默认模式无法满足您的需求，可点主界面的「控制台和设置」进行自定义配置。" FontSize="13" Foreground="#FF333333" TextWrapping="Wrap" />
+                                <TextBlock Text="如果默认模式无法满足您的需求，可点主界面的「控制台和设置」进行自定义配置。" FontSize="13" Foreground="#FF0A0A0A" TextWrapping="Wrap" />
                             </StackPanel>
 
                             <!-- 快捷键 -->
@@ -414,21 +414,21 @@
 
                                 <Border Background="#20000000" CornerRadius="6" Padding="10" Margin="0,0,0,8">
                                     <StackPanel>
-                                        <TextBlock Text="Ctrl + Alt + D" FontSize="15" FontWeight="Bold" Foreground="#FF333333" />
-                                        <TextBlock Text="快速显示/隐藏窗口" FontSize="13" Foreground="#FF666666" Margin="0,4,0,0" />
-                                        <TextBlock Text="这个快捷键在老师来的时候用来快速隐藏学习不通的窗口。" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                        <TextBlock Text="Ctrl + Alt + D" FontSize="15" FontWeight="Bold" Foreground="#FF0A0A0A" />
+                                        <TextBlock Text="快速显示/隐藏窗口" FontSize="13" Foreground="#FF3A3A3A" Margin="0,4,0,0" />
+                                        <TextBlock Text="这个快捷键在老师来的时候用来快速隐藏学习不通的窗口。" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="0,6,0,0" />
                                     </StackPanel>
                                 </Border>
 
                                 <Border Background="#20000000" CornerRadius="6" Padding="10" Margin="0,0,0,8">
                                     <StackPanel>
-                                        <TextBlock Text="Ctrl + Alt + F" FontSize="15" FontWeight="Bold" Foreground="#FF333333" />
-                                        <TextBlock Text="紧急全屏" FontSize="13" Foreground="#FF666666" Margin="0,4,0,0" />
-                                        <TextBlock Text="这个快捷键在老师来的时候快速把窗口调成全屏，等老师走后再次按这个快捷键重新切换回窗口（教师端开启了全屏广播这个快捷键才有效）。" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                        <TextBlock Text="Ctrl + Alt + F" FontSize="15" FontWeight="Bold" Foreground="#FF0A0A0A" />
+                                        <TextBlock Text="紧急全屏" FontSize="13" Foreground="#FF3A3A3A" Margin="0,4,0,0" />
+                                        <TextBlock Text="这个快捷键在老师来的时候快速把窗口调成全屏，等老师走后再次按这个快捷键重新切换回窗口（教师端开启了全屏广播这个快捷键才有效）。" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="0,6,0,0" />
                                     </StackPanel>
                                 </Border>
 
-                                <TextBlock Text="提示：您可以在 软件高级设置 中自定义快捷键。" FontSize="12" Foreground="#FF999999" TextWrapping="Wrap" />
+                                <TextBlock Text="提示：您可以在 软件高级设置 中自定义快捷键。" FontSize="12" Foreground="#FF666666" TextWrapping="Wrap" />
                             </StackPanel>
 
                             <!-- 其他 -->
@@ -448,12 +448,12 @@
                                 </Border>
 
                                 <TextBlock Text="已测试的版本：" FontSize="13" FontWeight="Bold" Foreground="#FF006BEF" Margin="0,8,0,4" />
-                                <TextBlock Text="• 极域电子教室: 4.0 和 6.0（2010 和 2015/2016版本）" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
-                                <TextBlock Text="• 已测试的系统: Win7、Win10" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,8" />
+                                <TextBlock Text="• 极域电子教室: 4.0 和 6.0（2010 和 2015/2016版本）" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 已测试的系统: Win7、Win10" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,8" />
 
                                 <TextBlock Text="软件需求：" FontSize="13" FontWeight="Bold" Foreground="#FF006BEF" Margin="0,0,0,4" />
-                                <TextBlock Text="• 本软件支持系统 Win7/Win8/Win8.1/Win10" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
-                                <TextBlock Text="• 极域电子教室 推荐在 4.0/6.0 版本" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 本软件支持系统 Win7/Win8/Win8.1/Win10" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 极域电子教室 推荐在 4.0/6.0 版本" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
                             </StackPanel>
 
                             <!-- 免责声明 -->
@@ -464,9 +464,9 @@
                                     <TextBlock Text="注意：本软件研发之初仅供学习交流使用，严禁将该软件用于不符合法律、道德的行为，本软件仅供技术交流，擅自用于不正当行为所造成的后果将由您自行承担！自您使用本软件起，即表明您同意了该声明。" FontSize="13" Foreground="#FF856404" TextWrapping="Wrap" FontWeight="Bold" />
                                 </Border>
 
-                                <TextBlock Text="版权所有 © 2026 Daitangxin" FontSize="13" Foreground="#FF333333" Margin="0,0,0,8" />
-                                <TextBlock Text="这款软件是为了学习而开发的免费开源软件，如果有人拿他收费卖的话，请不要上当，本软件永久开源免费，可在项目 Github 主页下载到程序和源码。" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,8" />
-                                <TextBlock Text="在您传播分发这款软件时，请尊重作者劳动成果，不要删掉软件的任何作者标识、署名。" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <TextBlock Text="版权所有 © 2026 Daitangxin" FontSize="13" Foreground="#FF0A0A0A" Margin="0,0,0,8" />
+                                <TextBlock Text="这款软件是为了学习而开发的免费开源软件，如果有人拿他收费卖的话，请不要上当，本软件永久开源免费，可在项目 Github 主页下载到程序和源码。" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <TextBlock Text="在您传播分发这款软件时，请尊重作者劳动成果，不要删掉软件的任何作者标识、署名。" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="0,0,0,8" />
                                 <TextBlock Text="缺德组织荣誉出品，必属精品" FontSize="13" Foreground="#FF006BEF" FontWeight="Bold" Margin="0,8,0,0" />
                             </StackPanel>
 
@@ -478,58 +478,58 @@
                 <Grid x:Name="PageCustom" Visibility="Collapsed">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="16,12">
-                            <TextBlock Text="自定义设置" FontSize="18" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,12" />
+                            <TextBlock Text="自定义设置" FontSize="18" FontWeight="Bold" Foreground="#FF0A0A0A" Margin="0,0,0,12" />
 
                             <!-- 毛玻璃效果 -->
                             <Border Background="#20000000" CornerRadius="8" Padding="12" Margin="0,0,0,12">
                                 <StackPanel>
-                                    <TextBlock Text="毛玻璃效果" FontSize="14" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,8" />
+                                    <TextBlock Text="毛玻璃效果" FontSize="14" FontWeight="Bold" Foreground="#FF0A0A0A" Margin="0,0,0,8" />
 
                                     <StackPanel Margin="0,0,0,8">
-                                        <TextBlock Text="模糊强度" FontSize="12" Foreground="#FF555555" Margin="0,0,0,4" />
+                                        <TextBlock Text="模糊强度" FontSize="12" Foreground="#FF2A2A2A" Margin="0,0,0,4" />
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Minimum="0" Maximum="1" Value="0.9" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
-                                            <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="90%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="90%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
                                     <StackPanel Margin="0,0,0,8">
-                                        <TextBlock Text="内容层透明度" FontSize="12" Foreground="#FF555555" Margin="0,0,0,4" />
+                                        <TextBlock Text="内容层透明度" FontSize="12" Foreground="#FF2A2A2A" Margin="0,0,0,4" />
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.05" Maximum="1" Value="0.65" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
-                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="65%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="65%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
                                     <StackPanel Margin="0,0,0,8">
-                                        <TextBlock Text="外层光晕透明度" FontSize="12" Foreground="#FF555555" Margin="0,0,0,4" />
+                                        <TextBlock Text="外层光晕透明度" FontSize="12" Foreground="#FF2A2A2A" Margin="0,0,0,4" />
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Slider x:Name="SliderOuterGlow" Grid.Column="0" Minimum="0" Maximum="1" Value="0.2" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderOuterGlow_ValueChanged" />
-                                            <TextBlock x:Name="TextOuterGlowValue" Grid.Column="1" Text="20%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="TextOuterGlowValue" Grid.Column="1" Text="20%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
                                     <StackPanel Margin="0,0,0,8">
-                                        <TextBlock Text="中层光晕透明度" FontSize="12" Foreground="#FF555555" Margin="0,0,0,4" />
+                                        <TextBlock Text="中层光晕透明度" FontSize="12" Foreground="#FF2A2A2A" Margin="0,0,0,4" />
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Slider x:Name="SliderInnerGlow" Grid.Column="0" Minimum="0" Maximum="1" Value="0.3" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderInnerGlow_ValueChanged" />
-                                            <TextBlock x:Name="TextInnerGlowValue" Grid.Column="1" Text="30%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="TextInnerGlowValue" Grid.Column="1" Text="30%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
@@ -540,11 +540,11 @@
                             <!-- 说明 -->
                             <Border Background="#10000000" CornerRadius="8" Padding="12">
                                 <StackPanel>
-                                    <TextBlock Text="说明" FontSize="13" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,6" />
-                                    <TextBlock Text="• 毛玻璃效果通过桌面截图 + 像素着色器实现" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" Margin="0,0,0,3" />
-                                    <TextBlock Text="• 移动窗口后自动刷新背景" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" Margin="0,0,0,3" />
-                                    <TextBlock Text="• 模糊强度越高，玻璃效果越明显" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" Margin="0,0,0,3" />
-                                    <TextBlock Text="• 内容层透明度越低，背景越清晰" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" />
+                                    <TextBlock Text="说明" FontSize="13" FontWeight="Bold" Foreground="#FF0A0A0A" Margin="0,0,0,6" />
+                                    <TextBlock Text="• 毛玻璃效果通过桌面截图 + 像素着色器实现" FontSize="11" Foreground="#FF3A3A3A" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                    <TextBlock Text="• 移动窗口后自动刷新背景" FontSize="11" Foreground="#FF3A3A3A" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                    <TextBlock Text="• 模糊强度越高，玻璃效果越明显" FontSize="11" Foreground="#FF3A3A3A" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                    <TextBlock Text="• 内容层透明度越低，背景越清晰" FontSize="11" Foreground="#FF3A3A3A" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -569,7 +569,7 @@
                     <!-- 调试命令 -->
                     <Border Grid.Row="1" Background="#15000000" CornerRadius="8" Padding="10" Margin="0,0,0,8">
                         <StackPanel>
-                            <TextBlock Text="调试命令" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,6" />
+                            <TextBlock Text="调试命令" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,6" />
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -578,7 +578,7 @@
                                 <TextBox x:Name="TextDebugCmd" Grid.Column="0" Style="{StaticResource GlassTextBox}" Height="28" FontSize="13" VerticalContentAlignment="Center" KeyDown="TextDebugCmd_KeyDown" ToolTip="输入 help 查看可用命令" />
                                 <Button x:Name="BtnRunCmd" Grid.Column="1" Content="执行" Style="{StaticResource GlassButton}" Click="BtnRunCmd_Click" Background="#FF007BFF" Margin="6,0,0,0" Padding="14,5" FontSize="12" />
                             </Grid>
-                            <TextBlock Text="输入 help 查看可用命令，按回车快速执行" FontSize="11" Foreground="#FF999999" Margin="0,4,0,0" />
+                            <TextBlock Text="输入 help 查看可用命令，按回车快速执行" FontSize="11" Foreground="#FF666666" Margin="0,4,0,0" />
                         </StackPanel>
                     </Border>
 
@@ -589,7 +589,7 @@
                              FontSize="12"
                              Background="#FF1E1E1E"
                              Foreground="#FFD4D4D4"
-                             BorderBrush="#FF333333"
+                             BorderBrush="#FF0A0A0A"
                              BorderThickness="1"
                              VerticalScrollBarVisibility="Auto"
                              HorizontalScrollBarVisibility="Auto"
@@ -601,12 +601,12 @@
             <!-- 底部导航栏 -->
             <Border Grid.Row="2" Background="#10000000" CornerRadius="0,0,16,16">
                 <UniformGrid Columns="6">
-                    <Button x:Name="NavQuick" Content="快捷栏" Click="NavQuick_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
-                    <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF333333" BorderBrush="Transparent" FontWeight="Bold" FontSize="11" Padding="1,0" />
-                    <Button x:Name="NavCustom" Content="自定义设置" Click="NavCustom_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
-                    <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
-                    <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
-                    <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavQuick" Content="快捷栏" Click="NavQuick_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF0A0A0A" BorderBrush="Transparent" FontWeight="Bold" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavCustom" Content="自定义设置" Click="NavCustom_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
                 </UniformGrid>
             </Border>
 
