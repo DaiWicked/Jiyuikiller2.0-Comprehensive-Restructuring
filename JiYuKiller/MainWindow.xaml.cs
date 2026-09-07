@@ -7,6 +7,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Microsoft.Win32;
+using WinForms = System.Windows.Forms;
+using Drawing = System.Drawing;
 
 namespace JiYuKiller
 {
@@ -14,6 +16,9 @@ namespace JiYuKiller
     {
         private Models.AppSettings _settings;
         private Services.JiYuController _controller;
+        private WinForms.NotifyIcon _trayIcon;
+        private bool _hideTipShown = false;
+        private bool _isExiting = false;
 
         public MainWindow()
         {
@@ -32,6 +37,9 @@ namespace JiYuKiller
             // 应用 Liquid Glass 效果
             ApplyLiquidGlass();
 
+            // 初始化系统托盘
+            InitTrayIcon();
+
             // 启动监控
             _controller.Start();
 
@@ -43,6 +51,109 @@ namespace JiYuKiller
 
             Services.Logger.Instance.WindowEvent("MainWindow", "构造函数完成");
         }
+
+        #region 系统托盘
+
+        private void InitTrayIcon()
+        {
+            Services.Logger.Instance.FunctionCall("InitTrayIcon");
+
+            _trayIcon = new WinForms.NotifyIcon();
+            _trayIcon.Text = "学习不通 - JiYuKiller";
+            // 使用绝对路径加载图标，避免工作目录变化导致找不到
+            string iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "JiYuTrainerLogo.ico");
+            if (System.IO.File.Exists(iconPath))
+            {
+                _trayIcon.Icon = new Drawing.Icon(iconPath);
+                Services.Logger.Instance.Debug($"托盘图标已加载: {iconPath}");
+            }
+            else
+            {
+                // 回退：使用系统默认图标
+                _trayIcon.Icon = Drawing.SystemIcons.Application;
+                Services.Logger.Instance.Warn($"图标文件不存在，使用系统默认图标: {iconPath}");
+            }
+            _trayIcon.Visible = true;
+
+            // 双击托盘显示/隐藏主窗口
+            _trayIcon.MouseDoubleClick += (s, e) =>
+            {
+                if (e.Button == WinForms.MouseButtons.Left)
+                {
+                    ToggleMainWindow();
+                }
+            };
+
+            // 右键菜单
+            WinForms.ContextMenuStrip menu = new WinForms.ContextMenuStrip();
+            menu.Items.Add("显示主界面", null, (s, e) => ShowMainWindow());
+            menu.Items.Add("退出软件", null, (s, e) => ExitApplication());
+            _trayIcon.ContextMenuStrip = menu;
+
+            Services.Logger.Instance.Info("系统托盘图标已创建");
+        }
+
+        private void ToggleMainWindow()
+        {
+            if (this.Visibility == Visibility.Visible)
+            {
+                HideToTray();
+            }
+            else
+            {
+                ShowMainWindow();
+            }
+        }
+
+        private void ShowMainWindow()
+        {
+            Services.Logger.Instance.ButtonClick("显示主界面", "TrayMenu");
+            this.Visibility = Visibility.Visible;
+            this.WindowState = WindowState.Normal;
+            this.Activate();
+            this.Topmost = true;
+            this.Topmost = false;
+            Services.Logger.Instance.Info("主窗口已显示");
+        }
+
+        private void HideToTray()
+        {
+            Services.Logger.Instance.FunctionCall("HideToTray");
+            this.Visibility = Visibility.Collapsed;
+
+            if (!_hideTipShown)
+            {
+                _trayIcon.ShowBalloonTip(3000, "学习不通 提示", "窗口隐藏到此处了，双击这里显示主界面", WinForms.ToolTipIcon.Info);
+                _hideTipShown = true;
+                Services.Logger.Instance.Info("首次隐藏提示已显示");
+            }
+
+            Services.Logger.Instance.Info("主窗口已隐藏到托盘");
+        }
+
+        private void ExitApplication()
+        {
+            Services.Logger.Instance.ButtonClick("退出软件", "TrayMenu");
+            _isExiting = true;
+
+            var result = System.Windows.MessageBox.Show("确定要退出学习不通吗？", "确认退出", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                Services.Logger.Instance.Info("用户确认退出程序");
+                _trayIcon.Visible = false;
+                _trayIcon.Dispose();
+                _controller.Stop();
+                Services.Logger.Instance.Close();
+                System.Windows.Application.Current.Shutdown();
+            }
+            else
+            {
+                _isExiting = false;
+                Services.Logger.Instance.Info("用户取消退出");
+            }
+        }
+
+        #endregion
 
         #region 设置加载/保存
 
@@ -155,21 +266,39 @@ namespace JiYuKiller
 
         private void BtnMinimize_Click(object sender, RoutedEventArgs e)
         {
-            Services.Logger.Instance.ButtonClick("最小化", "BtnMinimize");
-            WindowState = WindowState.Minimized;
+            Services.Logger.Instance.ButtonClick("最小化(隐藏到托盘)", "BtnMinimize");
+            // 参考原项目逻辑：最小化也隐藏到托盘
+            HideToTray();
         }
 
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
-            Services.Logger.Instance.ButtonClick("关闭", "BtnClose");
-            Close();
+            Services.Logger.Instance.ButtonClick("关闭(隐藏到托盘)", "BtnClose");
+            // 参考原项目逻辑：关闭按钮不退出程序，而是隐藏到托盘
+            HideToTray();
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            // 参考原项目 WM_CLOSE: return TRUE 的逻辑
+            // 除非是真正的退出操作，否则取消关闭，改为隐藏到托盘
+            if (!_isExiting)
+            {
+                Services.Logger.Instance.WindowEvent("MainWindow", "OnClosing - 取消关闭，隐藏到托盘");
+                e.Cancel = true;
+                HideToTray();
+            }
+            base.OnClosing(e);
         }
 
         protected override void OnClosed(EventArgs e)
         {
             Services.Logger.Instance.WindowEvent("MainWindow", "OnClosed");
-            _controller.Stop();
-            Services.Logger.Instance.Close();
+            if (_isExiting)
+            {
+                _controller.Stop();
+                Services.Logger.Instance.Close();
+            }
             base.OnClosed(e);
         }
 

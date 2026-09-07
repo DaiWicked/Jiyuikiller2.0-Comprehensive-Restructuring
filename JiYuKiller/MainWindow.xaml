@@ -8,7 +8,7 @@
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
-        ResizeMode="CanResize"
+        ResizeMode="NoResize"
         MinWidth="600" MinHeight="450">
 
     <Window.Resources>

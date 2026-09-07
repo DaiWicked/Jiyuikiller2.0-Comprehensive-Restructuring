@@ -1,7 +1,42 @@
+# 编译输出
 bin/
 obj/
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio
+.vs/
 *.user
 *.suo
-.vs/
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# 日志文件
 *.log
+logs/
+
+# 设置文件（运行时生成）
 JiYuKillerSettings.xml
+*.config.user
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+*.cache
+
+# 系统文件
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# 发布目录
+publish/
+Release/
+Debug/
+
+# 测试覆盖率
+TestResults/
+*.coverage
+*.coveragexml
