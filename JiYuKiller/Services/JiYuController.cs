@@ -108,6 +108,23 @@ namespace JiYuKiller.Services
             Logger.Instance.Info("[JiYuController] 设置已更新");
             LogSettings();
 
+            // 更新监控间隔（MonitorLoop中读取_settings.CKInterval，无需额外操作）
+            Logger.Instance.Debug($"[JiYuController] 监控间隔将在下一轮生效: {_settings.CKInterval}ms");
+
+            // 驱动设置变更
+            if (_settings.DisableDriver && IsDriverLoaded)
+            {
+                Logger.Instance.Info("[JiYuController] 设置要求禁用驱动，正在卸载...");
+                UnloadDriver();
+            }
+
+            // 自我保护
+            if (_settings.SelfProtect && IsDriverLoaded)
+            {
+                Logger.Instance.Info("[JiYuController] 启用驱动层自我保护");
+                _driver.InstallSelfProtect();
+            }
+
             // 如果已注入DLL，发送设置更新
             if (_virusInstalled && _studentControlled)
             {
@@ -124,6 +141,11 @@ namespace JiYuKiller.Services
             Logger.Instance.Debug("[JiYuController] 允许监视: " + _settings.AllowMonitor);
             Logger.Instance.Debug("[JiYuController] 禁止关闭窗口: " + _settings.ProhibitCloseWindow);
             Logger.Instance.Debug("[JiYuController] 允许控制: " + _settings.AllowControl);
+            Logger.Instance.Debug("[JiYuController] 检查间隔: " + _settings.CKInterval + "ms");
+            Logger.Instance.Debug("[JiYuController] 结束进程模式: " + _settings.KillProcessMode);
+            Logger.Instance.Debug("[JiYuController] 禁用驱动: " + _settings.DisableDriver);
+            Logger.Instance.Debug("[JiYuController] 自我保护: " + _settings.SelfProtect);
+            Logger.Instance.Debug("[JiYuController] 注入模式: " + _settings.InjectMode);
         }
 
         /// <summary>

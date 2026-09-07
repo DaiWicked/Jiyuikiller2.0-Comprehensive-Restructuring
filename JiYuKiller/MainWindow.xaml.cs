@@ -493,7 +493,6 @@ namespace JiYuKiller
             CheckForceInstallInCurrentDir.IsChecked = _settings.ForceInstallInCurrentDir;
             CheckForceDisableWatchDog.IsChecked = _settings.ForceDisableWatchDog;
             CheckInjectMasterHelper.IsChecked = _settings.InjectMasterHelper;
-            CheckInjectProcHelper64.IsChecked = _settings.InjectProcHelper64;
             CheckEnableController.IsChecked = _settings.EnableController;
             TextCKInterval.Text = _settings.CKInterval.ToString();
 
@@ -525,7 +524,6 @@ namespace JiYuKiller
             _settings.ForceInstallInCurrentDir = CheckForceInstallInCurrentDir.IsChecked ?? false;
             _settings.ForceDisableWatchDog = CheckForceDisableWatchDog.IsChecked ?? false;
             _settings.InjectMasterHelper = CheckInjectMasterHelper.IsChecked ?? false;
-            _settings.InjectProcHelper64 = CheckInjectProcHelper64.IsChecked ?? false;
             _settings.EnableController = CheckEnableController.IsChecked ?? true;
 
             // 结束进程模式

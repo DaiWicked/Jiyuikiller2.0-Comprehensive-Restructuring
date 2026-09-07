@@ -251,10 +251,10 @@
                             <!-- 驱动设置 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="驱动设置（需内核驱动支持）" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
-                                    <CheckBox x:Name="CheckDisableDriver" Content="禁用软件内核驱动" Style="{StaticResource GlassCheckBox}" IsEnabled="False" ToolTip="64位系统强制启用驱动，无法禁用" />
-                                    <CheckBox x:Name="CheckSelfProtect" Content="驱动层自我保护（32位系统有效）" Style="{StaticResource GlassCheckBox}" IsEnabled="False" ToolTip="64位系统不支持驱动层自我保护" />
-                                    <TextBlock Text="注：当前为64位系统，驱动相关设置暂不可用" FontSize="11" Foreground="#FF666666" Margin="4,4,0,0" />
+                                    <TextBlock Text="驱动设置" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
+                                    <CheckBox x:Name="CheckDisableDriver" Content="禁用软件内核驱动" Style="{StaticResource GlassCheckBox}" ToolTip="禁用后将不加载内核驱动，部分功能不可用" />
+                                    <CheckBox x:Name="CheckSelfProtect" Content="驱动层自我保护" Style="{StaticResource GlassCheckBox}" ToolTip="通过驱动防止本软件被结束" />
+                                    <TextBlock x:Name="DriverHintText" Text="注：需先在设置页面加载内核驱动" FontSize="11" Foreground="#FF666666" Margin="4,4,0,0" />
                                 </StackPanel>
                             </Border>
 
@@ -306,14 +306,14 @@
                                     <TextBlock Text="结束进程模式" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                     <RadioButton x:Name="RadioKillTP" Content="TerminateProcess (Weak)" GroupName="KillProcess" Foreground="#FF0A0A0A" FontSize="13" Margin="0,2" />
                                     <RadioButton x:Name="RadioKillNTP" Content="NtTerminateProcess (Default)" GroupName="KillProcess" Foreground="#FF0A0A0A" FontSize="13" Margin="0,2" />
-                                    <RadioButton x:Name="RadioKillKernel" Content="KernelMode (需驱动)" GroupName="KillProcess" Foreground="#FF0A0A0A" FontSize="13" Margin="0,2" IsEnabled="False" />
+                                    <RadioButton x:Name="RadioKillKernel" Content="KernelMode (需驱动)" GroupName="KillProcess" Foreground="#FF0A0A0A" FontSize="13" Margin="0,2" />
                                 </StackPanel>
                             </Border>
 
                             <!-- 注入模式 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="病毒注入模式（需DLL支持）" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
+                                    <TextBlock Text="DLL注入模式" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
                                     <Grid Margin="0,4,0,8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -321,13 +321,12 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="注入模式:" VerticalAlignment="Center" Foreground="#FF0A0A0A" FontSize="13" Margin="0,0,8,0" />
                                         <ComboBox x:Name="ComboInjectMode" Grid.Column="1" Height="28" FontSize="13">
-                                            <ComboBoxItem Content="RemoteThread" />
+                                            <ComboBoxItem Content="RemoteThread (默认)" />
                                             <ComboBoxItem Content="HookDllStub" />
                                         </ComboBox>
                                     </Grid>
-                                    <CheckBox x:Name="CheckInjectMasterHelper" Content="InjectMasterHelper" Style="{StaticResource GlassCheckBox}" IsEnabled="False" />
-                                    <CheckBox x:Name="CheckInjectProcHelper64" Content="InjectProcHelper64" Style="{StaticResource GlassCheckBox}" IsEnabled="False" />
-                                    <TextBlock Text="注：DLL注入功能开发中，设置项暂保存" FontSize="11" Foreground="#FF666666" Margin="4,4,0,0" />
+                                    <CheckBox x:Name="CheckInjectMasterHelper" Content="同时注入 MasterHelper" Style="{StaticResource GlassCheckBox}" />
+                                    <TextBlock Text="注：DLL注入在检测到极域进程后自动执行" FontSize="11" Foreground="#FF666666" Margin="4,4,0,0" />
                                 </StackPanel>
                             </Border>
 
