@@ -491,7 +491,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.3" Maximum="1" Value="0.7" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
+                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.1" Maximum="1" Value="0.7" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
                                             <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="70%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
