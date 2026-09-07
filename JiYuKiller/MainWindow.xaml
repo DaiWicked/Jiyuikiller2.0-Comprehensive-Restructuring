@@ -104,7 +104,7 @@
                         <WrapPanel Margin="0,2,0,0">
                             <Button x:Name="BtnUnloadNetFilter" Content="解除网络控制" Style="{StaticResource GlassButton}" Click="BtnUnloadNetFilter_Click" Margin="0,0,6,6" />
                             <Button x:Name="BtnLocateJiYu" Content="选择极域路径" Style="{StaticResource GlassButton}" Click="BtnLocateJiYu_Click" Background="#FF6C757D" Margin="0,0,6,6" />
-                            <Button x:Name="BtnAdvancedSettings" Content="软件高级设置" Style="{StaticResource GlassButton}" Click="BtnAdvancedSettings_Click" Background="#FF6F42C1" Margin="0,0,6,6" />
+                            <Button x:Name="BtnAdvancedSettings" Content="软件高级设置" Style="{StaticResource GlassButton}" Click="BtnAdvancedSettings_Click" Background="#FFDC3545" Margin="0,0,6,6" />
                             <Button x:Name="BtnSaveSettings" Content="保存设置" Style="{StaticResource GlassButton}" Click="BtnSaveSettings_Click" Background="#FF28A745" Margin="0,0,6,6" />
                             <Button x:Name="BtnResetSettings" Content="恢复默认" Style="{StaticResource GlassButton}" Click="BtnResetSettings_Click" Background="#FFFFC107" Foreground="#FF333333" Margin="0,0,6,6" />
                         </WrapPanel>
@@ -306,6 +306,118 @@
                     </ScrollViewer>
                 </Grid>
 
+                <!-- 帮助文档页面 -->
+                <Grid x:Name="PageHelp" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- 标题 -->
+                    <TextBlock Grid.Row="0" Text="帮助文档" FontSize="18" FontWeight="Bold" Foreground="#FF333333" HorizontalAlignment="Center" Margin="0,0,0,8" />
+
+                    <!-- 子页面导航 -->
+                    <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,8">
+                        <Button x:Name="HelpNavIntro" Content="介绍" Click="HelpNavIntro_Click" Style="{StaticResource GlassButton}" Background="#FF007BFF" Foreground="White" BorderBrush="Transparent" Padding="4,6" FontSize="11" />
+                        <Button x:Name="HelpNavKey" Content="快捷键" Click="HelpNavKey_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" Padding="4,6" FontSize="11" />
+                        <Button x:Name="HelpNavOthers" Content="其他" Click="HelpNavOthers_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" Padding="4,6" FontSize="11" />
+                        <Button x:Name="HelpNavDisclaimer" Content="免责声明" Click="HelpNavDisclaimer_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" Padding="4,6" FontSize="11" />
+                    </UniformGrid>
+
+                    <!-- 内容区域 -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="4,0,4,8">
+
+                            <!-- 介绍 -->
+                            <StackPanel x:Name="HelpContentIntro">
+                                <TextBlock Text="简介" FontSize="15" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,8" />
+                                <TextBlock Text="本软件研发目的就是为了对抗极域电子教室，如果您的学校机房使用极域电子教室来控制学生电脑的话，本软件很可能会帮到你。" FontSize="12" Foreground="#FF006BEF" TextWrapping="Wrap" Margin="0,0,0,6" />
+                                <TextBlock Text="这是一个可以使极域电子教室全屏广播失效的软件，也就是说，在被老师全屏广播时，会将其自动调整为窗口模式，你不仅可以自由操作电脑，也还可以看老师的演示，自由+学习两不误。其还可以防止被老师控制，以及自动关闭「黑屏安静」这种东西；由于本软件是将全屏调整为窗口，因此老师并不会发现你断线或是进行了非法操作。" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                                <TextBlock Text="主要功能" FontSize="13" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,6" />
+                                <TextBlock Text="• 在不影响极域正常运行的情况下将全屏的广播转为窗口广播模式" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 内置强杀、启停极域 StudentMain.exe 进程功能" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 内置破解极域解锁卸载密码功能，支持新版极域" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 防监视功能，开启反监视，教师端就无法监视您所用的电脑" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 防控制功能，防止教师通过极域控制您所用的电脑" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 监控极域远程执行命令，您可以自由选择是否允许" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 解除网络控制，防止教师限制您电脑的网络" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,8" />
+
+                                <TextBlock Text="安装方法" FontSize="13" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,6" />
+                                <TextBlock Text="本软件不依赖任何运行库，您只需复制一个 学习不通.exe 至目标电脑即可运行，本软件已将需要的DLL打包，它会自动进行安装。" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                                <TextBlock Text="操作方法" FontSize="13" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,6" />
+                                <TextBlock Text="本软件专为小白设计，默认情况下，您不需要修改任何参数，直接运行exe，并最小化即可，软件会自动进行操作。" FontSize="12" Foreground="#FF006BEF" TextWrapping="Wrap" Margin="0,0,0,4" />
+                                <TextBlock Text="如果默认模式无法满足您的需求，可点主界面的「控制台和设置」进行自定义配置。" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <!-- 快捷键 -->
+                            <StackPanel x:Name="HelpContentKey" Visibility="Collapsed">
+                                <TextBlock Text="快捷键" FontSize="15" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,8" />
+
+                                <Border Background="#20000000" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="Ctrl + Alt + D" FontSize="14" FontWeight="Bold" Foreground="#FF333333" />
+                                        <TextBlock Text="快速显示/隐藏窗口" FontSize="12" Foreground="#FF666666" Margin="0,4,0,0" />
+                                        <TextBlock Text="这个快捷键在老师来的时候用来快速隐藏学习不通的窗口。" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="#20000000" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="Ctrl + Alt + F" FontSize="14" FontWeight="Bold" Foreground="#FF333333" />
+                                        <TextBlock Text="紧急全屏" FontSize="12" Foreground="#FF666666" Margin="0,4,0,0" />
+                                        <TextBlock Text="这个快捷键在老师来的时候快速把窗口调成全屏，等老师走后再次按这个快捷键重新切换回窗口（教师端开启了全屏广播这个快捷键才有效）。" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Text="提示：您可以在 软件高级设置 中自定义快捷键。" FontSize="11" Foreground="#FF999999" TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <!-- 其他 -->
+                            <StackPanel x:Name="HelpContentOthers" Visibility="Collapsed">
+                                <TextBlock Text="其他" FontSize="15" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,8" />
+
+                                <Border Background="#FFF3CD" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                                    <TextBlock Text="如果您在使用本软件的内核驱动时出现蓝屏的错误，表明驱动不适用于您的系统。目前您可以在「软件高级设置」中勾选「禁用软件内核驱动」以解决蓝屏问题。" FontSize="11" Foreground="#FF856404" TextWrapping="Wrap" />
+                                </Border>
+
+                                <Border Background="#D4EDDA" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                                    <TextBlock Text="提示：如果您在可移动介质（比如U盘）中直接运行学习不通，为了防止长时间占用您的U盘，我们默认会将主程序安装至C盘的临时目录下，运行程序后您依然可以弹出U盘。" FontSize="11" Foreground="#FF155724" TextWrapping="Wrap" />
+                                </Border>
+
+                                <Border Background="#F8D7DA" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                                    <TextBlock Text="说明：由于本软件需要对极域电子教室进行操作，可能会被某些杀毒软件误识别为病毒，您可能需要关闭杀毒软件或者添加本软件到白名单。" FontSize="11" Foreground="#FF721C24" TextWrapping="Wrap" />
+                                </Border>
+
+                                <TextBlock Text="已测试的版本：" FontSize="12" FontWeight="Bold" Foreground="#FF006BEF" Margin="0,8,0,4" />
+                                <TextBlock Text="• 极域电子教室: 4.0 和 6.0（2010 和 2015/2016版本）" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 已测试的系统: Win7、Win10" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,8" />
+
+                                <TextBlock Text="软件需求：" FontSize="12" FontWeight="Bold" Foreground="#FF006BEF" Margin="0,0,0,4" />
+                                <TextBlock Text="• 本软件支持系统 Win7/Win8/Win8.1/Win10" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 极域电子教室 推荐在 4.0/6.0 版本" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="8,2,0,2" />
+                            </StackPanel>
+
+                            <!-- 免责声明 -->
+                            <StackPanel x:Name="HelpContentDisclaimer" Visibility="Collapsed">
+                                <TextBlock Text="免责声明" FontSize="15" FontWeight="Bold" Foreground="#FFFF0000" Margin="0,0,0,8" />
+
+                                <Border Background="#FFF3CD" CornerRadius="8" Padding="14" Margin="0,0,0,12">
+                                    <TextBlock Text="注意：本软件研发之初仅供学习交流使用，严禁将该软件用于不符合法律、道德的行为，本软件仅供技术交流，擅自用于不正当行为所造成的后果将由您自行承担！自您使用本软件起，即表明您同意了该声明。" FontSize="12" Foreground="#FF856404" TextWrapping="Wrap" FontWeight="Bold" />
+                                </Border>
+
+                                <TextBlock Text="版权所有 © 2026 Daitangxin" FontSize="12" Foreground="#FF333333" Margin="0,0,0,8" />
+                                <TextBlock Text="这款软件是为了学习而开发的免费开源软件，如果有人拿他收费卖的话，请不要上当，本软件永久开源免费，可在项目 Github 主页下载到程序和源码。" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <TextBlock Text="在您传播分发这款软件时，请尊重作者劳动成果，不要删掉软件的任何作者标识、署名。" FontSize="11" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <TextBlock Text="缺德组织荣誉出品，必属精品" FontSize="12" Foreground="#FF006BEF" FontWeight="Bold" Margin="0,8,0,0" />
+                            </StackPanel>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
                 <!-- 调试页面 -->
                 <Grid x:Name="PageDebug" Visibility="Collapsed">
                     <Grid.RowDefinitions>
@@ -336,8 +448,9 @@
 
             <!-- 底部导航栏 -->
             <Border Grid.Row="2" Background="#10000000" CornerRadius="0,0,16,16">
-                <UniformGrid Columns="3">
+                <UniformGrid Columns="4">
                     <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF333333" BorderBrush="Transparent" FontWeight="Bold" />
+                    <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
                     <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
                     <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
                 </UniformGrid>

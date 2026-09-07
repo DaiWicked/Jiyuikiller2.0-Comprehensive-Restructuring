@@ -466,10 +466,12 @@ namespace JiYuKiller
             PageAbout.Visibility = Visibility.Collapsed;
             PageAboutMe.Visibility = Visibility.Collapsed;
             PageAdvancedSettings.Visibility = Visibility.Collapsed;
+            PageHelp.Visibility = Visibility.Collapsed;
             PageDebug.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
             NavSetting.FontWeight = FontWeights.Normal;
+            NavHelp.FontWeight = FontWeights.Normal;
             NavDebug.FontWeight = FontWeights.Normal;
             NavAbout.FontWeight = FontWeights.Normal;
 
@@ -488,6 +490,10 @@ namespace JiYuKiller
                     break;
                 case "advanced":
                     PageAdvancedSettings.Visibility = Visibility.Visible;
+                    break;
+                case "help":
+                    PageHelp.Visibility = Visibility.Visible;
+                    NavHelp.FontWeight = FontWeights.Bold;
                     break;
                 case "debug":
                     PageDebug.Visibility = Visibility.Visible;
@@ -624,6 +630,83 @@ namespace JiYuKiller
             {
                 DebugLogBox.Text = $"读取日志失败: {ex.Message}";
                 Services.Logger.Instance.Error("读取日志失败", ex);
+            }
+        }
+
+        #endregion
+
+        #region 帮助文档
+
+        private void NavHelp_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("帮助文档", "NavHelp");
+            ShowHelpSubPage("intro");
+            ShowPage("help");
+        }
+
+        private void HelpNavIntro_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("帮助-介绍", "HelpNavIntro");
+            ShowHelpSubPage("intro");
+        }
+
+        private void HelpNavKey_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("帮助-快捷键", "HelpNavKey");
+            ShowHelpSubPage("key");
+        }
+
+        private void HelpNavOthers_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("帮助-其他", "HelpNavOthers");
+            ShowHelpSubPage("others");
+        }
+
+        private void HelpNavDisclaimer_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("帮助-免责声明", "HelpNavDisclaimer");
+            ShowHelpSubPage("disclaimer");
+        }
+
+        private void ShowHelpSubPage(string page)
+        {
+            HelpContentIntro.Visibility = Visibility.Collapsed;
+            HelpContentKey.Visibility = Visibility.Collapsed;
+            HelpContentOthers.Visibility = Visibility.Collapsed;
+            HelpContentDisclaimer.Visibility = Visibility.Collapsed;
+
+            // 重置导航按钮样式
+            HelpNavIntro.Background = new SolidColorBrush(Colors.Transparent);
+            HelpNavIntro.Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66));
+            HelpNavKey.Background = new SolidColorBrush(Colors.Transparent);
+            HelpNavKey.Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66));
+            HelpNavOthers.Background = new SolidColorBrush(Colors.Transparent);
+            HelpNavOthers.Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66));
+            HelpNavDisclaimer.Background = new SolidColorBrush(Colors.Transparent);
+            HelpNavDisclaimer.Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66));
+
+            switch (page)
+            {
+                case "intro":
+                    HelpContentIntro.Visibility = Visibility.Visible;
+                    HelpNavIntro.Background = new SolidColorBrush(Color.FromRgb(0x00, 0x7B, 0xFF));
+                    HelpNavIntro.Foreground = new SolidColorBrush(Colors.White);
+                    break;
+                case "key":
+                    HelpContentKey.Visibility = Visibility.Visible;
+                    HelpNavKey.Background = new SolidColorBrush(Color.FromRgb(0x00, 0x7B, 0xFF));
+                    HelpNavKey.Foreground = new SolidColorBrush(Colors.White);
+                    break;
+                case "others":
+                    HelpContentOthers.Visibility = Visibility.Visible;
+                    HelpNavOthers.Background = new SolidColorBrush(Color.FromRgb(0x00, 0x7B, 0xFF));
+                    HelpNavOthers.Foreground = new SolidColorBrush(Colors.White);
+                    break;
+                case "disclaimer":
+                    HelpContentDisclaimer.Visibility = Visibility.Visible;
+                    HelpNavDisclaimer.Background = new SolidColorBrush(Color.FromRgb(0x00, 0x7B, 0xFF));
+                    HelpNavDisclaimer.Foreground = new SolidColorBrush(Colors.White);
+                    break;
             }
         }
 
