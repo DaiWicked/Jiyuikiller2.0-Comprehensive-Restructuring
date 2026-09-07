@@ -36,7 +36,7 @@
             <Border x:Name="GlassyLayer" CornerRadius="16" Background="{Binding Background, ElementName=BackdropLayer}" ClipToBounds="True" />
 
             <!-- 层3: 半透明白色覆盖层 + 内容 -->
-            <Grid x:Name="ContentLayer" Background="#E6FFFFFF">
+            <Grid x:Name="ContentLayer" Background="#B3FFFFFF">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40" />
                     <RowDefinition Height="*" />
@@ -491,8 +491,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.3" Maximum="1" Value="0.9" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
-                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="90%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.3" Maximum="1" Value="0.7" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
+                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="70%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
