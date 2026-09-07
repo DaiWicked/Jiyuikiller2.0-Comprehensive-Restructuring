@@ -28,7 +28,7 @@
                 <Setter Property="BorderBrush" Value="#8064BEFF" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="Padding" Value="16,8" />
-                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontSize" Value="14" />
                 <Setter Property="Cursor" Value="Hand" />
                 <Setter Property="Template">
                     <Setter.Value>
@@ -67,7 +67,7 @@
             <!-- 玻璃复选框样式 -->
             <Style x:Key="GlassCheckBox" TargetType="CheckBox">
                 <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />
-                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontSize" Value="14" />
                 <Setter Property="Margin" Value="0,4" />
                 <Setter Property="Cursor" Value="Hand" />
             </Style>
@@ -78,7 +78,7 @@
                 <Setter Property="BorderBrush" Value="#1F000000" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="Padding" Value="8,4" />
-                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontSize" Value="14" />
                 <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />
             </Style>
         </ResourceDictionary>
