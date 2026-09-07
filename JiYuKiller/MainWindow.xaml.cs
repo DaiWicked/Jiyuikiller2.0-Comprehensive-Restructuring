@@ -150,22 +150,12 @@ namespace JiYuKiller
         {
             Services.Logger.Instance.ButtonClick("退出软件", "TrayMenu");
             _isExiting = true;
-
-            var result = System.Windows.MessageBox.Show("确定要退出学习不通吗？", "确认退出", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (result == MessageBoxResult.Yes)
-            {
-                Services.Logger.Instance.Info("用户确认退出程序");
-                _trayIcon.Visible = false;
-                _trayIcon.Dispose();
-                _controller.Stop();
-                Services.Logger.Instance.Close();
-                System.Windows.Application.Current.Shutdown();
-            }
-            else
-            {
-                _isExiting = false;
-                Services.Logger.Instance.Info("用户取消退出");
-            }
+            Services.Logger.Instance.Info("正在退出程序");
+            _trayIcon.Visible = false;
+            _trayIcon.Dispose();
+            _controller.Stop();
+            Services.Logger.Instance.Close();
+            System.Windows.Application.Current.Shutdown();
         }
 
         #endregion
