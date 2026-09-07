@@ -315,10 +315,23 @@ namespace JiYuKiller
             ShowPage("about");
         }
 
+        private void BtnAboutMe_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("关于我", "BtnAboutMe");
+            ShowPage("aboutme");
+        }
+
+        private void BtnBackFromAboutMe_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("返回(关于我)", "BtnBackFromAboutMe");
+            ShowPage("about");
+        }
+
         private void ShowPage(string pageName)
         {
             PageSettings.Visibility = Visibility.Collapsed;
             PageAbout.Visibility = Visibility.Collapsed;
+            PageAboutMe.Visibility = Visibility.Collapsed;
             PageDebug.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
@@ -335,6 +348,9 @@ namespace JiYuKiller
                 case "about":
                     PageAbout.Visibility = Visibility.Visible;
                     NavAbout.FontWeight = FontWeights.Bold;
+                    break;
+                case "aboutme":
+                    PageAboutMe.Visibility = Visibility.Visible;
                     break;
                 case "debug":
                     PageDebug.Visibility = Visibility.Visible;
