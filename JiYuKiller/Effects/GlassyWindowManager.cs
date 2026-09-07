@@ -43,6 +43,14 @@ namespace JiYuKiller.Effects
             _window.Activated += OnActivated;
             _window.Deactivated += OnDeactivated;
             _window.Closed += OnClosed;
+
+            // 如果窗口已经加载（在Loaded事件之后才创建管理器），直接初始化
+            if (window.IsLoaded)
+            {
+                Services.Logger.Instance.Info("窗口已加载，直接执行毛玻璃初始化");
+                OnSourceInitialized(window, EventArgs.Empty);
+                OnLoaded(window, new RoutedEventArgs());
+            }
         }
 
         /// <summary>
@@ -142,11 +150,13 @@ namespace JiYuKiller.Effects
             if (_glassyEffect == null)
             {
                 _glassyEffect = new GlassyEffect();
+                Services.Logger.Instance.Info("GlassyEffect 像素着色器创建成功");
             }
 
             if (_glassyBorder != null)
             {
                 _glassyBorder.Effect = _glassyEffect;
+                Services.Logger.Instance.Info("GlassyEffect 已应用到 GlassyLayer");
             }
         }
 
@@ -235,6 +245,7 @@ namespace JiYuKiller.Effects
             var snapshot = ScreenCaptureHelper.FullScreenSnapshot;
             if (snapshot == null)
             {
+                Services.Logger.Instance.Warn("桌面截图为空，无法更新毛玻璃背景");
                 return;
             }
 
@@ -279,6 +290,7 @@ namespace JiYuKiller.Effects
             }
 
             _backdropBrush.Viewbox = new Rect(x, y, width, height);
+            Services.Logger.Instance.Debug($"毛玻璃背景已更新: 区域=({x},{y},{width}x{height}), 截图尺寸={snapshot.PixelWidth}x{snapshot.PixelHeight}");
         }
 
         /// <summary>

@@ -47,7 +47,7 @@ namespace JiYuKiller.Effects
         {
             PixelShader = new PixelShader
             {
-                UriSource = new Uri("pack://application:,,,/JiYuKiller;component/Effects/GlassyEffect.ps", UriKind.Absolute)
+                UriSource = new Uri("pack://application:,,,/i.chaoxing;component/Effects/GlassyEffect.ps", UriKind.Absolute)
             };
 
             UpdateShaderValue(InputProperty);

@@ -32,11 +32,11 @@
             <!-- 层1: 桌面截图背景（毛玻璃底层） -->
             <Border x:Name="BackdropLayer" CornerRadius="16" ClipToBounds="True" />
 
-            <!-- 层2: 玻璃像素着色器效果层（折射/模糊） -->
-            <Border x:Name="GlassyLayer" CornerRadius="16" Background="Transparent" ClipToBounds="True" />
+            <!-- 层2: 玻璃像素着色器效果层（折射/模糊），背景绑定到截图层 -->
+            <Border x:Name="GlassyLayer" CornerRadius="16" Background="{Binding Background, ElementName=BackdropLayer}" ClipToBounds="True" />
 
             <!-- 层3: 半透明白色覆盖层 + 内容 -->
-            <Grid Background="#E6FFFFFF">
+            <Grid x:Name="ContentLayer" Background="#E6FFFFFF">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40" />
                     <RowDefinition Height="*" />

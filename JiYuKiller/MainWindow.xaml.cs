@@ -367,8 +367,23 @@ namespace JiYuKiller
                 TextContentOpacityValue.Text = string.Format("{0}%", (int)(e.NewValue * 100));
             }
 
-            // 调整内容层透明度
-            // 内容层是第三个Grid（索引2），通过Background设置
+            // 调整内容层背景透明度
+            if (ContentLayer != null)
+            {
+                byte alpha = (byte)(e.NewValue * 255);
+                SolidColorBrush brush = ContentLayer.Background as SolidColorBrush;
+                if (brush != null)
+                {
+                    Color color = brush.Color;
+                    color.A = alpha;
+                    brush.Color = color;
+                }
+                else
+                {
+                    ContentLayer.Background = new SolidColorBrush(Color.FromArgb(alpha, 255, 255, 255));
+                }
+            }
+
             Services.Logger.Instance.Debug($"内容层透明度调整: {e.NewValue:F2}");
         }
 
