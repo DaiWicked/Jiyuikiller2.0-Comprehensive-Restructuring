@@ -1,0 +1,150 @@
+<Window x:Class="JiYuKiller.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="学习不通 - JiYuKiller"
+        Height="600" Width="800"
+        WindowStartupLocation="CenterScreen"
+        Icon="Assets/JiYuTrainerLogo.ico"
+        Background="Transparent"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        MinWidth="600" MinHeight="450">
+
+    <Window.Resources>
+        <!-- 页面切换动画 -->
+        <Storyboard x:Key="FadeIn">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25" />
+        </Storyboard>
+    </Window.Resources>
+
+    <!-- 外层玻璃容器（半透明背景，不使用BlurEffect避免模糊文字） -->
+    <Border x:Name="GlassContainer" CornerRadius="16" Margin="8">
+        <Border.Background>
+            <SolidColorBrush x:Name="GlassBgBrush" Color="#E6FFFFFF" />
+        </Border.Background>
+        <Border.BorderBrush>
+            <SolidColorBrush Color="#60FFFFFF" />
+        </Border.BorderBrush>
+        <Border.BorderThickness>1</Border.BorderThickness>
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="16" ShadowDepth="0" Color="#40000000" Opacity="0.4" />
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="56" />
+            </Grid.RowDefinitions>
+
+            <!-- 标题栏 -->
+            <Grid Grid.Row="0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                    <Image Source="Assets/JiYuTrainerLogo.ico" Width="20" Height="20" Margin="0,0,8,0" />
+                    <TextBlock Text="学习不通" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Foreground="#FF333333" />
+                    <TextBlock x:Name="VersionText" Text="QD_V1.0" FontSize="11" VerticalAlignment="Center" Foreground="#FF888888" Margin="8,0,0,0" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,0">
+                    <Button x:Name="BtnMinimize" Content="─" Width="32" Height="28" Click="BtnMinimize_Click" Style="{StaticResource GlassButton}" Padding="0" FontSize="12" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
+                    <Button x:Name="BtnClose" Content="✕" Width="32" Height="28" Click="BtnClose_Click" Style="{StaticResource GlassButton}" Padding="0" FontSize="12" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
+                </StackPanel>
+            </Grid>
+
+            <!-- 内容区域 -->
+            <Grid Grid.Row="1" Margin="16,8">
+
+                <!-- 设置页面 -->
+                <ScrollViewer x:Name="PageSettings" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- 状态显示 -->
+                        <Border Background="#20000000" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="当前状态" FontSize="12" Foreground="#FF888888" />
+                                <TextBlock x:Name="StatusText" Text="正在初始化..." FontSize="16" FontWeight="Bold" Foreground="#FF333333" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 极域控制设置 -->
+                        <TextBlock Text="极域控制设置" FontSize="14" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,8" />
+
+                        <CheckBox x:Name="CheckMonitorProcess" Content="监控极域运行进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="监控极域运行进程，教师可通过极域远程执行应用程序" />
+                        <CheckBox x:Name="CheckBanRunOp" Content="禁止极域运行进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域在此电脑上运行程序" />
+                        <CheckBox x:Name="CheckAllowTop" Content="允许屏幕广播窗口置顶" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许屏幕广播窗口置顶，默认不允许" />
+                        <CheckBox x:Name="CheckProhibitKill" Content="禁止极域结束进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域结束您电脑上的进程" />
+                        <CheckBox x:Name="CheckAllowMonitor" Content="允许教师监视你的电脑" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许教师通过极域查看你的电脑屏幕" />
+                        <CheckBox x:Name="CheckProhibitClose" Content="禁止极域关闭窗口" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域关闭您电脑上的窗口" />
+                        <CheckBox x:Name="CheckAllowControl" Content="允许老师控制你的电脑" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许教师通过极域控制您的电脑" />
+
+                        <!-- 操作按钮 -->
+                        <WrapPanel Margin="0,12,0,0">
+                            <Button x:Name="BtnUnloadNetFilter" Content="解除网络控制" Style="{StaticResource GlassButton}" Click="BtnUnloadNetFilter_Click" Margin="0,0,8,0" />
+                            <Button x:Name="BtnLocateJiYu" Content="选择极域主进程位置" Style="{StaticResource GlassButton}" Click="BtnLocateJiYu_Click" Background="#FF6C757D" Margin="0,0,8,0" />
+                            <Button x:Name="BtnSaveSettings" Content="保存设置" Style="{StaticResource GlassButton}" Click="BtnSaveSettings_Click" Background="#FF28A745" Margin="0,0,8,0" />
+                            <Button x:Name="BtnResetSettings" Content="恢复默认" Style="{StaticResource GlassButton}" Click="BtnResetSettings_Click" Background="#FFFFC107" Foreground="#FF333333" />
+                        </WrapPanel>
+
+                        <!-- 极域路径显示 -->
+                        <TextBlock x:Name="JiYuPathText" Text="极域路径: 未设置" FontSize="11" Foreground="#FF888888" Margin="0,12,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 关于页面 -->
+                <Grid x:Name="PageAbout" Visibility="Collapsed">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Source="Assets/JiYuTrainerLogo.ico" Width="96" Height="96" Margin="0,0,0,16" />
+                        <TextBlock Text="学习不通" FontSize="24" FontWeight="Bold" Foreground="#FF333333" HorizontalAlignment="Center" />
+                        <TextBlock x:Name="AboutVersion" Text="QD_V1.0_WPF-Rebuild" FontSize="14" Foreground="#FF888888" HorizontalAlignment="Center" Margin="0,4,0,16" />
+                        <TextBlock Text="基于 JiYuTrainer 重构的 C# WPF 版本" FontSize="12" Foreground="#FF666666" HorizontalAlignment="Center" />
+                        <TextBlock Text="原作者: imengyu / zsyn666" FontSize="12" Foreground="#FF666666" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        <TextBlock Text="重构: QD" FontSize="12" Foreground="#FF666666" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- 调试页面 -->
+                <Grid x:Name="PageDebug" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="BtnRefreshLog" Content="刷新日志" Style="{StaticResource GlassButton}" Click="BtnRefreshLog_Click" Margin="0,0,8,0" />
+                        <Button x:Name="BtnOpenLogFolder" Content="打开日志目录" Style="{StaticResource GlassButton}" Click="BtnOpenLogFolder_Click" Background="#FF6C757D" />
+                        <CheckBox x:Name="CheckDebugMode" Content="调试模式" Style="{StaticResource GlassCheckBox}" Margin="16,0,0,0" Checked="DebugMode_Checked" Unchecked="DebugMode_Unchecked" />
+                    </StackPanel>
+
+                    <TextBox x:Name="DebugLogBox" Grid.Row="1"
+                             IsReadOnly="True"
+                             FontFamily="Consolas"
+                             FontSize="11"
+                             Background="#FF1E1E1E"
+                             Foreground="#FFD4D4D4"
+                             BorderBrush="#FF333333"
+                             BorderThickness="1"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Auto"
+                             TextWrapping="NoWrap" />
+                </Grid>
+
+            </Grid>
+
+            <!-- 底部导航栏 -->
+            <Border Grid.Row="2" Background="#10000000" CornerRadius="0,0,16,16">
+                <UniformGrid Columns="3">
+                    <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF333333" BorderBrush="Transparent" FontWeight="Bold" />
+                    <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
+                    <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
+                </UniformGrid>
+            </Border>
+
+        </Grid>
+    </Border>
+</Window>

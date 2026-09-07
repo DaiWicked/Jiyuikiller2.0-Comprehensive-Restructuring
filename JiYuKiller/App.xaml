@@ -1,0 +1,86 @@
+<Application x:Class="JiYuKiller.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <!-- 全局 Liquid Glass 样式 -->
+        <ResourceDictionary>
+            <!-- 颜色变量 -->
+            <Color x:Key="GlassBgColor">#B8FFFFFF</Color>
+            <Color x:Key="GlassBorderColor">#80FFFFFF</Color>
+            <Color x:Key="GlassTextColor">#FF000000</Color>
+            <Color x:Key="GlassPrimaryColor">#FF37B0FF</Color>
+            <Color x:Key="GlassSuccessColor">#FF28A745</Color>
+            <Color x:Key="GlassDangerColor">#FFFF6B6B</Color>
+
+            <!-- 玻璃背景画刷 -->
+            <SolidColorBrush x:Key="GlassBackgroundBrush" Color="{StaticResource GlassBgColor}" />
+            <SolidColorBrush x:Key="GlassBorderBrush" Color="{StaticResource GlassBorderColor}" />
+            <SolidColorBrush x:Key="GlassTextBrush" Color="{StaticResource GlassTextColor}" />
+            <SolidColorBrush x:Key="GlassPrimaryBrush" Color="{StaticResource GlassPrimaryColor}" />
+            <SolidColorBrush x:Key="GlassSuccessBrush" Color="{StaticResource GlassSuccessColor}" />
+            <SolidColorBrush x:Key="GlassDangerBrush" Color="{StaticResource GlassDangerColor}" />
+
+            <!-- 玻璃按钮样式 -->
+            <Style x:Key="GlassButton" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource GlassPrimaryBrush}" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="BorderBrush" Value="#8064BEFF" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="16,8" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#FF1E9EFF" />
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <TranslateTransform Y="-1" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#FF0080E0" />
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- 玻璃复选框样式 -->
+            <Style x:Key="GlassCheckBox" TargetType="CheckBox">
+                <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Margin" Value="0,4" />
+                <Setter Property="Cursor" Value="Hand" />
+            </Style>
+
+            <!-- 玻璃输入框样式 -->
+            <Style x:Key="GlassTextBox" TargetType="TextBox">
+                <Setter Property="Background" Value="#A6FFFFFF" />
+                <Setter Property="BorderBrush" Value="#1F000000" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="8,4" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
