@@ -59,7 +59,7 @@ namespace JiYuKiller
             Services.Logger.Instance.FunctionCall("InitTrayIcon");
 
             _trayIcon = new WinForms.NotifyIcon();
-            _trayIcon.Text = "学习不通 - JiYuKiller";
+            _trayIcon.Text = "学习不通";
             // 使用绝对路径加载图标，避免工作目录变化导致找不到
             string iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "JiYuTrainerLogo.ico");
             if (System.IO.File.Exists(iconPath))

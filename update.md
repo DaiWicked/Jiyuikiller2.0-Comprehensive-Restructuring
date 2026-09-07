@@ -1,5 +1,21 @@
 # JiYuKiller 2.0 全面重构 - 更新日志
 
+## QD_V2.0_JiYuRebuild-TEST (2026-09-07)
+
+### 重命名
+- **程序名**: 学习不通-JiYuKiller → 学习不通
+- **进程名**: JiYuKiller → i.chaoxing
+- **版本号**: QD_V1.0_WPF-Rebuild → QD_V2.0_JiYuRebuild-TEST
+
+### 修复
+- 标题栏整行可拖动：添加 Background="Transparent" 确保空白区域也接收鼠标事件
+- 移除标题栏双击最大化逻辑
+
+### 新增资源
+- JiYuTrainerLogo16.png: 标题栏小图标
+- about.png: 关于页面展示图
+- JiYuTrainerWarn.ico / JiYuTrainerBug.ico: 备用图标
+
 ## QD_V1.1_TrayIcon (2026-09-07)
 
 ### 新增功能

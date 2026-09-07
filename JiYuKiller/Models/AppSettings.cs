@@ -57,7 +57,7 @@ namespace JiYuKiller.Models
         public int WallpaperOpacity { get; set; } = 80;
 
         // === 版本信息 ===
-        public string Version { get; set; } = "QD_V1.0_WPF-Rebuild";
+        public string Version { get; set; } = "QD_V2.0_JiYuRebuild-TEST";
 
         [XmlIgnore]
         private static readonly string SettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "JiYuKillerSettings.xml");
