@@ -77,6 +77,7 @@
     <Compile Include="Services\JiYuController.cs" />
     <Compile Include="Services\ScreenCaptureHelper.cs" />
     <Compile Include="Services\DriverService.cs" />
+    <Compile Include="Services\DllInjectService.cs" />
     <Compile Include="Effects\GlassyEffect.cs" />
     <Compile Include="Effects\GlassyWindowManager.cs" />
   </ItemGroup>
@@ -128,7 +129,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Drivers\JiYuTrainerDriver.sys">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Drivers\JiYuTrainerHooks.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
