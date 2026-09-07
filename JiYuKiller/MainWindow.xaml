@@ -104,6 +104,7 @@
                         <WrapPanel Margin="0,2,0,0">
                             <Button x:Name="BtnUnloadNetFilter" Content="解除网络控制" Style="{StaticResource GlassButton}" Click="BtnUnloadNetFilter_Click" Margin="0,0,6,6" />
                             <Button x:Name="BtnLocateJiYu" Content="选择极域路径" Style="{StaticResource GlassButton}" Click="BtnLocateJiYu_Click" Background="#FF6C757D" Margin="0,0,6,6" />
+                            <Button x:Name="BtnAdvancedSettings" Content="软件高级设置" Style="{StaticResource GlassButton}" Click="BtnAdvancedSettings_Click" Background="#FF6F42C1" Margin="0,0,6,6" />
                             <Button x:Name="BtnSaveSettings" Content="保存设置" Style="{StaticResource GlassButton}" Click="BtnSaveSettings_Click" Background="#FF28A745" Margin="0,0,6,6" />
                             <Button x:Name="BtnResetSettings" Content="恢复默认" Style="{StaticResource GlassButton}" Click="BtnResetSettings_Click" Background="#FFFFC107" Foreground="#FF333333" Margin="0,0,6,6" />
                         </WrapPanel>
@@ -163,6 +164,144 @@
 
                             <!-- GitHub 链接 -->
                             <Button x:Name="BtnGithub" Content="GitHub 仓库" Style="{StaticResource GlassButton}" Click="BtnGithub_Click" Margin="0,16,0,0" Width="140" Background="#FF24292E" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- 软件高级设置页面 -->
+                <Grid x:Name="PageAdvancedSettings" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- 标题栏 -->
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="BtnBackFromAdvanced" Content="← 返回" Style="{StaticResource GlassButton}" Click="BtnBackFromAdvanced_Click" Background="#FF6C757D" Padding="12,6" />
+                        <TextBlock Grid.Column="1" Text="软件高级参数配置" FontSize="16" FontWeight="Bold" Foreground="#FF333333" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <!-- 内容区域 -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,0,0,8">
+                            <!-- 驱动设置 -->
+                            <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="驱动设置（需内核驱动支持）" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <CheckBox x:Name="CheckDisableDriver" Content="禁用软件内核驱动" Style="{StaticResource GlassCheckBox}" IsEnabled="False" ToolTip="64位系统强制启用驱动，无法禁用" />
+                                    <CheckBox x:Name="CheckSelfProtect" Content="驱动层自我保护（32位系统有效）" Style="{StaticResource GlassCheckBox}" IsEnabled="False" ToolTip="64位系统不支持驱动层自我保护" />
+                                    <TextBlock Text="注：当前为64位系统，驱动相关设置暂不可用" FontSize="10" Foreground="#FF999999" Margin="4,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 极域附加控制 -->
+                            <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="极域附加控制" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <CheckBox x:Name="CheckAutoForceKill" Content="不客气模式（自动强制清除）" Style="{StaticResource GlassCheckBox}" ToolTip="操作失败时直接清除极域有关进程，不建议使用" />
+                                    <CheckBox x:Name="CheckAutoIncludeFullWindow" Content="严格窗口控制模式" Style="{StaticResource GlassCheckBox}" ToolTip="严格控制极域所有窗口，不仅仅是屏幕广播和黑屏窗口" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 程序隐藏 -->
+                            <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="程序隐藏" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <CheckBox x:Name="CheckDoNotShowVirusWindow" Content="隐藏极域端控制输出窗口" Style="{StaticResource GlassCheckBox}" ToolTip="隐藏屏幕左上角的极域控制输出窗口" />
+                                    <CheckBox x:Name="CheckDoNotShowTrayIcon" Content="隐藏本软件任务栏图标" Style="{StaticResource GlassCheckBox}" ToolTip="隐藏后可使用快捷键显示或隐藏主窗口" Checked="CheckDoNotShowTrayIcon_Checked" Unchecked="CheckDoNotShowTrayIcon_Unchecked" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 快捷键 -->
+                            <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="快捷键（修改后重启生效）" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <Grid Margin="0,4,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="100" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="紧急全屏快捷键" VerticalAlignment="Center" Foreground="#FF333333" FontSize="12" />
+                                        <TextBlock x:Name="TextHotKeyFakeFull" Grid.Column="1" Text="Ctrl+Alt+F" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FF555555" FontSize="12" />
+                                    </Grid>
+                                    <Grid Margin="0,4,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="100" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="显示/隐藏窗口快捷键" VerticalAlignment="Center" Foreground="#FF333333" FontSize="12" />
+                                        <TextBlock x:Name="TextHotKeyShowHide" Grid.Column="1" Text="Ctrl+Alt+H" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FF555555" FontSize="12" />
+                                    </Grid>
+                                    <TextBlock Text="注：快捷键自定义功能开发中，当前使用默认快捷键" FontSize="10" Foreground="#FF999999" Margin="4,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 结束进程模式 -->
+                            <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="结束进程模式" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <RadioButton x:Name="RadioKillTP" Content="TerminateProcess (Weak)" GroupName="KillProcess" Foreground="#FF333333" FontSize="12" Margin="0,2" />
+                                    <RadioButton x:Name="RadioKillNTP" Content="NtTerminateProcess (Default)" GroupName="KillProcess" Foreground="#FF333333" FontSize="12" Margin="0,2" />
+                                    <RadioButton x:Name="RadioKillKernel" Content="KernelMode (需驱动)" GroupName="KillProcess" Foreground="#FF333333" FontSize="12" Margin="0,2" IsEnabled="False" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 注入模式 -->
+                            <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="病毒注入模式（需DLL支持）" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <Grid Margin="0,4,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="注入模式:" VerticalAlignment="Center" Foreground="#FF333333" FontSize="12" Margin="0,0,8,0" />
+                                        <ComboBox x:Name="ComboInjectMode" Grid.Column="1" Height="28" FontSize="12">
+                                            <ComboBoxItem Content="RemoteThread" />
+                                            <ComboBoxItem Content="HookDllStub" />
+                                        </ComboBox>
+                                    </Grid>
+                                    <CheckBox x:Name="CheckInjectMasterHelper" Content="InjectMasterHelper" Style="{StaticResource GlassCheckBox}" IsEnabled="False" />
+                                    <CheckBox x:Name="CheckInjectProcHelper64" Content="InjectProcHelper64" Style="{StaticResource GlassCheckBox}" IsEnabled="False" />
+                                    <TextBlock Text="注：DLL注入功能开发中，设置项暂保存" FontSize="10" Foreground="#FF999999" Margin="4,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 高级程序配置 -->
+                            <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="高级程序配置" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <CheckBox x:Name="CheckAlwaysCheckUpdate" Content="总是检查更新" Style="{StaticResource GlassCheckBox}" />
+                                    <CheckBox x:Name="CheckForceInstallInCurrentDir" Content="强制安装在当前目录" Style="{StaticResource GlassCheckBox}" />
+                                    <CheckBox x:Name="CheckForceDisableWatchDog" Content="强制禁用看门狗" Style="{StaticResource GlassCheckBox}" />
+                                    <Grid Margin="0,6,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="检查间隔(ms):" VerticalAlignment="Center" Foreground="#FF333333" FontSize="12" Margin="0,0,8,0" />
+                                        <TextBox x:Name="TextCKInterval" Grid.Column="1" Text="3100" Style="{StaticResource GlassTextBox}" Height="26" FontSize="12" VerticalContentAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Text="范围: 1000-10000" VerticalAlignment="Center" Foreground="#FF999999" FontSize="10" Margin="8,0,0,0" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 控制器启停 -->
+                            <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="自动控制器启停" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                    <CheckBox x:Name="CheckEnableController" Content="启用控制器" Style="{StaticResource GlassCheckBox}" Checked="CheckEnableController_Checked" Unchecked="CheckEnableController_Unchecked" />
+                                    <TextBlock Text="控制器负责检查和控制极域，关闭将导致极域脱离控制。不建议关闭，仅调试时使用。" FontSize="10" Foreground="#FF999999" Margin="4,4,0,0" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 保存按钮 -->
+                            <Button x:Name="BtnSaveAdvancedSettings" Content="保存高级设置" Style="{StaticResource GlassButton}" Click="BtnSaveAdvancedSettings_Click" Background="#FF28A745" Margin="0,4,0,0" Height="36" />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

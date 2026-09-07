@@ -342,11 +342,130 @@ namespace JiYuKiller
             }
         }
 
+        #region 软件高级设置
+
+        private void BtnAdvancedSettings_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("软件高级设置", "BtnAdvancedSettings");
+            LoadAdvancedSettingsToUI();
+            ShowPage("advanced");
+        }
+
+        private void BtnBackFromAdvanced_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("返回(高级设置)", "BtnBackFromAdvanced");
+            ShowPage("settings");
+        }
+
+        private void LoadAdvancedSettingsToUI()
+        {
+            Services.Logger.Instance.FunctionCall("LoadAdvancedSettingsToUI");
+
+            CheckDisableDriver.IsChecked = _settings.DisableDriver;
+            CheckSelfProtect.IsChecked = _settings.SelfProtect;
+            CheckAutoForceKill.IsChecked = _settings.AutoForceKill;
+            CheckAutoIncludeFullWindow.IsChecked = _settings.AutoIncludeFullWindow;
+            CheckDoNotShowVirusWindow.IsChecked = _settings.DoNotShowVirusWindow;
+            CheckDoNotShowTrayIcon.IsChecked = _settings.DoNotShowTrayIcon;
+            CheckAlwaysCheckUpdate.IsChecked = _settings.AlwaysCheckUpdate;
+            CheckForceInstallInCurrentDir.IsChecked = _settings.ForceInstallInCurrentDir;
+            CheckForceDisableWatchDog.IsChecked = _settings.ForceDisableWatchDog;
+            CheckInjectMasterHelper.IsChecked = _settings.InjectMasterHelper;
+            CheckInjectProcHelper64.IsChecked = _settings.InjectProcHelper64;
+            CheckEnableController.IsChecked = _settings.EnableController;
+            TextCKInterval.Text = _settings.CKInterval.ToString();
+
+            // 结束进程模式
+            switch (_settings.KillProcessMode)
+            {
+                case "TerminateProcess": RadioKillTP.IsChecked = true; break;
+                case "NtTerminateProcess": RadioKillNTP.IsChecked = true; break;
+                case "KernelMode": RadioKillKernel.IsChecked = true; break;
+            }
+
+            // 注入模式
+            ComboInjectMode.SelectedIndex = _settings.InjectMode == "HookDllStub" ? 1 : 0;
+
+            Services.Logger.Instance.Debug("高级设置已加载到 UI");
+        }
+
+        private void BtnSaveAdvancedSettings_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("保存高级设置", "BtnSaveAdvancedSettings");
+
+            _settings.DisableDriver = CheckDisableDriver.IsChecked ?? false;
+            _settings.SelfProtect = CheckSelfProtect.IsChecked ?? true;
+            _settings.AutoForceKill = CheckAutoForceKill.IsChecked ?? false;
+            _settings.AutoIncludeFullWindow = CheckAutoIncludeFullWindow.IsChecked ?? false;
+            _settings.DoNotShowVirusWindow = CheckDoNotShowVirusWindow.IsChecked ?? true;
+            _settings.DoNotShowTrayIcon = CheckDoNotShowTrayIcon.IsChecked ?? false;
+            _settings.AlwaysCheckUpdate = CheckAlwaysCheckUpdate.IsChecked ?? false;
+            _settings.ForceInstallInCurrentDir = CheckForceInstallInCurrentDir.IsChecked ?? false;
+            _settings.ForceDisableWatchDog = CheckForceDisableWatchDog.IsChecked ?? false;
+            _settings.InjectMasterHelper = CheckInjectMasterHelper.IsChecked ?? false;
+            _settings.InjectProcHelper64 = CheckInjectProcHelper64.IsChecked ?? false;
+            _settings.EnableController = CheckEnableController.IsChecked ?? true;
+
+            // 结束进程模式
+            if (RadioKillTP.IsChecked == true) _settings.KillProcessMode = "TerminateProcess";
+            else if (RadioKillNTP.IsChecked == true) _settings.KillProcessMode = "NtTerminateProcess";
+            else if (RadioKillKernel.IsChecked == true) _settings.KillProcessMode = "KernelMode";
+
+            // 注入模式
+            _settings.InjectMode = ComboInjectMode.SelectedIndex == 1 ? "HookDllStub" : "RemoteThread";
+
+            // 检查间隔
+            int ckInterval;
+            if (int.TryParse(TextCKInterval.Text, out ckInterval))
+            {
+                if (ckInterval < 1000) ckInterval = 1000;
+                if (ckInterval > 10000) ckInterval = 10000;
+                _settings.CKInterval = ckInterval;
+            }
+            else
+            {
+                _settings.CKInterval = 3100;
+            }
+
+            _settings.Save();
+            _controller.UpdateSettings(_settings);
+
+            Services.Logger.Instance.Info($"高级设置已保存: CKInterval={_settings.CKInterval}, KillProcess={_settings.KillProcessMode}, InjectMode={_settings.InjectMode}");
+            System.Windows.MessageBox.Show("高级设置已保存！\n部分设置需要重启软件生效。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void CheckDoNotShowTrayIcon_Checked(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.CheckboxChanged("隐藏任务栏图标", true, "CheckDoNotShowTrayIcon");
+            if (_trayIcon != null) _trayIcon.Visible = false;
+        }
+
+        private void CheckDoNotShowTrayIcon_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.CheckboxChanged("隐藏任务栏图标", false, "CheckDoNotShowTrayIcon");
+            if (_trayIcon != null) _trayIcon.Visible = true;
+        }
+
+        private void CheckEnableController_Checked(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.CheckboxChanged("启用控制器", true, "CheckEnableController");
+            _controller.Start();
+        }
+
+        private void CheckEnableController_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.CheckboxChanged("启用控制器", false, "CheckEnableController");
+            _controller.Stop();
+        }
+
+        #endregion
+
         private void ShowPage(string pageName)
         {
             PageSettings.Visibility = Visibility.Collapsed;
             PageAbout.Visibility = Visibility.Collapsed;
             PageAboutMe.Visibility = Visibility.Collapsed;
+            PageAdvancedSettings.Visibility = Visibility.Collapsed;
             PageDebug.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
@@ -366,6 +485,9 @@ namespace JiYuKiller
                     break;
                 case "aboutme":
                     PageAboutMe.Visibility = Visibility.Visible;
+                    break;
+                case "advanced":
+                    PageAdvancedSettings.Visibility = Visibility.Visible;
                     break;
                 case "debug":
                     PageDebug.Visibility = Visibility.Visible;

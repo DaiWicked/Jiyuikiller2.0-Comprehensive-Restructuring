@@ -43,6 +43,58 @@ namespace JiYuKiller.Models
         /// <summary>调试模式</summary>
         public bool DebugMode { get; set; } = false;
 
+        // === 软件高级设置（参考原项目 ConfigWindow）===
+        /// <summary>禁用软件内核驱动</summary>
+        public bool DisableDriver { get; set; } = false;
+
+        /// <summary>驱动层自我保护（32位系统有效）</summary>
+        public bool SelfProtect { get; set; } = true;
+
+        /// <summary>不客气模式（自动强制清除）</summary>
+        public bool AutoForceKill { get; set; } = false;
+
+        /// <summary>严格窗口控制模式</summary>
+        public bool AutoIncludeFullWindow { get; set; } = false;
+
+        /// <summary>隐藏极域端控制输出窗口</summary>
+        public bool DoNotShowVirusWindow { get; set; } = true;
+
+        /// <summary>隐藏本软件任务栏图标</summary>
+        public bool DoNotShowTrayIcon { get; set; } = false;
+
+        /// <summary>总是检查更新</summary>
+        public bool AlwaysCheckUpdate { get; set; } = false;
+
+        /// <summary>强制安装在当前目录</summary>
+        public bool ForceInstallInCurrentDir { get; set; } = false;
+
+        /// <summary>强制禁用看门狗</summary>
+        public bool ForceDisableWatchDog { get; set; } = false;
+
+        /// <summary>注入MasterHelper</summary>
+        public bool InjectMasterHelper { get; set; } = false;
+
+        /// <summary>注入ProcHelper64</summary>
+        public bool InjectProcHelper64 { get; set; } = false;
+
+        /// <summary>结束进程模式: TerminateProcess / NtTerminateProcess / KernelMode</summary>
+        public string KillProcessMode { get; set; } = "NtTerminateProcess";
+
+        /// <summary>注入模式: RemoteThread / HookDllStub</summary>
+        public string InjectMode { get; set; } = "RemoteThread";
+
+        /// <summary>检查间隔（毫秒，1000-10000）</summary>
+        public int CKInterval { get; set; } = 3100;
+
+        /// <summary>紧急全屏快捷键</summary>
+        public int HotKeyFakeFull { get; set; } = 1606;
+
+        /// <summary>显示/隐藏窗口快捷键</summary>
+        public int HotKeyShowHide { get; set; } = 1604;
+
+        /// <summary>启用控制器</summary>
+        public bool EnableController { get; set; } = true;
+
         // === Liquid Glass 设置 ===
         /// <summary>玻璃透明度 (0-100)</summary>
         public int GlassOpacity { get; set; } = 72;
