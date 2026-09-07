@@ -403,6 +403,8 @@ namespace JiYuKiller
 
         private void SliderOuterGlow_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            Services.Logger.Instance.Debug($"外层光晕滑块事件触发: NewValue={e.NewValue:F2}, OuterGlow null={OuterGlow == null}");
+
             if (TextOuterGlowValue != null)
             {
                 TextOuterGlowValue.Text = string.Format("{0}%", (int)(e.NewValue * 100));
@@ -410,13 +412,16 @@ namespace JiYuKiller
 
             if (OuterGlow != null)
             {
+                double oldOpacity = OuterGlow.Opacity;
                 OuterGlow.Opacity = e.NewValue;
-                Services.Logger.Instance.Debug($"外层光晕透明度调整: {e.NewValue:F2}");
+                Services.Logger.Instance.Debug($"外层光晕透明度: {oldOpacity:F2} -> {e.NewValue:F2}");
             }
         }
 
         private void SliderInnerGlow_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            Services.Logger.Instance.Debug($"中层光晕滑块事件触发: NewValue={e.NewValue:F2}, InnerGlow null={InnerGlow == null}");
+
             if (TextInnerGlowValue != null)
             {
                 TextInnerGlowValue.Text = string.Format("{0}%", (int)(e.NewValue * 100));
@@ -424,8 +429,9 @@ namespace JiYuKiller
 
             if (InnerGlow != null)
             {
+                double oldOpacity = InnerGlow.Opacity;
                 InnerGlow.Opacity = e.NewValue;
-                Services.Logger.Instance.Debug($"中层光晕透明度调整: {e.NewValue:F2}");
+                Services.Logger.Instance.Debug($"中层光晕透明度: {oldOpacity:F2} -> {e.NewValue:F2}");
             }
         }
 

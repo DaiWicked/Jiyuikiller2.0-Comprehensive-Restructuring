@@ -21,15 +21,15 @@
     <!-- 窗口根容器（光晕层 + 主窗口） -->
     <Grid Background="Transparent">
         <!-- 外层光晕虚化（模拟玻璃边缘光线散射） -->
-        <Border x:Name="OuterGlow" Margin="12" CornerRadius="20" Background="#60C8E8FF" Opacity="0.7" IsHitTestVisible="False">
+        <Border x:Name="OuterGlow" Margin="16" CornerRadius="24" Background="#60C8E8FF" Opacity="0.7" IsHitTestVisible="False">
             <Border.Effect>
-                <BlurEffect Radius="24" />
+                <BlurEffect Radius="28" />
             </Border.Effect>
         </Border>
         <!-- 第二层柔和光晕 -->
-        <Border x:Name="InnerGlow" Margin="10" CornerRadius="18" Background="#40FFFFFF" Opacity="0.9" IsHitTestVisible="False">
+        <Border x:Name="InnerGlow" Margin="13" CornerRadius="20" Background="#40FFFFFF" Opacity="0.9" IsHitTestVisible="False">
             <Border.Effect>
-                <BlurEffect Radius="12" />
+                <BlurEffect Radius="16" />
             </Border.Effect>
         </Border>
 
