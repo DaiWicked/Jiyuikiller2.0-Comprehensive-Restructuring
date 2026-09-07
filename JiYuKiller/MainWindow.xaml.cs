@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -19,6 +20,16 @@ namespace JiYuKiller
         private WinForms.NotifyIcon _trayIcon;
         private bool _hideTipShown = false;
         private bool _isExiting = false;
+        private bool _isTopMost = false;
+
+        // Win32 API
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOMOVE = 0x0002;
 
         public MainWindow()
         {
@@ -48,6 +59,10 @@ namespace JiYuKiller
             timer.Interval = TimeSpan.FromSeconds(2);
             timer.Tick += (s, e) => UpdateStatus();
             timer.Start();
+
+            // 默认显示快捷栏
+            ShowPage("quick");
+            UpdateJiYuStatus();
 
             Services.Logger.Instance.WindowEvent("MainWindow", "构造函数完成");
         }
@@ -462,6 +477,7 @@ namespace JiYuKiller
 
         private void ShowPage(string pageName)
         {
+            PageQuick.Visibility = Visibility.Collapsed;
             PageSettings.Visibility = Visibility.Collapsed;
             PageAbout.Visibility = Visibility.Collapsed;
             PageAboutMe.Visibility = Visibility.Collapsed;
@@ -470,6 +486,7 @@ namespace JiYuKiller
             PageDebug.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
+            NavQuick.FontWeight = FontWeights.Normal;
             NavSetting.FontWeight = FontWeights.Normal;
             NavHelp.FontWeight = FontWeights.Normal;
             NavDebug.FontWeight = FontWeights.Normal;
@@ -477,6 +494,10 @@ namespace JiYuKiller
 
             switch (pageName)
             {
+                case "quick":
+                    PageQuick.Visibility = Visibility.Visible;
+                    NavQuick.FontWeight = FontWeights.Bold;
+                    break;
                 case "settings":
                     PageSettings.Visibility = Visibility.Visible;
                     NavSetting.FontWeight = FontWeights.Bold;
@@ -636,6 +657,146 @@ namespace JiYuKiller
         #endregion
 
         #region 电源控制
+
+        private void NavQuick_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("快捷栏", "NavQuick");
+            UpdateJiYuStatus();
+            ShowPage("quick");
+        }
+
+        private void BtnTopMost_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("本窗口置顶", "BtnTopMost");
+            var helper = new System.Windows.Interop.WindowInteropHelper(this);
+            IntPtr hWnd = helper.Handle;
+
+            if (_isTopMost)
+            {
+                _isTopMost = false;
+                SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+                BtnTopMost.Content = "本窗口置顶";
+                BtnTopMost.Background = new SolidColorBrush(Color.FromRgb(0x00, 0x7B, 0xFF));
+                Services.Logger.Instance.Info("已取消窗口置顶");
+            }
+            else
+            {
+                _isTopMost = true;
+                SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+                BtnTopMost.Content = "取消置顶";
+                BtnTopMost.Background = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07));
+                BtnTopMost.Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33));
+                Services.Logger.Instance.Info("已设置窗口置顶");
+            }
+        }
+
+        private void BtnKillJiYu_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("杀死极域", "BtnKillJiYu");
+            try
+            {
+                var processes = Process.GetProcessesByName("StudentMain");
+                if (processes.Length > 0)
+                {
+                    foreach (var p in processes)
+                    {
+                        p.Kill();
+                        Services.Logger.Instance.Info($"已杀死极域进程 PID={p.Id}");
+                    }
+                    System.Windows.MessageBox.Show("已成功结束极域电子教室", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show("未找到极域进程", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("杀死极域进程失败", ex);
+                System.Windows.MessageBox.Show("杀死极域失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            UpdateJiYuStatus();
+        }
+
+        private void BtnRestartJiYu_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("重启极域", "BtnRestartJiYu");
+            try
+            {
+                // 先杀死现有进程
+                var processes = Process.GetProcessesByName("StudentMain");
+                foreach (var p in processes)
+                {
+                    p.Kill();
+                    Services.Logger.Instance.Info($"重启前杀死极域进程 PID={p.Id}");
+                }
+                System.Threading.Thread.Sleep(500);
+
+                // 尝试启动极域
+                string jiYuPath = _settings.JiYuMainPath;
+                if (!string.IsNullOrEmpty(jiYuPath) && File.Exists(jiYuPath))
+                {
+                    Process.Start(jiYuPath);
+                    Services.Logger.Instance.Info($"已启动极域: {jiYuPath}");
+                    System.Windows.MessageBox.Show("已启动极域电子教室", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    // 尝试常见路径
+                    string[] commonPaths = {
+                        @"C:\Program Files\Mythware\极域电子教室\StudentMain.exe",
+                        @"C:\Program Files (x86)\Mythware\极域电子教室\StudentMain.exe",
+                        @"C:\Program Files\Mythware\Classroom\StudentMain.exe"
+                    };
+                    bool started = false;
+                    foreach (string path in commonPaths)
+                    {
+                        if (File.Exists(path))
+                        {
+                            Process.Start(path);
+                            _settings.JiYuMainPath = path;
+                            _settings.Save();
+                            Services.Logger.Instance.Info($"已从默认路径启动极域: {path}");
+                            System.Windows.MessageBox.Show("已启动极域电子教室", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                            started = true;
+                            break;
+                        }
+                    }
+                    if (!started)
+                    {
+                        System.Windows.MessageBox.Show("未找到极域主程序，请在设置中指定极域路径", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("重启极域失败", ex);
+                System.Windows.MessageBox.Show("重启极域失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            UpdateJiYuStatus();
+        }
+
+        private void UpdateJiYuStatus()
+        {
+            try
+            {
+                var processes = Process.GetProcessesByName("StudentMain");
+                if (processes.Length > 0)
+                {
+                    TextJiYuStatus.Text = $"极域状态: 运行中 (PID={processes[0].Id})";
+                    TextJiYuStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
+                }
+                else
+                {
+                    TextJiYuStatus.Text = "极域状态: 未运行";
+                    TextJiYuStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xDC, 0x35, 0x45));
+                }
+            }
+            catch
+            {
+                TextJiYuStatus.Text = "极域状态: 检测失败";
+            }
+        }
 
         private void BtnShutdown_Click(object sender, RoutedEventArgs e)
         {
