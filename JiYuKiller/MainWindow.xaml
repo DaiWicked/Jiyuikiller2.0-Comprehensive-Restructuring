@@ -35,8 +35,9 @@
             <!-- 层2: 玻璃像素着色器效果层（折射/模糊），背景绑定到截图层 -->
             <Border x:Name="GlassyLayer" CornerRadius="16" Background="{Binding Background, ElementName=BackdropLayer}" ClipToBounds="True" />
 
-            <!-- 层3: 半透明白色覆盖层 + 内容 -->
-            <Grid x:Name="ContentLayer" Background="#B3FFFFFF">
+            <!-- 层3: 半透明白色覆盖层 + 内容（圆角裁剪） -->
+            <Border x:Name="ContentLayer" Background="#B3FFFFFF" CornerRadius="16" ClipToBounds="True">
+                <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40" />
                     <RowDefinition Height="*" />
@@ -479,8 +480,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Minimum="0" Maximum="1" Value="0.2" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
-                                            <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="20%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Minimum="0" Maximum="1" Value="0.8" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
+                                            <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="80%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
@@ -491,7 +492,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.1" Maximum="1" Value="0.7" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
+                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.05" Maximum="1" Value="0.7" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
                                             <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="70%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
@@ -573,7 +574,8 @@
                 </UniformGrid>
             </Border>
 
-            </Grid>
+                </Grid>
+            </Border>
         </Grid>
     </Border>
 </Window>
