@@ -36,7 +36,7 @@
             <Border x:Name="GlassyLayer" CornerRadius="16" Background="{Binding Background, ElementName=BackdropLayer}" ClipToBounds="True" />
 
             <!-- 层3: 半透明白色覆盖层 + 内容（圆角裁剪） -->
-            <Border x:Name="ContentLayer" Background="#B3FFFFFF" CornerRadius="16" ClipToBounds="True">
+            <Border x:Name="ContentLayer" Background="#4DFFFFFF" CornerRadius="16" ClipToBounds="True">
                 <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40" />
@@ -480,8 +480,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Minimum="0" Maximum="1" Value="0.8" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
-                                            <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="80%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Minimum="0" Maximum="1" Value="1" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
+                                            <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="100%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
@@ -492,8 +492,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.05" Maximum="1" Value="0.7" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
-                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="70%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.05" Maximum="1" Value="0.3" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
+                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="30%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
@@ -575,6 +575,27 @@
             </Border>
 
                 </Grid>
+            </Border>
+
+            <!-- 层4: 光感效果（渐变边框 + 顶部高光，不响应鼠标事件） -->
+            <Border CornerRadius="16" BorderThickness="1.5" IsHitTestVisible="False">
+                <Border.BorderBrush>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#A0FFFFFF" Offset="0" />
+                        <GradientStop Color="#50A6E1FF" Offset="0.35" />
+                        <GradientStop Color="#50FFB3E1" Offset="0.65" />
+                        <GradientStop Color="#A0FFFFFF" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.BorderBrush>
+            </Border>
+            <!-- 顶部高光 -->
+            <Border CornerRadius="16,16,0,0" Height="40" VerticalAlignment="Top" IsHitTestVisible="False" Opacity="0.3">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#60FFFFFF" Offset="0" />
+                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
             </Border>
         </Grid>
     </Border>
