@@ -21,13 +21,13 @@
     <!-- 窗口根容器（光晕层 + 主窗口） -->
     <Grid>
         <!-- 外层光晕虚化（模拟玻璃边缘光线散射） -->
-        <Border Margin="12" CornerRadius="20" Background="#40A6E1FF" Opacity="0.6" IsHitTestVisible="False">
+        <Border Margin="12" CornerRadius="20" Background="#60C8E8FF" Opacity="0.7" IsHitTestVisible="False">
             <Border.Effect>
                 <BlurEffect Radius="24" />
             </Border.Effect>
         </Border>
         <!-- 第二层柔和光晕 -->
-        <Border Margin="10" CornerRadius="18" Background="#20FFFFFF" Opacity="0.8" IsHitTestVisible="False">
+        <Border Margin="10" CornerRadius="18" Background="#40FFFFFF" Opacity="0.9" IsHitTestVisible="False">
             <Border.Effect>
                 <BlurEffect Radius="12" />
             </Border.Effect>
@@ -51,7 +51,7 @@
             <Border x:Name="GlassyLayer" CornerRadius="16" Background="{Binding Background, ElementName=BackdropLayer}" ClipToBounds="True" />
 
             <!-- 层3: 半透明白色覆盖层 + 内容（圆角裁剪） -->
-            <Border x:Name="ContentLayer" Background="#4DFFFFFF" CornerRadius="16" ClipToBounds="True">
+            <Border x:Name="ContentLayer" Background="#80FFFFFF" CornerRadius="16" ClipToBounds="True">
                 <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40" />
@@ -507,8 +507,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.05" Maximum="1" Value="0.3" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
-                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="30%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.05" Maximum="1" Value="0.5" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
+                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="50%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
