@@ -656,6 +656,131 @@ namespace JiYuKiller
 
         #endregion
 
+        #region 调试命令
+
+        private void BtnRunCmd_Click(object sender, RoutedEventArgs e)
+        {
+            ExecuteDebugCommand();
+        }
+
+        private void TextDebugCmd_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                ExecuteDebugCommand();
+            }
+        }
+
+        private void ExecuteDebugCommand()
+        {
+            string cmd = TextDebugCmd.Text.Trim();
+            if (string.IsNullOrEmpty(cmd))
+            {
+                Services.Logger.Instance.Warn("调试命令为空");
+                AppendDebugOutput("[错误] 请输入命令！输入 help 查看可用命令");
+                return;
+            }
+
+            Services.Logger.Instance.Info($"执行调试命令: {cmd}");
+            AppendDebugOutput($"> {cmd}");
+
+            string[] parts = cmd.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string command = parts[0].ToLower();
+
+            try
+            {
+                switch (command)
+                {
+                    case "help":
+                        AppendDebugOutput("可用命令:");
+                        AppendDebugOutput("  help          - 显示帮助");
+                        AppendDebugOutput("  killst        - 杀死极域进程");
+                        AppendDebugOutput("  rerunst       - 重启极域进程");
+                        AppendDebugOutput("  status        - 显示当前状态");
+                        AppendDebugOutput("  whereisi      - 显示程序路径");
+                        AppendDebugOutput("  shutdown      - 关闭计算机");
+                        AppendDebugOutput("  reboot        - 重新启动计算机");
+                        AppendDebugOutput("  exit          - 退出软件");
+                        AppendDebugOutput("  clear         - 清空日志显示");
+                        AppendDebugOutput("  refresh       - 刷新日志");
+                        break;
+
+                    case "killst":
+                        var procs = Process.GetProcessesByName("StudentMain");
+                        if (procs.Length > 0)
+                        {
+                            foreach (var p in procs) p.Kill();
+                            AppendDebugOutput($"[成功] 已杀死 {procs.Length} 个极域进程");
+                        }
+                        else
+                        {
+                            AppendDebugOutput("[提示] 未找到极域进程");
+                        }
+                        UpdateJiYuStatus();
+                        break;
+
+                    case "rerunst":
+                        BtnRestartJiYu_Click(null, null);
+                        AppendDebugOutput("[成功] 已执行重启极域命令");
+                        break;
+
+                    case "status":
+                        AppendDebugOutput($"当前状态: {StatusText.Text}");
+                        AppendDebugOutput($"极域状态: {TextJiYuStatus.Text}");
+                        break;
+
+                    case "whereisi":
+                        string appPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                        AppendDebugOutput($"程序路径: {appPath}");
+                        break;
+
+                    case "shutdown":
+                        AppendDebugOutput("[执行] 正在关闭计算机...");
+                        BtnShutdown_Click(null, null);
+                        break;
+
+                    case "reboot":
+                        AppendDebugOutput("[执行] 正在重新启动计算机...");
+                        BtnReboot_Click(null, null);
+                        break;
+
+                    case "exit":
+                        AppendDebugOutput("[执行] 正在退出软件...");
+                        ExitApplication();
+                        break;
+
+                    case "clear":
+                        DebugLogBox.Clear();
+                        break;
+
+                    case "refresh":
+                        BtnRefreshLog_Click(null, null);
+                        AppendDebugOutput("[成功] 日志已刷新");
+                        break;
+
+                    default:
+                        AppendDebugOutput($"[错误] 未知命令: {command}，输入 help 查看可用命令");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendDebugOutput($"[错误] 命令执行失败: {ex.Message}");
+                Services.Logger.Instance.Error($"调试命令执行失败: {cmd}", ex);
+            }
+
+            TextDebugCmd.Clear();
+            TextDebugCmd.Focus();
+        }
+
+        private void AppendDebugOutput(string text)
+        {
+            DebugLogBox.AppendText(text + Environment.NewLine);
+            DebugLogBox.ScrollToEnd();
+        }
+
+        #endregion
+
         #region 电源控制
 
         private void NavQuick_Click(object sender, RoutedEventArgs e)

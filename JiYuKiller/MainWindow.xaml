@@ -460,16 +460,35 @@
                 <Grid x:Name="PageDebug" Visibility="Collapsed">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
+                    <!-- 工具栏 -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-                        <Button x:Name="BtnRefreshLog" Content="刷新日志" Style="{StaticResource GlassButton}" Click="BtnRefreshLog_Click" Margin="0,0,8,0" />
-                        <Button x:Name="BtnOpenLogFolder" Content="打开日志目录" Style="{StaticResource GlassButton}" Click="BtnOpenLogFolder_Click" Background="#FF6C757D" />
-                        <CheckBox x:Name="CheckDebugMode" Content="调试模式" Style="{StaticResource GlassCheckBox}" Margin="16,0,0,0" Checked="DebugMode_Checked" Unchecked="DebugMode_Unchecked" />
+                        <Button x:Name="BtnRefreshLog" Content="刷新日志" Style="{StaticResource GlassButton}" Click="BtnRefreshLog_Click" Margin="0,0,6,0" Padding="10,5" FontSize="11" />
+                        <Button x:Name="BtnOpenLogFolder" Content="打开日志目录" Style="{StaticResource GlassButton}" Click="BtnOpenLogFolder_Click" Background="#FF6C757D" Margin="0,0,6,0" Padding="10,5" FontSize="11" />
+                        <CheckBox x:Name="CheckDebugMode" Content="调试模式" Style="{StaticResource GlassCheckBox}" Margin="8,0,0,0" FontSize="11" Checked="DebugMode_Checked" Unchecked="DebugMode_Unchecked" />
                     </StackPanel>
 
-                    <TextBox x:Name="DebugLogBox" Grid.Row="1"
+                    <!-- 调试命令 -->
+                    <Border Grid.Row="1" Background="#15000000" CornerRadius="8" Padding="10" Margin="0,0,0,8">
+                        <StackPanel>
+                            <TextBlock Text="调试命令" FontSize="12" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,6" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="TextDebugCmd" Grid.Column="0" Style="{StaticResource GlassTextBox}" Height="28" FontSize="12" VerticalContentAlignment="Center" KeyDown="TextDebugCmd_KeyDown" ToolTip="输入 help 查看可用命令" />
+                                <Button x:Name="BtnRunCmd" Grid.Column="1" Content="执行" Style="{StaticResource GlassButton}" Click="BtnRunCmd_Click" Background="#FF007BFF" Margin="6,0,0,0" Padding="14,5" FontSize="11" />
+                            </Grid>
+                            <TextBlock Text="输入 help 查看可用命令，按回车快速执行" FontSize="10" Foreground="#FF999999" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 日志显示 -->
+                    <TextBox x:Name="DebugLogBox" Grid.Row="2"
                              IsReadOnly="True"
                              FontFamily="Consolas"
                              FontSize="11"
@@ -487,11 +506,11 @@
             <!-- 底部导航栏 -->
             <Border Grid.Row="2" Background="#10000000" CornerRadius="0,0,16,16">
                 <UniformGrid Columns="5">
-                    <Button x:Name="NavQuick" Content="快捷栏" Click="NavQuick_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
-                    <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF333333" BorderBrush="Transparent" FontWeight="Bold" />
-                    <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
-                    <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
-                    <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" />
+                    <Button x:Name="NavQuick" Content="快捷栏" Click="NavQuick_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="2,0" />
+                    <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF333333" BorderBrush="Transparent" FontWeight="Bold" FontSize="11" Padding="2,0" />
+                    <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="2,0" />
+                    <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="2,0" />
+                    <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="2,0" />
                 </UniformGrid>
             </Border>
 
