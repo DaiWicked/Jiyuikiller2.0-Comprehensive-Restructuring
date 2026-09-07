@@ -2,14 +2,14 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="学习不通"
-        Height="600" Width="800"
+        Height="600" Width="680"
         WindowStartupLocation="CenterScreen"
         Icon="Assets/JiYuTrainerLogo.ico"
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
         ResizeMode="NoResize"
-        MinWidth="600" MinHeight="450">
+        MinWidth="560" MinHeight="450">
 
     <Window.Resources>
         <!-- 页面切换动画 -->
