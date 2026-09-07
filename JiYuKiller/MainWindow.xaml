@@ -113,14 +113,18 @@
                         <!-- 操作按钮 -->
                         <WrapPanel Margin="0,2,0,0">
                             <Button x:Name="BtnUnloadNetFilter" Content="解除网络控制" Style="{StaticResource GlassButton}" Click="BtnUnloadNetFilter_Click" Margin="0,0,6,6" />
+                            <Button x:Name="BtnLoadDriver" Content="加载内核驱动" Style="{StaticResource GlassButton}" Click="BtnLoadDriver_Click" Background="#FF6F42C1" Margin="0,0,6,6" />
+                            <Button x:Name="BtnUnloadDriver" Content="卸载内核驱动" Style="{StaticResource GlassButton}" Click="BtnUnloadDriver_Click" Background="#FF6C757D" Margin="0,0,6,6" />
                             <Button x:Name="BtnLocateJiYu" Content="选择极域路径" Style="{StaticResource GlassButton}" Click="BtnLocateJiYu_Click" Background="#FF6C757D" Margin="0,0,6,6" />
                             <Button x:Name="BtnAdvancedSettings" Content="软件高级设置" Style="{StaticResource GlassButton}" Click="BtnAdvancedSettings_Click" Background="#FFDC3545" Margin="0,0,6,6" />
                             <Button x:Name="BtnSaveSettings" Content="保存设置" Style="{StaticResource GlassButton}" Click="BtnSaveSettings_Click" Background="#FF28A745" Margin="0,0,6,6" />
                             <Button x:Name="BtnResetSettings" Content="恢复默认" Style="{StaticResource GlassButton}" Click="BtnResetSettings_Click" Background="#FFFFC107" Foreground="#FF0A0A0A" Margin="0,0,6,6" />
                         </WrapPanel>
 
+                        <!-- 驱动状态 -->
+                        <TextBlock x:Name="DriverStatusText" Text="驱动状态: 未加载" FontSize="11" Foreground="#FF666666" Margin="4,6,0,0" />
                         <!-- 极域路径显示 -->
-                        <TextBlock x:Name="JiYuPathText" Text="极域路径: 未设置" FontSize="11" Foreground="#FF666666" Margin="4,8,0,0" TextWrapping="Wrap" />
+                        <TextBlock x:Name="JiYuPathText" Text="极域路径: 未设置" FontSize="11" Foreground="#FF666666" Margin="4,4,0,0" TextWrapping="Wrap" />
                     </StackPanel>
                 </ScrollViewer>
 

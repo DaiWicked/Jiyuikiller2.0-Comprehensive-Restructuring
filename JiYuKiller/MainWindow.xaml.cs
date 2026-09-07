@@ -648,6 +648,8 @@ namespace JiYuKiller
             if (cb != null)
             {
                 Services.Logger.Instance.CheckboxChanged(cb.Content?.ToString() ?? cb.Name, true, cb.Name);
+                SaveSettingsFromUI();
+                _controller.UpdateSettings(_settings);
             }
         }
 
@@ -657,6 +659,8 @@ namespace JiYuKiller
             if (cb != null)
             {
                 Services.Logger.Instance.CheckboxChanged(cb.Content?.ToString() ?? cb.Name, false, cb.Name);
+                SaveSettingsFromUI();
+                _controller.UpdateSettings(_settings);
             }
         }
 
@@ -664,6 +668,7 @@ namespace JiYuKiller
         {
             Services.Logger.Instance.ButtonClick("保存设置", "BtnSaveSettings");
             SaveSettingsFromUI();
+            _controller.UpdateSettings(_settings);
             MessageBox.Show("设置已保存！", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
@@ -685,6 +690,34 @@ namespace JiYuKiller
         {
             Services.Logger.Instance.ButtonClick("解除网络控制", "BtnUnloadNetFilter");
             _controller.UnloadNetFilter();
+        }
+
+        private void BtnLoadDriver_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("加载内核驱动", "BtnLoadDriver");
+            _controller.LoadDriver();
+            UpdateDriverStatus();
+        }
+
+        private void BtnUnloadDriver_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("卸载内核驱动", "BtnUnloadDriver");
+            _controller.UnloadDriver();
+            UpdateDriverStatus();
+        }
+
+        private void UpdateDriverStatus()
+        {
+            if (_controller.IsDriverLoaded)
+            {
+                DriverStatusText.Text = "驱动状态: 已加载";
+                DriverStatusText.Foreground = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
+            }
+            else
+            {
+                DriverStatusText.Text = "驱动状态: 未加载";
+                DriverStatusText.Foreground = new SolidColorBrush(Color.FromRgb(0xDC, 0x35, 0x45));
+            }
         }
 
         private void BtnLocateJiYu_Click(object sender, RoutedEventArgs e)
@@ -931,27 +964,14 @@ namespace JiYuKiller
         private void BtnKillJiYu_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("杀死极域", "BtnKillJiYu");
-            try
+            bool result = _controller.KillJiYu();
+            if (result)
             {
-                var processes = Process.GetProcessesByName("StudentMain");
-                if (processes.Length > 0)
-                {
-                    foreach (var p in processes)
-                    {
-                        p.Kill();
-                        Services.Logger.Instance.Info($"已杀死极域进程 PID={p.Id}");
-                    }
-                    System.Windows.MessageBox.Show("已成功结束极域电子教室", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    System.Windows.MessageBox.Show("未找到极域进程", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
+                System.Windows.MessageBox.Show("已成功结束极域电子教室", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex)
+            else
             {
-                Services.Logger.Instance.Error("杀死极域进程失败", ex);
-                System.Windows.MessageBox.Show("杀死极域失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("未找到极域进程或杀死失败", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             UpdateJiYuStatus();
         }
@@ -959,57 +979,10 @@ namespace JiYuKiller
         private void BtnRestartJiYu_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("重启极域", "BtnRestartJiYu");
-            try
+            bool result = _controller.RestartJiYu();
+            if (result)
             {
-                // 先杀死现有进程
-                var processes = Process.GetProcessesByName("StudentMain");
-                foreach (var p in processes)
-                {
-                    p.Kill();
-                    Services.Logger.Instance.Info($"重启前杀死极域进程 PID={p.Id}");
-                }
-                System.Threading.Thread.Sleep(500);
-
-                // 尝试启动极域
-                string jiYuPath = _settings.JiYuMainPath;
-                if (!string.IsNullOrEmpty(jiYuPath) && File.Exists(jiYuPath))
-                {
-                    Process.Start(jiYuPath);
-                    Services.Logger.Instance.Info($"已启动极域: {jiYuPath}");
-                    System.Windows.MessageBox.Show("已启动极域电子教室", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    // 尝试常见路径
-                    string[] commonPaths = {
-                        @"C:\Program Files\Mythware\极域电子教室\StudentMain.exe",
-                        @"C:\Program Files (x86)\Mythware\极域电子教室\StudentMain.exe",
-                        @"C:\Program Files\Mythware\Classroom\StudentMain.exe"
-                    };
-                    bool started = false;
-                    foreach (string path in commonPaths)
-                    {
-                        if (File.Exists(path))
-                        {
-                            Process.Start(path);
-                            _settings.JiYuMainPath = path;
-                            _settings.Save();
-                            Services.Logger.Instance.Info($"已从默认路径启动极域: {path}");
-                            System.Windows.MessageBox.Show("已启动极域电子教室", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                            started = true;
-                            break;
-                        }
-                    }
-                    if (!started)
-                    {
-                        System.Windows.MessageBox.Show("未找到极域主程序，请在设置中指定极域路径", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Services.Logger.Instance.Error("重启极域失败", ex);
-                System.Windows.MessageBox.Show("重启极域失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("已重启极域电子教室", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             UpdateJiYuStatus();
         }
@@ -1189,6 +1162,8 @@ namespace JiYuKiller
         private void UpdateStatus()
         {
             StatusText.Text = _controller.GetStatusText();
+            UpdateJiYuStatus();
+            UpdateDriverStatus();
         }
 
         #endregion
