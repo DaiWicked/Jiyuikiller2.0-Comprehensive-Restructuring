@@ -27,7 +27,7 @@
             </Border.Effect>
         </Border>
         <!-- 第二层柔和光晕 -->
-        <Border x:Name="InnerGlow" Margin="5" CornerRadius="20" Background="#40FFFFFF" Opacity="0.9" IsHitTestVisible="False">
+        <Border x:Name="InnerGlow" Margin="3" CornerRadius="20" Background="#80FFFFFF" Opacity="0.9" IsHitTestVisible="False">
             <Border.Effect>
                 <BlurEffect Radius="16" />
             </Border.Effect>
