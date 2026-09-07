@@ -63,36 +63,53 @@
 
                 <!-- 设置页面 -->
                 <ScrollViewer x:Name="PageSettings" VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <!-- 状态显示 -->
-                        <Border Background="#20000000" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                    <StackPanel Margin="0,0,0,8">
+                        <!-- 状态显示卡片 -->
+                        <Border Background="#20000000" CornerRadius="10" Padding="14" Margin="0,0,0,12">
                             <StackPanel>
-                                <TextBlock Text="当前状态" FontSize="12" Foreground="#FF888888" />
-                                <TextBlock x:Name="StatusText" Text="正在初始化..." FontSize="16" FontWeight="Bold" Foreground="#FF333333" Margin="0,4,0,0" />
+                                <TextBlock Text="当前状态" FontSize="11" Foreground="#FF888888" />
+                                <TextBlock x:Name="StatusText" Text="正在初始化..." FontSize="18" FontWeight="Bold" Foreground="#FF333333" Margin="0,4,0,0" />
                             </StackPanel>
                         </Border>
 
-                        <!-- 极域控制设置 -->
-                        <TextBlock Text="极域控制设置" FontSize="14" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,8" />
+                        <!-- 进程控制分组 -->
+                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="进程控制" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                <CheckBox x:Name="CheckMonitorProcess" Content="监控极域运行进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="监控极域运行进程，教师可通过极域远程执行应用程序" />
+                                <CheckBox x:Name="CheckBanRunOp" Content="禁止极域运行进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域在此电脑上运行程序" />
+                                <CheckBox x:Name="CheckProhibitKill" Content="禁止极域结束进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域结束您电脑上的进程" />
+                            </StackPanel>
+                        </Border>
 
-                        <CheckBox x:Name="CheckMonitorProcess" Content="监控极域运行进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="监控极域运行进程，教师可通过极域远程执行应用程序" />
-                        <CheckBox x:Name="CheckBanRunOp" Content="禁止极域运行进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域在此电脑上运行程序" />
-                        <CheckBox x:Name="CheckAllowTop" Content="允许屏幕广播窗口置顶" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许屏幕广播窗口置顶，默认不允许" />
-                        <CheckBox x:Name="CheckProhibitKill" Content="禁止极域结束进程" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域结束您电脑上的进程" />
-                        <CheckBox x:Name="CheckAllowMonitor" Content="允许教师监视你的电脑" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许教师通过极域查看你的电脑屏幕" />
-                        <CheckBox x:Name="CheckProhibitClose" Content="禁止极域关闭窗口" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域关闭您电脑上的窗口" />
-                        <CheckBox x:Name="CheckAllowControl" Content="允许老师控制你的电脑" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许教师通过极域控制您的电脑" />
+                        <!-- 窗口控制分组 -->
+                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="窗口控制" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                <CheckBox x:Name="CheckAllowTop" Content="允许屏幕广播窗口置顶" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许屏幕广播窗口置顶，默认不允许" />
+                                <CheckBox x:Name="CheckProhibitClose" Content="禁止极域关闭窗口" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="禁止教师通过极域关闭您电脑上的窗口" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 教师权限分组 -->
+                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="教师权限" FontSize="13" FontWeight="Bold" Foreground="#FF555555" Margin="0,0,0,8" />
+                                <CheckBox x:Name="CheckAllowMonitor" Content="允许教师监视你的电脑" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许教师通过极域查看你的电脑屏幕" />
+                                <CheckBox x:Name="CheckAllowControl" Content="允许老师控制你的电脑" Style="{StaticResource GlassCheckBox}" Checked="Setting_Checked" Unchecked="Setting_Unchecked" ToolTip="允许教师通过极域控制您的电脑" />
+                            </StackPanel>
+                        </Border>
 
                         <!-- 操作按钮 -->
-                        <WrapPanel Margin="0,12,0,0">
-                            <Button x:Name="BtnUnloadNetFilter" Content="解除网络控制" Style="{StaticResource GlassButton}" Click="BtnUnloadNetFilter_Click" Margin="0,0,8,0" />
-                            <Button x:Name="BtnLocateJiYu" Content="选择极域主进程位置" Style="{StaticResource GlassButton}" Click="BtnLocateJiYu_Click" Background="#FF6C757D" Margin="0,0,8,0" />
-                            <Button x:Name="BtnSaveSettings" Content="保存设置" Style="{StaticResource GlassButton}" Click="BtnSaveSettings_Click" Background="#FF28A745" Margin="0,0,8,0" />
-                            <Button x:Name="BtnResetSettings" Content="恢复默认" Style="{StaticResource GlassButton}" Click="BtnResetSettings_Click" Background="#FFFFC107" Foreground="#FF333333" />
+                        <WrapPanel Margin="0,2,0,0">
+                            <Button x:Name="BtnUnloadNetFilter" Content="解除网络控制" Style="{StaticResource GlassButton}" Click="BtnUnloadNetFilter_Click" Margin="0,0,6,6" />
+                            <Button x:Name="BtnLocateJiYu" Content="选择极域路径" Style="{StaticResource GlassButton}" Click="BtnLocateJiYu_Click" Background="#FF6C757D" Margin="0,0,6,6" />
+                            <Button x:Name="BtnSaveSettings" Content="保存设置" Style="{StaticResource GlassButton}" Click="BtnSaveSettings_Click" Background="#FF28A745" Margin="0,0,6,6" />
+                            <Button x:Name="BtnResetSettings" Content="恢复默认" Style="{StaticResource GlassButton}" Click="BtnResetSettings_Click" Background="#FFFFC107" Foreground="#FF333333" Margin="0,0,6,6" />
                         </WrapPanel>
 
                         <!-- 极域路径显示 -->
-                        <TextBlock x:Name="JiYuPathText" Text="极域路径: 未设置" FontSize="11" Foreground="#FF888888" Margin="0,12,0,0" TextWrapping="Wrap" />
+                        <TextBlock x:Name="JiYuPathText" Text="极域路径: 未设置" FontSize="10" Foreground="#FF999999" Margin="4,8,0,0" TextWrapping="Wrap" />
                     </StackPanel>
                 </ScrollViewer>
 
@@ -143,6 +160,9 @@
                                     <TextBlock Text="缺德组织核心人员之一" FontSize="13" Foreground="#FF333333" HorizontalAlignment="Center" />
                                 </StackPanel>
                             </Border>
+
+                            <!-- GitHub 链接 -->
+                            <Button x:Name="BtnGithub" Content="GitHub 仓库" Style="{StaticResource GlassButton}" Click="BtnGithub_Click" Margin="0,16,0,0" Width="140" Background="#FF24292E" />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

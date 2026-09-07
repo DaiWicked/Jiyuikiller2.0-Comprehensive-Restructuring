@@ -327,6 +327,21 @@ namespace JiYuKiller
             ShowPage("about");
         }
 
+        private void BtnGithub_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("GitHub仓库", "BtnGithub");
+            try
+            {
+                System.Diagnostics.Process.Start("https://github.com/DaiWicked/Jiyuikiller2.0-Comprehensive-Restructuring");
+                Services.Logger.Instance.Info("已打开 GitHub 仓库链接");
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("打开 GitHub 链接失败", ex);
+                System.Windows.MessageBox.Show("打开浏览器失败，请手动访问:\nhttps://github.com/DaiWicked/Jiyuikiller2.0-Comprehensive-Restructuring", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void ShowPage(string pageName)
         {
             PageSettings.Visibility = Visibility.Collapsed;

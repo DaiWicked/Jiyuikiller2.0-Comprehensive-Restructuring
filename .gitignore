@@ -1,42 +1,77 @@
+# ==========================================
 # 编译输出
-bin/
-obj/
+# ==========================================
 [Bb]in/
 [Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]uild/
+publish/
 
+# ==========================================
 # Visual Studio
+# ==========================================
 .vs/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
 *.userprefs
+*.vcxproj.user
+*.psess
+*.vsp
+*.vspx
+*.sap
 
-# 日志文件
+# ==========================================
+# 日志和临时文件
+# ==========================================
 *.log
 logs/
-
-# 设置文件（运行时生成）
-JiYuKillerSettings.xml
-*.config.user
-
-# 临时文件
 *.tmp
 *.temp
 *.bak
 *.cache
+*.pidb
+*.host
+*.aux
+*.cachefile
 
-# 系统文件
-Thumbs.db
-desktop.ini
-.DS_Store
+# ==========================================
+# 运行时生成的设置文件
+# ==========================================
+JiYuKillerSettings.xml
+*.config.user
+appsettings.local.json
 
-# 发布目录
-publish/
-Release/
-Debug/
-
-# 测试覆盖率
+# ==========================================
+# 测试和覆盖率
+# ==========================================
 TestResults/
 *.coverage
 *.coveragexml
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# ==========================================
+# 系统文件
+# ==========================================
+Thumbs.db
+desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+System Volume Information/
+
+# ==========================================
+# 压缩包
+# ==========================================
+*.zip
+*.rar
+*.7z
+*.tar.gz
