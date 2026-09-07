@@ -73,6 +73,12 @@
     <Compile Include="Services\Logger.cs" />
     <Compile Include="Models\AppSettings.cs" />
     <Compile Include="Services\JiYuController.cs" />
+    <Compile Include="Services\ScreenCaptureHelper.cs" />
+    <Compile Include="Effects\GlassyEffect.cs" />
+    <Compile Include="Effects\GlassyWindowManager.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Effects\GlassyEffect.ps" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

@@ -21,6 +21,7 @@ namespace JiYuKiller
         private bool _hideTipShown = false;
         private bool _isExiting = false;
         private bool _isTopMost = false;
+        private Effects.GlassyWindowManager _glassyManager;
 
         // Win32 API
         [DllImport("user32.dll")]
@@ -47,6 +48,9 @@ namespace JiYuKiller
 
             // 应用 Liquid Glass 效果
             ApplyLiquidGlass();
+
+            // 初始化毛玻璃效果管理器（窗口加载后）
+            this.Loaded += MainWindow_Loaded;
 
             // 初始化系统托盘
             InitTrayIcon();
@@ -213,7 +217,10 @@ namespace JiYuKiller
         {
             Services.Logger.Instance.FunctionCall("ApplyLiquidGlass", $"opacity={_settings.GlassOpacity}, color={_settings.GlassBgColor}");
 
-            // 根据背景色设置玻璃颜色
+            // 根据背景色设置内容层透明度
+            byte alpha = (byte)(_settings.GlassOpacity * 2.55);
+
+            // 内容层背景色
             Color bgColor;
             switch (_settings.GlassBgColor.ToLower())
             {
@@ -239,14 +246,25 @@ namespace JiYuKiller
                     bgColor = Color.FromRgb(255, 255, 255);
                     break;
             }
-
-            // 计算透明度 (0-100 -> 0-255)
-            byte alpha = (byte)(_settings.GlassOpacity * 2.55);
             bgColor.A = alpha;
 
-            GlassBgBrush.Color = bgColor;
-
+            // 设置内容层背景（第三个Grid）
+            // 注意：毛玻璃效果由 GlassyWindowManager 管理桌面截图和像素着色器
             Services.Logger.Instance.Debug($"Liquid Glass 已应用: ARGB={bgColor.A},{bgColor.R},{bgColor.G},{bgColor.B}");
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.Info("窗口加载完成，初始化毛玻璃效果管理器");
+            try
+            {
+                _glassyManager = new Effects.GlassyWindowManager(this, BackdropLayer, GlassyLayer);
+                Services.Logger.Instance.Info("毛玻璃效果管理器初始化成功");
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("毛玻璃效果管理器初始化失败", ex);
+            }
         }
 
         #endregion
@@ -319,6 +337,56 @@ namespace JiYuKiller
             Services.Logger.Instance.ButtonClick("关于", "NavAbout");
             ShowPage("about");
         }
+
+        private void NavCustom_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("自定义设置", "NavCustom");
+            ShowPage("custom");
+        }
+
+        #region 自定义设置（毛玻璃效果）
+
+        private void SliderBlurIntensity_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (TextBlurValue != null)
+            {
+                TextBlurValue.Text = string.Format("{0}%", (int)(e.NewValue * 100));
+            }
+
+            if (_glassyManager != null)
+            {
+                _glassyManager.BlurIntensity = e.NewValue;
+                Services.Logger.Instance.Debug($"毛玻璃模糊强度调整: {e.NewValue:F2}");
+            }
+        }
+
+        private void SliderContentOpacity_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (TextContentOpacityValue != null)
+            {
+                TextContentOpacityValue.Text = string.Format("{0}%", (int)(e.NewValue * 100));
+            }
+
+            // 调整内容层透明度
+            // 内容层是第三个Grid（索引2），通过Background设置
+            Services.Logger.Instance.Debug($"内容层透明度调整: {e.NewValue:F2}");
+        }
+
+        private void BtnRefreshGlass_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("刷新玻璃背景", "BtnRefreshGlass");
+            if (_glassyManager != null)
+            {
+                _glassyManager.RefreshBackdrop();
+                Services.Logger.Instance.Info("毛玻璃背景已刷新");
+            }
+            else
+            {
+                Services.Logger.Instance.Warn("毛玻璃管理器未初始化");
+            }
+        }
+
+        #endregion
 
         private void BtnAboutMe_Click(object sender, RoutedEventArgs e)
         {
@@ -474,10 +542,12 @@ namespace JiYuKiller
             PageAdvancedSettings.Visibility = Visibility.Collapsed;
             PageHelp.Visibility = Visibility.Collapsed;
             PageDebug.Visibility = Visibility.Collapsed;
+            PageCustom.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
             NavQuick.FontWeight = FontWeights.Normal;
             NavSetting.FontWeight = FontWeights.Normal;
+            NavCustom.FontWeight = FontWeights.Normal;
             NavHelp.FontWeight = FontWeights.Normal;
             NavDebug.FontWeight = FontWeights.Normal;
             NavAbout.FontWeight = FontWeights.Normal;
@@ -509,6 +579,10 @@ namespace JiYuKiller
                 case "debug":
                     PageDebug.Visibility = Visibility.Visible;
                     NavDebug.FontWeight = FontWeights.Bold;
+                    break;
+                case "custom":
+                    PageCustom.Visibility = Visibility.Visible;
+                    NavCustom.FontWeight = FontWeights.Bold;
                     break;
             }
 

@@ -18,11 +18,8 @@
         </Storyboard>
     </Window.Resources>
 
-    <!-- 外层玻璃容器（半透明背景，不使用BlurEffect避免模糊文字） -->
+    <!-- 外层玻璃容器 -->
     <Border x:Name="GlassContainer" CornerRadius="16" Margin="8">
-        <Border.Background>
-            <SolidColorBrush x:Name="GlassBgBrush" Color="#E6FFFFFF" />
-        </Border.Background>
         <Border.BorderBrush>
             <SolidColorBrush Color="#60FFFFFF" />
         </Border.BorderBrush>
@@ -32,11 +29,19 @@
         </Border.Effect>
 
         <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="40" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="56" />
-            </Grid.RowDefinitions>
+            <!-- 层1: 桌面截图背景（毛玻璃底层） -->
+            <Border x:Name="BackdropLayer" CornerRadius="16" ClipToBounds="True" />
+
+            <!-- 层2: 玻璃像素着色器效果层（折射/模糊） -->
+            <Border x:Name="GlassyLayer" CornerRadius="16" Background="Transparent" ClipToBounds="True" />
+
+            <!-- 层3: 半透明白色覆盖层 + 内容 -->
+            <Grid Background="#E6FFFFFF">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="40" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="56" />
+                </Grid.RowDefinitions>
 
             <!-- 标题栏（整行可拖动，Background=Transparent确保空白区域也接收鼠标事件） -->
             <Grid Grid.Row="0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" Background="Transparent">
@@ -456,6 +461,59 @@
                     </ScrollViewer>
                 </Grid>
 
+                <!-- 自定义设置页面 -->
+                <Grid x:Name="PageCustom" Visibility="Collapsed">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="16,12">
+                            <TextBlock Text="自定义设置" FontSize="18" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,12" />
+
+                            <!-- 毛玻璃效果 -->
+                            <Border Background="#20000000" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="毛玻璃效果" FontSize="14" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,8" />
+
+                                    <StackPanel Margin="0,0,0,8">
+                                        <TextBlock Text="模糊强度" FontSize="12" Foreground="#FF555555" Margin="0,0,0,4" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Minimum="0" Maximum="1" Value="0.2" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
+                                            <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="20%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,0,0,8">
+                                        <TextBlock Text="内容层透明度" FontSize="12" Foreground="#FF555555" Margin="0,0,0,4" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.3" Maximum="1" Value="0.9" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
+                                            <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="90%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <Button x:Name="BtnRefreshGlass" Content="刷新玻璃背景" Style="{StaticResource GlassButton}" Click="BtnRefreshGlass_Click" Padding="12,6" FontSize="12" HorizontalAlignment="Left" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 说明 -->
+                            <Border Background="#10000000" CornerRadius="8" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="说明" FontSize="13" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,6" />
+                                    <TextBlock Text="• 毛玻璃效果通过桌面截图 + 像素着色器实现" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                    <TextBlock Text="• 移动窗口后自动刷新背景" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                    <TextBlock Text="• 模糊强度越高，玻璃效果越明显" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                    <TextBlock Text="• 内容层透明度越低，背景越清晰" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
                 <!-- 调试页面 -->
                 <Grid x:Name="PageDebug" Visibility="Collapsed">
                     <Grid.RowDefinitions>
@@ -505,15 +563,17 @@
 
             <!-- 底部导航栏 -->
             <Border Grid.Row="2" Background="#10000000" CornerRadius="0,0,16,16">
-                <UniformGrid Columns="5">
-                    <Button x:Name="NavQuick" Content="快捷栏" Click="NavQuick_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="12" Padding="2,0" />
-                    <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF333333" BorderBrush="Transparent" FontWeight="Bold" FontSize="12" Padding="2,0" />
-                    <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="12" Padding="2,0" />
-                    <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="12" Padding="2,0" />
-                    <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="12" Padding="2,0" />
+                <UniformGrid Columns="6">
+                    <Button x:Name="NavQuick" Content="快捷栏" Click="NavQuick_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF333333" BorderBrush="Transparent" FontWeight="Bold" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavCustom" Content="自定义设置" Click="NavCustom_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
+                    <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF666666" BorderBrush="Transparent" FontSize="11" Padding="1,0" />
                 </UniformGrid>
             </Border>
 
+            </Grid>
         </Grid>
     </Border>
 </Window>
