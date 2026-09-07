@@ -21,13 +21,13 @@
     <!-- 窗口根容器（光晕层 + 主窗口） -->
     <Grid Background="Transparent">
         <!-- 外层光晕虚化（模拟玻璃边缘光线散射） -->
-        <Border x:Name="OuterGlow" Margin="2" CornerRadius="24" Background="#60C8E8FF" Opacity="0.7" IsHitTestVisible="False">
+        <Border x:Name="OuterGlow" Margin="2" CornerRadius="24" Background="#60C8E8FF" Opacity="0.2" IsHitTestVisible="False">
             <Border.Effect>
                 <BlurEffect Radius="28" />
             </Border.Effect>
         </Border>
         <!-- 第二层柔和光晕 -->
-        <Border x:Name="InnerGlow" Margin="3" CornerRadius="20" Background="#80FFFFFF" Opacity="0.9" IsHitTestVisible="False">
+        <Border x:Name="InnerGlow" Margin="3" CornerRadius="20" Background="#80FFFFFF" Opacity="0.3" IsHitTestVisible="False">
             <Border.Effect>
                 <BlurEffect Radius="16" />
             </Border.Effect>
@@ -492,8 +492,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Minimum="0" Maximum="1" Value="1" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
-                                            <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="100%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Minimum="0" Maximum="1" Value="0.9" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
+                                            <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="90%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
@@ -516,8 +516,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderOuterGlow" Grid.Column="0" Minimum="0" Maximum="1" Value="0.7" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderOuterGlow_ValueChanged" />
-                                            <TextBlock x:Name="TextOuterGlowValue" Grid.Column="1" Text="70%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <Slider x:Name="SliderOuterGlow" Grid.Column="0" Minimum="0" Maximum="1" Value="0.2" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderOuterGlow_ValueChanged" />
+                                            <TextBlock x:Name="TextOuterGlowValue" Grid.Column="1" Text="20%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
@@ -528,8 +528,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderInnerGlow" Grid.Column="0" Minimum="0" Maximum="1" Value="0.9" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderInnerGlow_ValueChanged" />
-                                            <TextBlock x:Name="TextInnerGlowValue" Grid.Column="1" Text="90%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <Slider x:Name="SliderInnerGlow" Grid.Column="0" Minimum="0" Maximum="1" Value="0.3" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderInnerGlow_ValueChanged" />
+                                            <TextBlock x:Name="TextInnerGlowValue" Grid.Column="1" Text="30%" FontSize="12" Foreground="#FF555555" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 
