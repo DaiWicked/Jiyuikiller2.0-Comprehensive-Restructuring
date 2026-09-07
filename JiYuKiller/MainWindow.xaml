@@ -18,15 +18,30 @@
         </Storyboard>
     </Window.Resources>
 
-    <!-- 外层玻璃容器 -->
-    <Border x:Name="GlassContainer" CornerRadius="16" Margin="8">
-        <Border.BorderBrush>
-            <SolidColorBrush Color="#60FFFFFF" />
-        </Border.BorderBrush>
-        <Border.BorderThickness>1</Border.BorderThickness>
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="16" ShadowDepth="0" Color="#40000000" Opacity="0.4" />
-        </Border.Effect>
+    <!-- 窗口根容器（光晕层 + 主窗口） -->
+    <Grid>
+        <!-- 外层光晕虚化（模拟玻璃边缘光线散射） -->
+        <Border Margin="12" CornerRadius="20" Background="#40A6E1FF" Opacity="0.6" IsHitTestVisible="False">
+            <Border.Effect>
+                <BlurEffect Radius="24" />
+            </Border.Effect>
+        </Border>
+        <!-- 第二层柔和光晕 -->
+        <Border Margin="10" CornerRadius="18" Background="#20FFFFFF" Opacity="0.8" IsHitTestVisible="False">
+            <Border.Effect>
+                <BlurEffect Radius="12" />
+            </Border.Effect>
+        </Border>
+
+        <!-- 外层玻璃容器 -->
+        <Border x:Name="GlassContainer" CornerRadius="16" Margin="8">
+            <Border.BorderBrush>
+                <SolidColorBrush Color="#60FFFFFF" />
+            </Border.BorderBrush>
+            <Border.BorderThickness>1</Border.BorderThickness>
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="0" Color="#30000000" Opacity="0.5" />
+            </Border.Effect>
 
         <Grid>
             <!-- 层1: 桌面截图背景（毛玻璃底层） -->
@@ -599,4 +614,5 @@
             </Border>
         </Grid>
     </Border>
+    </Grid>
 </Window>
