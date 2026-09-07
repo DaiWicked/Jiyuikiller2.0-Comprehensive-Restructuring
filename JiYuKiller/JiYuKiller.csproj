@@ -51,6 +51,7 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System.Management" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
@@ -75,6 +76,7 @@
     <Compile Include="Models\AppSettings.cs" />
     <Compile Include="Services\JiYuController.cs" />
     <Compile Include="Services\ScreenCaptureHelper.cs" />
+    <Compile Include="Services\DriverService.cs" />
     <Compile Include="Effects\GlassyEffect.cs" />
     <Compile Include="Effects\GlassyWindowManager.cs" />
   </ItemGroup>
@@ -123,6 +125,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\me.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Drivers\JiYuTrainerDriver.sys">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
