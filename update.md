@@ -1,6 +1,6 @@
-# JiYuKiller 2.0 全面重构 - 更新日志
+﻿# JiYuKiller 2.0 全面重构 - 更新日志
 
-## QD_V2.0_JiYuRebuild-TEST (2026-09-08)
+## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-08)
 
 ### 液态玻璃悬浮底栏（7层结构）
 
@@ -101,7 +101,7 @@
 - 程序显示名称：学习不通
 - 进程名：i.chaoxing
 - 程序图标：JiYuTrainerLogo.ico
-- 版本号：QD_V2.0_JiYuRebuild-TEST
+- 版本号：QD_V2.1_JiYuRebuild_Liquid-Glass
 - 目标框架：.NET Framework 4.7.2
 
 ## QD_V1.1_TrayIcon (2026-09-07)

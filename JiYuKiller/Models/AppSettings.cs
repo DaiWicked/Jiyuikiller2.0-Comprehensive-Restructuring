@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Xml.Serialization;
 
@@ -109,7 +109,7 @@ namespace JiYuKiller.Models
         public int WallpaperOpacity { get; set; } = 80;
 
         // === 版本信息 ===
-        public string Version { get; set; } = "QD_V2.0_JiYuRebuild-TEST";
+        public string Version { get; set; } = "QD_V2.1_JiYuRebuild_Liquid-Glass";
 
         [XmlIgnore]
         private static readonly string SettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "JiYuKillerSettings.xml");
