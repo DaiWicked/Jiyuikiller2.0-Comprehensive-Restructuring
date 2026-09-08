@@ -22,7 +22,7 @@ namespace JiYuKiller.Services
         [DllImport("iphlpapi.dll", ExactSpelling = true)]
         private static extern int SendARP(int DestIP, int SrcIP, byte[] pMacAddr, ref uint PhyAddrLen);
 
-        private string GetMacAddress(string ip)
+        public string GetMacAddress(string ip)
         {
             try
             {
@@ -111,6 +111,7 @@ namespace JiYuKiller.Services
         private const int BasePackShutdown = 3;
 
         public event Action<string> OnLog;
+        public event Action<bool, string> OnSendResult;  // success, message
         public event Action<List<NetworkHost>> OnScanComplete;
 
         private bool _isScanning = false;
@@ -203,6 +204,7 @@ namespace JiYuKiller.Services
                         int sent = client.Send(data, data.Length, endPoint);
                         OnLog?.Invoke($"[{ip}:{port}] {description} == 发送成功。{sent} 字节");
                         Logger.Instance.Info($"[UDP攻击] 发送成功 {sent} 字节 -> {ip}:{port}");
+                        OnSendResult?.Invoke(true, $"发送成功！目标 {ip}:{port}，共 {sent} 字节");
                     }
                 }
                 catch (Exception ex)

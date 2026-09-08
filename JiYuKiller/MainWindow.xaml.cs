@@ -1321,39 +1321,19 @@ namespace JiYuKiller
                 var svc = Services.UdpAttackService.Instance;
                 string ip = svc.GetLocalIP();
                 // 先快速显示IP
-                TextUdpLocalInfo.Text = $"本机: 获取MAC中... - {ip}";
-                // MAC异步获取，不阻塞UI
+                TextUdpLocalInfo.Text = $"本机: 获取MAC中 - {ip}";
+                Services.Logger.Instance.Info($"UDP攻击-本机IP: {ip}");
+                // MAC用SendARP异步获取
                 Task.Run(() =>
                 {
                     try
                     {
-                        string mac = "未知";
-                        foreach (var ni in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
-                        {
-                            if (ni.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up &&
-                                ni.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
-                            {
-                                var props = ni.GetIPProperties();
-                                foreach (var ua in props.UnicastAddresses)
-                                {
-                                    if (ua.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ua.Address.ToString() == ip)
-                                    {
-                                        mac = ni.GetPhysicalAddress().ToString();
-                                        if (mac.Length == 12)
-                                        {
-                                            mac = mac.Insert(2, "-").Insert(5, "-").Insert(8, "-").Insert(11, "-").Insert(14, "-");
-                                        }
-                                        break;
-                                    }
-                                }
-                                if (mac != "未知") break;
-                            }
-                        }
+                        string mac = svc.GetMacAddress(ip);
                         Dispatcher.Invoke(() =>
                         {
                             TextUdpLocalInfo.Text = $"本机: {mac} - {ip}";
                         });
-                        Services.Logger.Instance.Info($"UDP攻击-本机信息: {mac} - {ip}");
+                        Services.Logger.Instance.Info($"UDP攻击-本机MAC: {mac}");
                     }
                     catch (Exception ex)
                     {
@@ -1376,6 +1356,17 @@ namespace JiYuKiller
             {
                 var svc = Services.UdpAttackService.Instance;
                 svc.OnLog += (msg) => Dispatcher.Invoke(() => TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " " + msg + "\n"));
+                svc.OnSendResult += (success, msg) => Dispatcher.Invoke(() =>
+                {
+                    if (success)
+                    {
+                        System.Windows.MessageBox.Show(msg, "发送成功", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        System.Windows.MessageBox.Show(msg, "发送失败", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    }
+                });
                 _udpLogRegistered = true;
             }
         }
