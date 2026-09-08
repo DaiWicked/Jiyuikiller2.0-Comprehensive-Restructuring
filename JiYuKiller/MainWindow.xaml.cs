@@ -756,14 +756,14 @@ namespace JiYuKiller
                     InitChat();
                     break;
                 case "screenshot":
-                    case "teachersim":
-                        PageTeacherSim.Visibility = Visibility.Visible;
-                        NavTeacherSim.FontWeight = FontWeights.Bold;
-                        InitTeacherSim();
-                        break;
                     PageScreenshot.Visibility = Visibility.Visible;
                     NavScreenshot.FontWeight = FontWeights.Bold;
                     InitScreenshot();
+                    break;
+                case "teachersim":
+                    PageTeacherSim.Visibility = Visibility.Visible;
+                    NavTeacherSim.FontWeight = FontWeights.Bold;
+                    InitTeacherSim();
                     break;
             }
 
