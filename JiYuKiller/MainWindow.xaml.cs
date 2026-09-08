@@ -660,7 +660,6 @@ namespace JiYuKiller
             PageDebug.Visibility = Visibility.Collapsed;
             PageCustom.Visibility = Visibility.Collapsed;
             PageUdpAttack.Visibility = Visibility.Collapsed;
-            PageUdpAttack.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
             NavQuick.FontWeight = FontWeights.Normal;
@@ -702,6 +701,10 @@ namespace JiYuKiller
                 case "custom":
                     PageCustom.Visibility = Visibility.Visible;
                     NavCustom.FontWeight = FontWeights.Bold;
+                    break;
+                case "udpattack":
+                    PageUdpAttack.Visibility = Visibility.Visible;
+                    NavUdpAttack.FontWeight = FontWeights.Bold;
                     break;
             }
 
