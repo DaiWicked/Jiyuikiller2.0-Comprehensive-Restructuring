@@ -260,41 +260,6 @@
                 </Grid>
 
                 <!-- 极客工具页面 -->
-                <!-- 极客工具页面 -->
-                <ScrollViewer x:Name="PageGeek" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
-                    <StackPanel Margin="0,0,0,8">
-                        <TextBlock Text="极客工具" FontSize="20" FontWeight="Bold" Foreground="#FF000000" HorizontalAlignment="Center" Margin="0,0,0,12" />
-                        <TextBlock Text="增强功能模块" FontSize="13" Foreground="#FF555555" HorizontalAlignment="Center" Margin="0,0,0,16" />
-                        <Button x:Name="BtnOpenUdpAttack" Click="BtnOpenUdpAttack_Click" Style="{StaticResource GlassButton}" Background="Transparent" BorderBrush="Transparent" Padding="0" Margin="0,0,0,10" HorizontalContentAlignment="Stretch">
-                            <Border Background="#20000000" CornerRadius="10" Padding="14">
-                                <StackPanel>
-                                    <TextBlock Text="极域 UDP 攻击" FontSize="14" FontWeight="Bold" Foreground="#FF1A1A1A" Margin="0,0,0,4" />
-                                    <TextBlock Text="局域网扫描 + 发包攻击 (关机/重启/命令)" FontSize="11" Foreground="#FF666666" />
-                                </StackPanel>
-                            </Border>
-                        </Button>
-                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="小小私聊" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,4" />
-                                <TextBlock Text="开发中..." FontSize="12" Foreground="#FF888888" />
-                            </StackPanel>
-                        </Border>
-                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="截图替换" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,4" />
-                                <TextBlock Text="开发中..." FontSize="12" Foreground="#FF888888" />
-                            </StackPanel>
-                        </Border>
-                        <Button x:Name="BtnOpenIMTeacher" Click="BtnOpenIMTeacher_Click" Style="{StaticResource GlassButton}" Background="Transparent" BorderBrush="Transparent" Padding="0" Margin="0,0,0,10" HorizontalContentAlignment="Stretch">
-                            <Border Background="#20000000" CornerRadius="10" Padding="14">
-                                <StackPanel>
-                                    <TextBlock Text="极域教师端模拟 (beta)" FontSize="14" FontWeight="Bold" Foreground="#FF1A1A1A" Margin="0,0,0,4" />
-                                    <TextBlock Text="模拟教师端 (外部程序调用)" FontSize="11" Foreground="#FF666666" />
-                                </StackPanel>
-                            </Border>
-                        </Button>
-                    </StackPanel>
-                </ScrollViewer>
 
 
                 <!-- 极域UDP攻击页面 -->
@@ -347,36 +312,6 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- 教师端模拟页面 -->
-                <ScrollViewer x:Name="PageIMTeacher" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
-                    <StackPanel Margin="0,0,0,8">
-                        <Button x:Name="BtnBackFromIMTeacher" Content="← 返回" Click="BtnBackFromIMTeacher_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" Padding="4,6" FontSize="12" HorizontalAlignment="Left" Margin="0,0,0,8" />
-                        <TextBlock Text="极域教师端模拟 (beta)" FontSize="20" FontWeight="Bold" Foreground="#FF000000" HorizontalAlignment="Center" Margin="0,0,0,12" />
-                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="状态" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,6" />
-                                <TextBlock x:Name="TextIMTeacherStatus" Text="未启动" FontSize="12" Foreground="#FF888888" />
-                            </StackPanel>
-                        </Border>
-                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="操作" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
-                                <Grid Margin="0,0,0,6">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Button x:Name="BtnStartIMTeacher" Content="启动模拟" Click="BtnStartIMTeacher_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,8" FontSize="12" />
-                                    <Button x:Name="BtnStopIMTeacher" Content="停止模拟" Click="BtnStopIMTeacher_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,8" FontSize="12" />
-                                </Grid>
-                                <Button x:Name="BtnOpenIMTeacherLog" Content="打开日志目录" Click="BtnOpenIMTeacherLog_Click" Style="{StaticResource GlassButton}" Padding="8,8" FontSize="12" />
-                            </StackPanel>
-                        </Border>
-                        <Border Background="#FFF5F5DC" CornerRadius="10" Padding="14" Margin="0,0,0,10">
-                            <TextBlock Text="注意：教师端模拟依赖外部 teacher_sim.exe，需要放在程序目录下。首次使用请确认文件存在。" FontSize="11" Foreground="#FF8B4513" TextWrapping="Wrap" />
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
                 <!-- 软件高级设置页面 -->
                 <Grid x:Name="PageAdvancedSettings" Visibility="Collapsed">
                     <Grid.RowDefinitions>
@@ -837,7 +772,7 @@
                                         <Button x:Name="NavQuick" Content="快捷栏" Click="NavQuick_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
                                         <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="88" Height="44" />
                                         <Button x:Name="NavCustom" Content="自定义设置" Click="NavCustom_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="76" Height="44" />
-                                        <Button x:Name="NavGeek" Content="极客工具" Click="NavGeek_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
+                                        <Button x:Name="NavUdpAttack" Content="UDP攻击" Click="NavUdpAttack_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
                                         <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
                                         <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
