@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -338,6 +338,30 @@ namespace JiYuKiller
             ShowPage("about");
         }
 
+        private void NavGeek_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("极客工具", "NavGeek");
+            ShowPage("geek");
+        }
+
+        private void AnimateNavIndicator(Button targetBtn)
+        {
+            if (targetBtn == null || NavIndicator == null || NavIndicatorTransform == null) return;
+            try
+            {
+                Point relativePoint = targetBtn.TranslatePoint(new Point(0, 0), NavStackPanel);
+                double targetX = relativePoint.X;
+                double targetWidth = targetBtn.ActualWidth;
+                NavIndicator.Width = targetWidth;
+                DoubleAnimation anim = new DoubleAnimation { To = targetX, Duration = TimeSpan.FromMilliseconds(350), EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut } };
+                NavIndicatorTransform.BeginAnimation(TranslateTransform.XProperty, anim);
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Warn("导航指示器动画失败: " + ex.Message);
+            }
+        }
+
         private void NavCustom_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("自定义设置", "NavCustom");
@@ -590,6 +614,7 @@ namespace JiYuKiller
             PageHelp.Visibility = Visibility.Collapsed;
             PageDebug.Visibility = Visibility.Collapsed;
             PageCustom.Visibility = Visibility.Collapsed;
+            PageGeek.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
             NavQuick.FontWeight = FontWeights.Normal;
@@ -598,6 +623,7 @@ namespace JiYuKiller
             NavHelp.FontWeight = FontWeights.Normal;
             NavDebug.FontWeight = FontWeights.Normal;
             NavAbout.FontWeight = FontWeights.Normal;
+            NavGeek.FontWeight = FontWeights.Normal;
 
             switch (pageName)
             {
