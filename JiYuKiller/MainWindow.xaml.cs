@@ -32,6 +32,19 @@ namespace JiYuKiller
         private const uint SWP_NOSIZE = 0x0001;
         private const uint SWP_NOMOVE = 0x0002;
 
+        // 全局快捷键 API
+        [DllImport("user32.dll")]
+        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+        [DllImport("user32.dll")]
+        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+        private const int WM_HOTKEY = 0x0312;
+        private const uint MOD_ALT = 0x0001;
+        private const uint MOD_CONTROL = 0x0002;
+        private const uint MOD_SHIFT = 0x0004;
+        private const int HOTKEY_FAKEFULL = 9000;
+        private const int HOTKEY_SHOWHIDE = 9001;
+        private System.Windows.Interop.HwndSource _hwndSource;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -57,6 +70,10 @@ namespace JiYuKiller
 
             // 启动监控
             _controller.Start();
+
+            // 注册全局快捷键
+            this.Loaded += (s, e) => RegisterGlobalHotKeys();
+            this.Closed += (s, e) => UnregisterGlobalHotKeys();
 
             // 定时更新状态
             System.Windows.Threading.DispatcherTimer timer = new System.Windows.Threading.DispatcherTimer();
@@ -1217,6 +1234,76 @@ namespace JiYuKiller
             StatusText.Text = _controller.GetStatusText();
             UpdateJiYuStatus();
             UpdateDriverStatus();
+        }
+
+        #endregion
+
+        #region 全局快捷键
+
+        private void RegisterGlobalHotKeys()
+        {
+            Services.Logger.Instance.FunctionCall("RegisterGlobalHotKeys");
+
+            _hwndSource = System.Windows.Interop.HwndSource.FromHwnd(new System.Windows.Interop.WindowInteropHelper(this).Handle);
+            if (_hwndSource != null)
+            {
+                _hwndSource.AddHook(HwndHook);
+            }
+
+            IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+
+            // 紧急全屏: Ctrl+Alt+F (VK_F = 0x46)
+            bool result1 = RegisterHotKey(hwnd, HOTKEY_FAKEFULL, MOD_CONTROL | MOD_ALT, 0x46);
+            Services.Logger.Instance.Info("[HotKey] 注册紧急全屏 Ctrl+Alt+F: " + (result1 ? "成功" : "失败"));
+
+            // 显示/隐藏窗口: Ctrl+Alt+H (VK_H = 0x48)
+            bool result2 = RegisterHotKey(hwnd, HOTKEY_SHOWHIDE, MOD_CONTROL | MOD_ALT, 0x48);
+            Services.Logger.Instance.Info("[HotKey] 注册显示/隐藏 Ctrl+Alt+H: " + (result2 ? "成功" : "失败"));
+        }
+
+        private void UnregisterGlobalHotKeys()
+        {
+            Services.Logger.Instance.FunctionCall("UnregisterGlobalHotKeys");
+
+            if (_hwndSource != null)
+            {
+                _hwndSource.RemoveHook(HwndHook);
+                _hwndSource = null;
+            }
+
+            IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            UnregisterHotKey(hwnd, HOTKEY_FAKEFULL);
+            UnregisterHotKey(hwnd, HOTKEY_SHOWHIDE);
+            Services.Logger.Instance.Info("[HotKey] 已注销全部快捷键");
+        }
+
+        private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_HOTKEY)
+            {
+                int id = wParam.ToInt32();
+                if (id == HOTKEY_FAKEFULL)
+                {
+                    Services.Logger.Instance.ButtonClick("快捷键-紧急全屏", "GlobalHotKey");
+                    bool result = _controller.SwitchFakeFull();
+                    Services.Logger.Instance.Info("[HotKey] 紧急全屏切换: " + (result ? "已全屏" : "已恢复"));
+                    handled = true;
+                }
+                else if (id == HOTKEY_SHOWHIDE)
+                {
+                    Services.Logger.Instance.ButtonClick("快捷键-显示/隐藏", "GlobalHotKey");
+                    if (this.Visibility == Visibility.Visible)
+                    {
+                        HideToTray();
+                    }
+                    else
+                    {
+                        ShowMainWindow();
+                    }
+                    handled = true;
+                }
+            }
+            return IntPtr.Zero;
         }
 
         #endregion

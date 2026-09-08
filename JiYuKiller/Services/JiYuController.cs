@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -730,6 +730,58 @@ namespace JiYuKiller.Services
                 return "极域运行中 (PID: " + JiYuProcessId + ")";
             }
             return "极域未运行";
+        }
+
+        private bool _fakeFull = false;
+        public bool IsFakeFull => _fakeFull;
+
+        /// <summary>
+        /// 切换紧急全屏（伪全屏）
+        /// 对应原项目 SwitchFakeFull，通过DLL消息+窗口调整实现
+        /// </summary>
+        public bool SwitchFakeFull()
+        {
+            Logger.Instance.FunctionCall("SwitchFakeFull");
+
+            if (!IsJiYuRunning)
+            {
+                Logger.Instance.Warn("[JiYuController] 极域未运行，无法切换伪全屏");
+                return false;
+            }
+
+            _fakeFull = !_fakeFull;
+
+            // 发送DLL消息
+            SendVirusMessage("hk:fkfull:" + (_fakeFull ? "true" : "false"));
+
+            // 调整广播窗口
+            if (_currentBroadcastWnd != IntPtr.Zero)
+            {
+                if (_fakeFull)
+                {
+                    // 伪全屏: 移除边框，全屏置顶
+                    int exStyle = GetWindowLong(_currentBroadcastWnd, GWL_EXSTYLE);
+                    SetWindowLong(_currentBroadcastWnd, GWL_EXSTYLE, exStyle | (int)WS_EX_TOPMOST);
+                    int style = GetWindowLong(_currentBroadcastWnd, GWL_STYLE);
+                    SetWindowLong(_currentBroadcastWnd, GWL_STYLE, style ^ (int)WS_BORDER ^ (int)WS_OVERLAPPEDWINDOW);
+                    SetWindowPos(_currentBroadcastWnd, HWND_TOPMOST, 0, 0, _screenWidth, _screenHeight, SWP_SHOWWINDOW);
+                    SendMessage(_currentBroadcastWnd, WM_SIZE, IntPtr.Zero, (IntPtr)((_screenHeight << 16) | _screenWidth));
+                    Logger.Instance.Info("[JiYuController] 广播窗口已伪全屏");
+                }
+                else
+                {
+                    // 恢复窗口化
+                    FixBroadcastWindow(_currentBroadcastWnd);
+                    Logger.Instance.Info("[JiYuController] 广播窗口已恢复窗口化");
+                }
+            }
+            else
+            {
+                Logger.Instance.Warn("[JiYuController] 未找到广播窗口，仅发送DLL消息");
+            }
+
+            OnStatusChanged?.Invoke();
+            return _fakeFull;
         }
     }
 }

@@ -359,7 +359,7 @@
                                         <TextBlock Text="显示/隐藏窗口快捷键" VerticalAlignment="Center" Foreground="#FF0A0A0A" FontSize="13" />
                                         <TextBlock x:Name="TextHotKeyShowHide" Grid.Column="1" Text="Ctrl+Alt+H" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FF2A2A2A" FontSize="13" />
                                     </Grid>
-                                    <TextBlock Text="注：快捷键自定义功能开发中，当前使用默认快捷键" FontSize="11" Foreground="#FF666666" Margin="4,4,0,0" />
+                                    <TextBlock Text="注：快捷键当前为固定值，自定义功能后续版本支持" FontSize="11" Foreground="#FF888888" Margin="4,4,0,0" />
                                 </StackPanel>
                             </Border>
 
