@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -1319,35 +1320,63 @@ namespace JiYuKiller
             {
                 var svc = Services.UdpAttackService.Instance;
                 string ip = svc.GetLocalIP();
-                string mac = "未知";
-                foreach (var ni in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+                // 先快速显示IP
+                TextUdpLocalInfo.Text = $"本机: 获取MAC中... - {ip}";
+                // MAC异步获取，不阻塞UI
+                Task.Run(() =>
                 {
-                    if (ni.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up &&
-                        ni.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
+                    try
                     {
-                        var props = ni.GetIPProperties();
-                        foreach (var ua in props.UnicastAddresses)
+                        string mac = "未知";
+                        foreach (var ni in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
                         {
-                            if (ua.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ua.Address.ToString() == ip)
+                            if (ni.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up &&
+                                ni.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
                             {
-                                mac = ni.GetPhysicalAddress().ToString();
-                                if (mac.Length == 12)
+                                var props = ni.GetIPProperties();
+                                foreach (var ua in props.UnicastAddresses)
                                 {
-                                    mac = mac.Insert(2, "-").Insert(5, "-").Insert(8, "-").Insert(11, "-").Insert(14, "-");
+                                    if (ua.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ua.Address.ToString() == ip)
+                                    {
+                                        mac = ni.GetPhysicalAddress().ToString();
+                                        if (mac.Length == 12)
+                                        {
+                                            mac = mac.Insert(2, "-").Insert(5, "-").Insert(8, "-").Insert(11, "-").Insert(14, "-");
+                                        }
+                                        break;
+                                    }
                                 }
-                                break;
+                                if (mac != "未知") break;
                             }
                         }
-                        if (mac != "未知") break;
+                        Dispatcher.Invoke(() =>
+                        {
+                            TextUdpLocalInfo.Text = $"本机: {mac} - {ip}";
+                        });
+                        Services.Logger.Instance.Info($"UDP攻击-本机信息: {mac} - {ip}");
                     }
-                }
-                TextUdpLocalInfo.Text = $"本机: {mac} - {ip}";
-                Services.Logger.Instance.Info($"UDP攻击-本机信息: {mac} - {ip}");
+                    catch (Exception ex)
+                    {
+                        Dispatcher.Invoke(() => { TextUdpLocalInfo.Text = $"本机: 未知 - {ip}"; });
+                        Services.Logger.Instance.Error("获取本机MAC失败: " + ex.Message);
+                    }
+                });
             }
             catch (Exception ex)
             {
                 TextUdpLocalInfo.Text = "本机: 获取失败";
                 Services.Logger.Instance.Error("获取本机信息失败: " + ex.Message);
+            }
+        }
+
+        private bool _udpLogRegistered = false;
+        private void RegisterUdpLog()
+        {
+            if (!_udpLogRegistered)
+            {
+                var svc = Services.UdpAttackService.Instance;
+                svc.OnLog += (msg) => Dispatcher.Invoke(() => TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " " + msg + "\n"));
+                _udpLogRegistered = true;
             }
         }
 
