@@ -279,7 +279,14 @@
                         <!-- 目标配置 -->
                         <Border Background="#18000000" CornerRadius="12" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="目标配置" FontSize="13" FontWeight="Bold" Foreground="#FF1A1A1A" Margin="0,0,0,10" />
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="目标配置" FontSize="13" FontWeight="Bold" Foreground="#FF1A1A1A" Grid.Column="0" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="TextUdpLocalInfo" Text="本机: 获取中..." FontSize="10" Foreground="#FF888888" Grid.Column="1" VerticalAlignment="Center" />
+                                </Grid>
                                 <TextBlock Text="目标 IP 地址" FontSize="11" Foreground="#FF555555" Margin="0,0,0,4" />
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>

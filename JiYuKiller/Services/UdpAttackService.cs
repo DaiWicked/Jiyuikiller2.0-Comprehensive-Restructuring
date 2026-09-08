@@ -303,7 +303,7 @@ namespace JiYuKiller.Services
         /// <summary>
         /// 获取本机IP (借鉴teacher_sim get_ip()思路)
         /// </summary>
-        private string GetLocalIP()
+        public string GetLocalIP()
         {
             try
             {

@@ -1313,6 +1313,44 @@ namespace JiYuKiller
 
         #region UDP攻击
 
+        private void UpdateUdpLocalInfo()
+        {
+            try
+            {
+                var svc = Services.UdpAttackService.Instance;
+                string ip = svc.GetLocalIP();
+                string mac = "未知";
+                foreach (var ni in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (ni.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up &&
+                        ni.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
+                    {
+                        var props = ni.GetIPProperties();
+                        foreach (var ua in props.UnicastAddresses)
+                        {
+                            if (ua.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ua.Address.ToString() == ip)
+                            {
+                                mac = ni.GetPhysicalAddress().ToString();
+                                if (mac.Length == 12)
+                                {
+                                    mac = mac.Insert(2, "-").Insert(5, "-").Insert(8, "-").Insert(11, "-").Insert(14, "-");
+                                }
+                                break;
+                            }
+                        }
+                        if (mac != "未知") break;
+                    }
+                }
+                TextUdpLocalInfo.Text = $"本机: {mac} - {ip}";
+                Services.Logger.Instance.Info($"UDP攻击-本机信息: {mac} - {ip}");
+            }
+            catch (Exception ex)
+            {
+                TextUdpLocalInfo.Text = "本机: 获取失败";
+                Services.Logger.Instance.Error("获取本机信息失败: " + ex.Message);
+            }
+        }
+
         private void BtnBackFromUdpAttack_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("UDP攻击-返回", "BtnBackFromUdpAttack");
