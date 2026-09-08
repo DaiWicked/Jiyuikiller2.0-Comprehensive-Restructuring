@@ -128,7 +128,9 @@ namespace JiYuKiller.Services
             // 如果已注入DLL，发送设置更新
             if (_virusInstalled && _studentControlled)
             {
+                Logger.Instance.Info("[JiYuController] 发送设置更新到DLL");
                 SendVirusMessage("hk:reset");
+                SendSettingsToVirus();
             }
         }
 
@@ -327,7 +329,8 @@ namespace JiYuKiller.Services
             if (result)
             {
                 _virusInstalled = true;
-                Logger.Instance.Info("[JiYuController] DLL注入成功");
+                _studentControlled = true;
+                Logger.Instance.Info("[JiYuController] DLL注入成功，已控制极域");
 
                 // 等待DLL初始化
                 Thread.Sleep(1000);
@@ -338,6 +341,7 @@ namespace JiYuKiller.Services
 
                 // 发送设置
                 SendSettingsToVirus();
+                OnStatusChanged?.Invoke();
             }
             else
             {
@@ -522,7 +526,7 @@ namespace JiYuKiller.Services
         }
 
         /// <summary>
-        /// 杀死极域
+        /// 杀死极域（根据 KillProcessMode 设置选择方式）
         /// </summary>
         public bool KillJiYu(bool useDriver = false)
         {
@@ -534,16 +538,41 @@ namespace JiYuKiller.Services
                 return false;
             }
 
-            if (useDriver && _driver.IsDriverOpened)
+            // 优先使用驱动模式
+            string mode = _settings.KillProcessMode;
+            Logger.Instance.Info("[JiYuController] 杀进程模式: " + mode);
+
+            // KernelMode: 内核驱动杀进程
+            if (useDriver || mode == "KernelMode")
             {
-                return _driver.KillProcess(JiYuProcessId);
+                if (_driver.IsDriverOpened)
+                {
+                    bool result = _driver.KillProcess(JiYuProcessId);
+                    if (result)
+                    {
+                        Logger.Instance.Info("[JiYuController] 内核级杀死极域成功 PID=" + JiYuProcessId);
+                        IsJiYuRunning = false;
+                        JiYuProcessId = 0;
+                        _virusInstalled = false;
+                        _studentControlled = false;
+                        OnStatusChanged?.Invoke();
+                    }
+                    return result;
+                }
+                Logger.Instance.Warn("[JiYuController] 驱动未打开，回退到用户态杀进程");
             }
 
+            // TerminateProcess / NtTerminateProcess: 用户态杀进程
             try
             {
                 Process proc = Process.GetProcessById(JiYuProcessId);
                 proc.Kill();
-                Logger.Instance.Info("[JiYuController] 已杀死极域进程 PID=" + JiYuProcessId);
+                Logger.Instance.Info("[JiYuController] 已杀死极域进程 PID=" + JiYuProcessId + " (模式: " + mode + ")");
+                IsJiYuRunning = false;
+                JiYuProcessId = 0;
+                _virusInstalled = false;
+                _studentControlled = false;
+                OnStatusChanged?.Invoke();
                 return true;
             }
             catch (Exception ex)
