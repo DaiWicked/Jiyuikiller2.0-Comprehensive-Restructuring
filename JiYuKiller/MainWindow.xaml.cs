@@ -19,6 +19,7 @@ namespace JiYuKiller
         private Models.AppSettings _settings;
         private Services.JiYuController _controller;
         private bool _isInitializing = false;
+        private Services.TeacherSimService _teacherSimService;
         private WinForms.NotifyIcon _trayIcon;
         private bool _hideTipShown = false;
         private bool _isExiting = false;
@@ -77,6 +78,13 @@ namespace JiYuKiller
 
             // 启动监控
             _controller.Start();
+
+            // 初始化教师端模拟服务
+            _teacherSimService = new Services.TeacherSimService();
+            _teacherSimService.ExePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "teacher_sim.exe");
+            _teacherSimService.WorkDir = AppDomain.CurrentDomain.BaseDirectory;
+            _teacherSimService.OnLogOutput += TeacherSim_OnLogOutput;
+            _teacherSimService.OnStateChanged += TeacherSim_OnStateChanged;
 
             // 注册全局快捷键
             this.Loaded += (s, e) => RegisterGlobalHotKeys();
@@ -660,6 +668,13 @@ namespace JiYuKiller
         {
             Services.Logger.Instance.CheckboxChanged("启用控制器", true, "CheckEnableController");
             _controller.Start();
+
+            // 初始化教师端模拟服务
+            _teacherSimService = new Services.TeacherSimService();
+            _teacherSimService.ExePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "teacher_sim.exe");
+            _teacherSimService.WorkDir = AppDomain.CurrentDomain.BaseDirectory;
+            _teacherSimService.OnLogOutput += TeacherSim_OnLogOutput;
+            _teacherSimService.OnStateChanged += TeacherSim_OnStateChanged;
         }
 
         private void CheckEnableController_Unchecked(object sender, RoutedEventArgs e)
@@ -683,6 +698,7 @@ namespace JiYuKiller
             PageUdpAttack.Visibility = Visibility.Collapsed;
             PageChat.Visibility = Visibility.Collapsed;
             PageScreenshot.Visibility = Visibility.Collapsed;
+                    PageTeacherSim.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
             NavQuick.FontWeight = FontWeights.Normal;
@@ -694,6 +710,7 @@ namespace JiYuKiller
             NavUdpAttack.FontWeight = FontWeights.Normal;
             NavChat.FontWeight = FontWeights.Normal;
             NavScreenshot.FontWeight = FontWeights.Normal;
+                    NavTeacherSim.FontWeight = FontWeights.Normal;
 
             switch (pageName)
             {
@@ -739,6 +756,11 @@ namespace JiYuKiller
                     InitChat();
                     break;
                 case "screenshot":
+                    case "teachersim":
+                        PageTeacherSim.Visibility = Visibility.Visible;
+                        NavTeacherSim.FontWeight = FontWeights.Bold;
+                        InitTeacherSim();
+                        break;
                     PageScreenshot.Visibility = Visibility.Visible;
                     NavScreenshot.FontWeight = FontWeights.Bold;
                     InitScreenshot();
@@ -1684,6 +1706,135 @@ namespace JiYuKiller
         }
 
         #endregion
+
+        #region 极域教师端模拟
+
+        private void NavTeacherSim_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("教师模拟", "NavTeacherSim");
+            ShowPage("teachersim");
+        }
+
+        private void InitTeacherSim()
+        {
+            Services.Logger.Instance.FunctionCall("InitTeacherSim");
+            // 获取本机IP
+            try
+            {
+                string localIP = Services.UdpAttackService.Instance.GetLocalIP();
+                TextTeacherSimInfo.Text = $"本机IP: {localIP}，频道: {TextTeacherSimChannel.Text}";
+            }
+            catch
+            {
+                TextTeacherSimInfo.Text = "本机IP: 获取失败";
+            }
+            UpdateTeacherSimState();
+        }
+
+        private void UpdateTeacherSimState()
+        {
+            if (_teacherSimService != null && _teacherSimService.IsRunning)
+            {
+                TextTeacherSimStatus.Text = "运行中";
+                TextTeacherSimStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
+                TeacherSimStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
+            }
+            else
+            {
+                TextTeacherSimStatus.Text = "未启动";
+                TextTeacherSimStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
+                TeacherSimStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
+            }
+        }
+
+        private void TeacherSim_OnLogOutput(string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                TextTeacherSimConsole.AppendText(message + Environment.NewLine);
+                TextTeacherSimConsole.ScrollToEnd();
+            });
+        }
+
+        private void TeacherSim_OnStateChanged(bool isRunning)
+        {
+            Dispatcher.Invoke(() => UpdateTeacherSimState());
+        }
+
+        private void BtnTeacherSimStart_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("启动模拟", "BtnTeacherSimStart");
+            if (int.TryParse(TextTeacherSimChannel.Text, out int channel))
+            {
+                _teacherSimService.Channel = channel;
+            }
+            _teacherSimService.Start();
+            UpdateTeacherSimState();
+        }
+
+        private void BtnTeacherSimStop_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("停止模拟", "BtnTeacherSimStop");
+            _teacherSimService.Stop();
+            UpdateTeacherSimState();
+        }
+
+        private void BtnTeacherSimSend_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("发送命令", "BtnTeacherSimSend");
+            string cmd = TextTeacherSimCommand.Text.Trim();
+            if (!string.IsNullOrEmpty(cmd))
+            {
+                _teacherSimService.SendCommand(cmd);
+                TextTeacherSimCommand.Clear();
+            }
+        }
+
+        private void TextTeacherSimCommand_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                BtnTeacherSimSend_Click(sender, e);
+            }
+        }
+
+        private void BtnTeacherSimClear_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("清空控制台", "BtnTeacherSimClear");
+            TextTeacherSimConsole.Clear();
+        }
+
+        private void BtnTeacherSimBack_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("返回", "BtnTeacherSimBack");
+            ShowPage("quick");
+        }
+
+        private void BtnTeacherSimQuickList_Click(object sender, RoutedEventArgs e)
+        {
+            _teacherSimService.SendCommand("list");
+        }
+
+        private void BtnTeacherSimQuickAll_Click(object sender, RoutedEventArgs e)
+        {
+            _teacherSimService.SendCommand("all");
+        }
+
+        private void BtnTeacherSimQuickBlackAll_Click(object sender, RoutedEventArgs e)
+        {
+            _teacherSimService.SendCommand("bsall");
+        }
+
+        private void BtnTeacherSimQuickUnlockAll_Click(object sender, RoutedEventArgs e)
+        {
+            _teacherSimService.SendCommand("unlock_all");
+        }
+
+        private void BtnTeacherSimQuickHelp_Click(object sender, RoutedEventArgs e)
+        {
+            _teacherSimService.SendCommand("help");
+        }
+
+        #endregion
     }
 }
-

@@ -1,5 +1,25 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 教师端模拟与单文件打包
+
+### 极域教师端模拟 (TeacherSimService)
+- 新增TeacherSimService服务，管理teacher_sim.exe进程
+- 通过重定向stdin发送命令，通过日志文件获取输出
+- 模拟控制台UI：黑色终端风格，支持命令输入和实时日志显示
+- 快捷命令按钮：列出学生、全部预览、黑屏全体、解锁全体、帮助
+- 状态指示灯：未启动(灰)/运行中(绿)
+- 频道配置：支持1-32频道
+- 底栏新增"教师模拟"入口
+- teacher_sim.exe放在Drivers目录，随程序分发
+
+### 单文件打包 (EmbeddedResourceService)
+- JiYuTrainerDriver.sys和JiYuTrainerHooks.dll嵌入为程序资源
+- 程序启动时自动释放到%TEMP%\学习不通\目录
+- 驱动和DLL从临时目录加载，不再需要外部Drivers文件夹
+- exe体积从228KB增至808KB（含驱动+DLL）
+- teacher_sim.exe(52MB)保持外部文件，不嵌入
+- 文件已存在且大小相同时跳过释放，提升启动速度
+
 ## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 错误报告与调试模式
 
 ### 错误报告服务 (CrashReportService)

@@ -604,6 +604,88 @@
                     </StackPanel>
                 </ScrollViewer>
 
+                <!-- 极域教师端模拟页面 -->
+                <ScrollViewer x:Name="PageTeacherSim" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                    <StackPanel Margin="16,12">
+                        <!-- 标题栏 -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="←" Click="BtnTeacherSimBack_Click" Style="{StaticResource GlassButton}" Width="36" Height="32" FontSize="14" Padding="0" />
+                            <TextBlock Grid.Column="1" Text="极域教师端模拟 (beta)" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#FF1a1a2e" />
+                        </Grid>
+
+                        <!-- 状态和配置 -->
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Ellipse x:Name="TeacherSimStatusDot" Width="12" Height="12" Fill="#FF999999" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Grid.Column="1" x:Name="TextTeacherSimStatus" Text="未启动" FontSize="14" FontWeight="Bold" Foreground="#FF666666" VerticalAlignment="Center" />
+                                </Grid>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="频道:" FontSize="12" Foreground="#FF555566" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox Grid.Column="1" x:Name="TextTeacherSimChannel" Text="1" Style="{StaticResource GlassTextBox}" FontSize="12" Padding="6,4" Height="28" Width="60" HorizontalAlignment="Left" />
+                                </Grid>
+                                <TextBlock x:Name="TextTeacherSimInfo" Text="本机IP: 获取中..." FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 模拟控制台 -->
+                        <Border Background="#FF0A0A0A" CornerRadius="10" Padding="8" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="模拟控制台" FontSize="12" FontWeight="Bold" Foreground="#FF00FF00" Margin="0,0,0,4" />
+                                <TextBox x:Name="TextTeacherSimConsole" Background="#FF000000" Foreground="#FF00FF00" FontSize="11" FontFamily="Consolas" Height="200" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" Padding="4" BorderThickness="0" />
+                                <Grid Margin="0,6,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TextTeacherSimCommand" Background="#FF1A1A1A" Foreground="#FF00FF00" FontSize="12" FontFamily="Consolas" Padding="6,4" Height="30" BorderThickness="0" KeyDown="TextTeacherSimCommand_KeyDown" />
+                                    <Button Grid.Column="1" Content="发送" Click="BtnTeacherSimSend_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Width="60" Height="30" Margin="6,0,0,0" FontSize="12" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 快捷命令 -->
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="快捷命令" FontSize="13" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6" />
+                                <WrapPanel>
+                                    <Button Content="列出学生" Click="BtnTeacherSimQuickList_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="全部预览" Click="BtnTeacherSimQuickAll_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="黑屏全体" Click="BtnTeacherSimQuickBlackAll_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="解锁全体" Click="BtnTeacherSimQuickUnlockAll_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="帮助" Click="BtnTeacherSimQuickHelp_Click" Style="{StaticResource GlassButton}" Background="#FF6C757D" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 操作按钮 -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="BtnTeacherSimStart" Content="启动模拟" Click="BtnTeacherSimStart_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="36" Margin="0,0,4,0" />
+                            <Button Grid.Column="1" x:Name="BtnTeacherSimStop" Content="停止模拟" Click="BtnTeacherSimStop_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" Margin="4,0,4,0" />
+                            <Button Grid.Column="2" Content="清空控制台" Click="BtnTeacherSimClear_Click" Style="{StaticResource GlassButton}" Background="#FF6C757D" Height="36" Margin="4,0,0,0" />
+                        </Grid>
+
+                        <TextBlock Text="说明：本功能通过teacher_sim.exe模拟极域教师端，可查看学生屏幕、远程控制、发送消息等。控制台输入help查看所有命令。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,8" />
+                    </StackPanel>
+                </ScrollViewer>
+
 
                 <!-- 帮助文档页面 -->
                 <Grid x:Name="PageHelp" Visibility="Collapsed">
@@ -932,6 +1014,7 @@
                                         <Button x:Name="NavUdpAttack" Content="UDP攻击" Click="NavUdpAttack_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavChat" Content="小小私聊" Click="NavChat_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavScreenshot" Content="截图替换" Click="NavScreenshot_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
+                                        <Button x:Name="NavTeacherSim" Content="教师模拟" Click="NavTeacherSim_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
                                         <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
                                         <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />

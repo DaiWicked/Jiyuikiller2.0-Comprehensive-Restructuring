@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 
 namespace JiYuKiller
@@ -17,6 +17,7 @@ namespace JiYuKiller
             // DebugMode为false时不启用日志，不生成日志文件
 
             Services.Logger.Instance.Info("应用程序启动");
+            Services.EmbeddedResourceService.ExtractAll();
             Services.Logger.Instance.Info($"当前目录: {AppDomain.CurrentDomain.BaseDirectory}");
             Services.Logger.Instance.Info($"操作系统: {Environment.OSVersion}");
             Services.Logger.Instance.Info($".NET版本: {Environment.Version}");

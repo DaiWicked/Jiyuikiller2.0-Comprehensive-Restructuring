@@ -140,3 +140,6 @@ i.chaoxing_Error_*.txt
 !JiYuKiller/Drivers/*.sys
 *.cat
 *.inf
+
+# teacher_sim日志
+teacher_sim.log

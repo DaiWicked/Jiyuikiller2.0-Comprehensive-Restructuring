@@ -329,7 +329,7 @@ namespace JiYuKiller.Services
         {
             if (JiYuProcessId <= 0) return false;
 
-            string dllPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "JiYuTrainerHooks.dll");
+            string dllPath = Services.EmbeddedResourceService.GetDllPath();
 
             if (!File.Exists(dllPath))
             {
@@ -511,7 +511,7 @@ namespace JiYuKiller.Services
         {
             Logger.Instance.FunctionCall("LoadDriver");
 
-            string driverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "JiYuTrainerDriver.sys");
+            string driverPath = Services.EmbeddedResourceService.GetDriverPath();
 
             if (!File.Exists(driverPath))
             {
