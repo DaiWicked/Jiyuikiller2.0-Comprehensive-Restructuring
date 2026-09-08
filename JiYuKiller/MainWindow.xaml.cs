@@ -43,6 +43,7 @@ namespace JiYuKiller
         private const uint MOD_SHIFT = 0x0004;
         private const int HOTKEY_FAKEFULL = 9000;
         private const int HOTKEY_SHOWHIDE = 9001;
+        private const int WM_COPYDATA = 0x004A;
         private System.Windows.Interop.HwndSource _hwndSource;
 
         public MainWindow()

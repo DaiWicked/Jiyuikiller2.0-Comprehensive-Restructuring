@@ -27,6 +27,7 @@ namespace JiYuKiller.Services
 
         // 状态
         private bool _virusInstalled = false;
+        private bool _masterHelperInjected = false;
         private bool _studentControlled = false;
         private IntPtr _currentBroadcastWnd = IntPtr.Zero;
         private IntPtr _currentBlackScreenWnd = IntPtr.Zero;
@@ -76,6 +77,20 @@ namespace JiYuKiller.Services
 
         [DllImport("user32.dll")]
         private static extern int GetSystemMetrics(int nIndex);
+
+        [DllImport("ntdll.dll")]
+        private static extern int NtTerminateProcess(IntPtr hProcess, int exitCode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, int processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool TerminateProcess(IntPtr hProcess, uint uExitCode);
+
+        private const uint PROCESS_TERMINATE = 0x0001;
 
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
