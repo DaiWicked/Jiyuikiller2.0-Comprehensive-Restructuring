@@ -677,6 +677,8 @@ namespace JiYuKiller
             PageDebug.Visibility = Visibility.Collapsed;
             PageCustom.Visibility = Visibility.Collapsed;
             PageUdpAttack.Visibility = Visibility.Collapsed;
+            PageChat.Visibility = Visibility.Collapsed;
+            PageScreenshot.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
             NavQuick.FontWeight = FontWeights.Normal;
@@ -686,6 +688,8 @@ namespace JiYuKiller
             NavDebug.FontWeight = FontWeights.Normal;
             NavAbout.FontWeight = FontWeights.Normal;
             NavUdpAttack.FontWeight = FontWeights.Normal;
+            NavChat.FontWeight = FontWeights.Normal;
+            NavScreenshot.FontWeight = FontWeights.Normal;
 
             switch (pageName)
             {

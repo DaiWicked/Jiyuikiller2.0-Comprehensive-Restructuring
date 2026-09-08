@@ -926,11 +926,11 @@
                                         <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="88" Height="44" />
                                         <Button x:Name="NavCustom" Content="自定义设置" Click="NavCustom_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="76" Height="44" />
                                         <Button x:Name="NavUdpAttack" Content="UDP攻击" Click="NavUdpAttack_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
+                                        <Button x:Name="NavChat" Content="小小私聊" Click="NavChat_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
+                                        <Button x:Name="NavScreenshot" Content="截图替换" Click="NavScreenshot_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
                                         <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
                                         <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
-                                        <Button x:Name="NavChat" Content="小小私聊" Click="NavChat_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
-                                        <Button x:Name="NavScreenshot" Content="截图替换" Click="NavScreenshot_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                     </StackPanel>
                                 </Grid>
                             </ScrollViewer>
