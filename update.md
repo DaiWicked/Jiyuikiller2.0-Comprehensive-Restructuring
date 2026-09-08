@@ -1,5 +1,29 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 代码审查与稳定性修复
+
+### 调试模式修复
+- 修复调试模式关闭后重启仍为开启状态的bug
+- 原因：DebugMode_Checked/Unchecked只设置了值，未调用_settings.Save()保存到文件
+- 添加_settings.Save()确保设置持久化
+- 添加Logger.Instance.Enable()/Disable()实时启用/禁用日志
+- 关闭调试模式时先记录日志再禁用
+
+### 退出进程清理
+- 修复退出程序后teacher_sim.exe仍在后台运行的问题
+- ExitApplication()添加_teacherSimService.Stop()调用
+- 退出前检查教师端模拟进程是否运行并停止
+
+### 代码审查结果
+- 总代码量：6338行（19个.cs + 2个.xaml）
+- 70个Click事件全部有对应方法
+- 12个页面控件XAML和CS引用完整
+- 11个服务文件全部在csproj中编译
+- 编译结果：0错误，0警告
+- 15处CheckBox空引用保护
+- 全局异常双保险：DispatcherUnhandledException + AppDomain.UnhandledException
+- 日志覆盖：147次调用（ButtonClick 53 + Info 41 + Debug 14 + Error 8等）
+
 ## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 最终审核与资源修复
 
 ### 代码最终审核
