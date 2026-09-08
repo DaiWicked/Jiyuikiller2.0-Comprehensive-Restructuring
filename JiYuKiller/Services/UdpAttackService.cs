@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace JiYuKiller.Services
 {
@@ -18,6 +19,27 @@ namespace JiYuKiller.Services
     /// </summary>
     public class UdpAttackService
     {
+        [DllImport("iphlpapi.dll", ExactSpelling = true)]
+        private static extern int SendARP(int DestIP, int SrcIP, byte[] pMacAddr, ref uint PhyAddrLen);
+
+        private string GetMacAddress(string ip)
+        {
+            try
+            {
+                IPAddress ipAddr = IPAddress.Parse(ip);
+                byte[] ipBytes = ipAddr.GetAddressBytes();
+                int destIp = BitConverter.ToInt32(ipBytes, 0);
+                byte[] mac = new byte[6];
+                uint len = 6;
+                int result = SendARP(destIp, 0, mac, ref len);
+                if (result == 0)
+                {
+                    return BitConverter.ToString(mac, 0, 6);
+                }
+            }
+            catch { }
+            return "未知";
+        }
         private static readonly Lazy<UdpAttackService> _instance = new Lazy<UdpAttackService>(() => new UdpAttackService());
         public static UdpAttackService Instance => _instance.Value;
 
@@ -246,9 +268,10 @@ namespace JiYuKiller.Services
                                 }
                                 catch { }
 
+                                string mac = GetMacAddress(scanIp);
                                 lock (hosts)
                                 {
-                                    hosts.Add(new NetworkHost { IP = scanIp, HostName = hostName });
+                                    hosts.Add(new NetworkHost { IP = scanIp, MAC = mac, HostName = hostName });
                                 }
                             }
                         }
@@ -361,10 +384,11 @@ namespace JiYuKiller.Services
     public class NetworkHost
     {
         public string IP { get; set; }
+        public string MAC { get; set; }
         public string HostName { get; set; }
         public override string ToString()
         {
-            return string.IsNullOrEmpty(HostName) ? IP : $"{IP} ({HostName})";
+            return $"[{MAC}] - {IP}";
         }
     }
 }

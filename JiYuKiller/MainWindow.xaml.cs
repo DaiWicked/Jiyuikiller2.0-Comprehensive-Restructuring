@@ -1326,21 +1326,24 @@ namespace JiYuKiller
             svc.OnLog += (msg) => Dispatcher.Invoke(() => TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " " + msg + "\n"));
             svc.OnScanComplete += (hosts) => Dispatcher.Invoke(() =>
             {
-                TextUdpScanResult.Text = $"发现 {hosts.Count} 台主机，右键点击选择目标IP";
-                var menu = new System.Windows.Controls.ContextMenu();
+                ListUdpScanResult.Items.Clear();
                 foreach (var host in hosts)
                 {
-                    var item = new System.Windows.Controls.MenuItem { Header = host.ToString(), Tag = host.IP };
-                    item.Click += (s, args) =>
-                    {
-                        TextUdpTargetIp.Text = (string)((System.Windows.Controls.MenuItem)s).Tag;
-                        TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " 已选择目标: " + TextUdpTargetIp.Text + "\n");
-                    };
-                    menu.Items.Add(item);
+                    ListUdpScanResult.Items.Add(host);
                 }
-                TextUdpScanResult.ContextMenu = menu;
+                TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + $" 扫描完成，发现 {hosts.Count} 台主机，点击列表选择目标\n");
             });
             svc.ScanNetwork();
+        }
+
+        private void ListUdpScanResult_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (ListUdpScanResult.SelectedItem is Services.NetworkHost host)
+            {
+                TextUdpTargetIp.Text = host.IP;
+                TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " 已选择目标: " + host.ToString() + "\n");
+                Services.Logger.Instance.ButtonClick("UDP攻击-选择目标", "ListUdpScanResult");
+            }
         }
 
         private void BtnUdpSendMsg_Click(object sender, RoutedEventArgs e)
