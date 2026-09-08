@@ -293,9 +293,9 @@ namespace JiYuKiller
 
         private void BtnMinimize_Click(object sender, RoutedEventArgs e)
         {
-            Services.Logger.Instance.ButtonClick("最小化(隐藏到托盘)", "BtnMinimize");
-            // 参考原项目逻辑：最小化也隐藏到托盘
-            HideToTray();
+            Services.Logger.Instance.ButtonClick("最小化(到任务栏)", "BtnMinimize");
+            // 最小化到任务栏（不是隐藏到托盘）
+            this.WindowState = WindowState.Minimized;
         }
 
         private void BtnClose_Click(object sender, RoutedEventArgs e)

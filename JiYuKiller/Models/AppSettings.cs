@@ -127,7 +127,9 @@ namespace JiYuKiller.Models
                     using (FileStream fs = new FileStream(SettingsPath, FileMode.Open))
                     {
                         AppSettings settings = (AppSettings)serializer.Deserialize(fs);
-                        Services.Logger.Instance.Info($"设置加载成功，从: {SettingsPath}");
+                        // 强制更新版本号（版本号总是使用编译时的默认值，不使用保存的旧值）
+                        settings.Version = new AppSettings().Version;
+                        Services.Logger.Instance.Info($"设置加载成功，从: {SettingsPath}，版本号已更新为: {settings.Version}");
                         return settings;
                     }
                 }
