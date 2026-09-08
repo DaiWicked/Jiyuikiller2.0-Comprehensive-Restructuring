@@ -507,12 +507,12 @@
                         </Grid>
 
                         <!-- 本机信息 -->
-                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <TextBlock x:Name="TextChatLocalInfo" Text="本机信息获取中..." FontSize="13" Foreground="#FF2d2d44" TextWrapping="Wrap" />
                         </Border>
 
                         <!-- 目标配置 -->
-                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <TextBlock Text="目标座位号" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6" />
                                 <Grid>
@@ -528,7 +528,7 @@
                         </Border>
 
                         <!-- 消息内容 -->
-                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <TextBlock Text="消息内容 (最多80字)" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6" />
                                 <TextBox x:Name="TextChatMessage" Style="{StaticResource GlassTextBox}" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" />
@@ -537,7 +537,7 @@
                         </Border>
 
                         <!-- 聊天记录 -->
-                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <Grid Margin="0,0,0,6">
                                     <TextBlock Text="聊天记录" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
@@ -565,12 +565,12 @@
                         </Grid>
 
                         <!-- 状态 -->
-                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <TextBlock x:Name="TextScreenshotStatus" Text="加载中..." FontSize="13" Foreground="#FF2d2d44" TextWrapping="Wrap" />
                         </Border>
 
                         <!-- 图片预览 -->
-                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <TextBlock Text="图片预览" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6" />
                                 <Border Background="#FFEEEEF5" CornerRadius="8" Height="180" VerticalAlignment="Stretch">
@@ -581,7 +581,7 @@
                         </Border>
 
                         <!-- 操作按钮 -->
-                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <Button x:Name="BtnScreenshotChoose" Content="选择图片" Click="BtnScreenshotChoose_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="36" Margin="0,0,0,6" />
                                 <Button x:Name="BtnScreenshotClear" Content="清除图片" Click="BtnScreenshotClear_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" Margin="0,0,0,6" />
