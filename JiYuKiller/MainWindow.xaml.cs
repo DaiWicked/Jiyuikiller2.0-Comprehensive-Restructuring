@@ -23,6 +23,10 @@ namespace JiYuKiller
         private bool _isExiting = false;
         private bool _isTopMost = false;
         private Effects.GlassyWindowManager _glassyManager;
+        private readonly Services.ChatService _chatService = new Services.ChatService();
+        private readonly Services.ScreenshotService _screenshotService = new Services.ScreenshotService();
+        private string _chatTargetIP = "";
+        private int _chatTargetSeat = 0;
 
         // Win32 API
         [DllImport("user32.dll")]
@@ -363,6 +367,18 @@ namespace JiYuKiller
         {
             Services.Logger.Instance.ButtonClick("关于", "NavAbout");
             ShowPage("about");
+        }
+
+        private void NavChat_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("小小私聊", "NavChat");
+            ShowPage("chat");
+        }
+
+        private void NavScreenshot_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("截图替换", "NavScreenshot");
+            ShowPage("screenshot");
         }
 
         private void NavScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -708,6 +724,16 @@ namespace JiYuKiller
                     NavUdpAttack.FontWeight = FontWeights.Bold;
                     UpdateUdpLocalInfo();
                     RegisterUdpLog();
+                    break;
+                case "chat":
+                    PageChat.Visibility = Visibility.Visible;
+                    NavChat.FontWeight = FontWeights.Bold;
+                    InitChat();
+                    break;
+                case "screenshot":
+                    PageScreenshot.Visibility = Visibility.Visible;
+                    NavScreenshot.FontWeight = FontWeights.Bold;
+                    InitScreenshot();
                     break;
             }
 
@@ -1486,5 +1512,137 @@ namespace JiYuKiller
             TextUdpLog.Text = "日志已清空\n";
         }
         #endregion
+
+        #region 小小私聊
+
+        private bool _chatInitialized = false;
+
+        private void InitChat()
+        {
+            if (!_chatInitialized)
+            {
+                _chatService.OnLog += (msg) => Dispatcher.Invoke(() => { TextChatLocalInfo.Text = msg; });
+                _chatService.OnChatRecord += (msg) => Dispatcher.Invoke(() => { TextChatLog.AppendText(msg + "\n"); TextChatLog.ScrollToEnd(); });
+                _chatService.OnSendResult += (success, msg) => Dispatcher.Invoke(() => { System.Windows.MessageBox.Show(msg, success ? "发送成功" : "发送失败"); });
+                _chatInitialized = true;
+                Services.Logger.Instance.Info("[Chat] 小小私聊事件注册完成");
+            }
+            TextChatLog.Clear();
+            TextChatLog.AppendText("~~ 欢迎使用小小私聊 ~~\n");
+            TextChatLog.AppendText("原理：极域学生端不对UDP包做身份验证，可构造数据包发送消息。\n");
+            TextChatLog.AppendText("提示：座位号换算算法移植自jiyu_chat，按6人一排布局推算。\n");
+            _chatService.InitLocalInfo();
+        }
+
+        private async void BtnChatFind_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.Info("[Chat] 点击查找同学");
+            if (!int.TryParse(TextChatTargetSeat.Text, out int seatID) || seatID <= 0)
+            {
+                TextChatTargetStatus.Text = "请输入有效的座位号！";
+                TextChatLog.AppendText("请输入有效的座位号！\n");
+                return;
+            }
+            TextChatTargetStatus.Text = "查找中...";
+            var result = await _chatService.FindClassmate(seatID);
+            TextChatTargetStatus.Text = result.Item3;
+            if (result.Item1)
+            {
+                _chatTargetIP = result.Item2;
+                _chatTargetSeat = seatID;
+            }
+        }
+
+        private async void BtnChatSend_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.Info("[Chat] 点击发送消息");
+            await _chatService.SendMessage(_chatTargetIP, TextChatMessage.Text, _chatTargetSeat);
+            TextChatMessage.Clear();
+        }
+
+        private void BtnChatClear_Click(object sender, RoutedEventArgs e)
+        {
+            TextChatLog.Clear();
+            Services.Logger.Instance.Info("[Chat] 清空聊天记录");
+        }
+
+        private void BtnChatBack_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPage("quick");
+        }
+
+        #endregion
+
+        #region 截图替换
+
+        private bool _screenshotInitialized = false;
+        private string _screenshotTempPath = "";
+
+        private void InitScreenshot()
+        {
+            if (!_screenshotInitialized)
+            {
+                _screenshotService.OnLog += (msg) => Services.Logger.Instance.Info("[Screenshot] " + msg);
+                _screenshotService.OnStatusChanged += (msg) => Dispatcher.Invoke(() => { TextScreenshotStatus.Text = msg; });
+                _screenshotInitialized = true;
+                Services.Logger.Instance.Info("[Screenshot] 截图替换事件注册完成");
+            }
+            _screenshotService.LoadCurrent();
+            UpdateScreenshotPreview();
+        }
+
+        private void UpdateScreenshotPreview()
+        {
+            var img = _screenshotService.LoadPreviewImage();
+            ImgScreenshotPreview.Source = img;
+            TextScreenshotPath.Text = string.IsNullOrEmpty(_screenshotService.CurrentImagePath) ? "（未设置）" : _screenshotService.CurrentImagePath;
+        }
+
+        private void BtnScreenshotChoose_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.Info("[Screenshot] 点击选择图片");
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "选择用于替换屏幕截图的图片",
+                Filter = "图片文件(*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|所有文件(*.*)|*.*"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                _screenshotTempPath = dlg.FileName;
+                _screenshotService.ChooseImage(dlg.FileName);
+                UpdateScreenshotPreview();
+            }
+        }
+
+        private void BtnScreenshotClear_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.Info("[Screenshot] 点击清除图片");
+            _screenshotTempPath = "";
+            _screenshotService.ClearImage();
+            UpdateScreenshotPreview();
+        }
+
+        private void BtnScreenshotApply_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.Info("[Screenshot] 点击应用");
+            bool ok = _screenshotService.Apply(_controller);
+            UpdateScreenshotPreview();
+            System.Windows.MessageBox.Show(ok ? "应用成功" : "应用失败", "截图替换");
+        }
+
+        private void BtnScreenshotCancel_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.Info("[Screenshot] 点击取消");
+            _screenshotService.LoadCurrent();
+            UpdateScreenshotPreview();
+        }
+
+        private void BtnScreenshotBack_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPage("quick");
+        }
+
+        #endregion
     }
 }
+

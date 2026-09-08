@@ -493,6 +493,113 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
+                <!-- 小小私聊页面 -->
+                <ScrollViewer x:Name="PageChat" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                    <StackPanel Margin="16,12">
+                        <!-- 标题栏 -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="←" Click="BtnChatBack_Click" Style="{StaticResource GlassButton}" Width="36" Height="32" FontSize="14" Padding="0" />
+                            <TextBlock Grid.Column="1" Text="小小私聊 (beta)" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#FF1a1a2e" />
+                        </Grid>
+
+                        <!-- 本机信息 -->
+                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                            <TextBlock x:Name="TextChatLocalInfo" Text="本机信息获取中..." FontSize="13" Foreground="#FF2d2d44" TextWrapping="Wrap" />
+                        </Border>
+
+                        <!-- 目标配置 -->
+                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="目标座位号" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TextChatTargetSeat" Style="{StaticResource GlassTextBox}" Height="32" VerticalContentAlignment="Center" InputScope="Number" />
+                                    <Button Grid.Column="1" Content="查找同学" Click="BtnChatFind_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Margin="8,0,0,0" Height="32" Padding="12,0" />
+                                </Grid>
+                                <TextBlock x:Name="TextChatTargetStatus" Text="未查找" FontSize="12" Foreground="#FF666680" Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 消息内容 -->
+                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="消息内容 (最多80字)" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6" />
+                                <TextBox x:Name="TextChatMessage" Style="{StaticResource GlassTextBox}" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" />
+                                <Button Content="发送消息" Click="BtnChatSend_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Margin="0,8,0,0" Height="36" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 聊天记录 -->
+                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="聊天记录" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
+                                    <Button Content="清空" Click="BtnChatClear_Click" Style="{StaticResource GlassButton}" Width="56" Height="26" FontSize="11" Padding="0" HorizontalAlignment="Right" />
+                                </Grid>
+                                <TextBox x:Name="TextChatLog" Style="{StaticResource GlassTextBox}" Height="160" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="原理：极域学生端不对UDP包做身份验证，可构造数据包发送消息。座位号按6人一排布局推算。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,4" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 截图替换页面 -->
+                <ScrollViewer x:Name="PageScreenshot" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                    <StackPanel Margin="16,12">
+                        <!-- 标题栏 -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="←" Click="BtnScreenshotBack_Click" Style="{StaticResource GlassButton}" Width="36" Height="32" FontSize="14" Padding="0" />
+                            <TextBlock Grid.Column="1" Text="截图替换" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#FF1a1a2e" />
+                        </Grid>
+
+                        <!-- 状态 -->
+                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                            <TextBlock x:Name="TextScreenshotStatus" Text="加载中..." FontSize="13" Foreground="#FF2d2d44" TextWrapping="Wrap" />
+                        </Border>
+
+                        <!-- 图片预览 -->
+                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="图片预览" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6" />
+                                <Border Background="#FFEEEEF5" CornerRadius="8" Height="180" VerticalAlignment="Stretch">
+                                    <Image x:Name="ImgScreenshotPreview" Stretch="Uniform" Margin="4" />
+                                </Border>
+                                <TextBlock x:Name="TextScreenshotPath" Text="（未设置）" FontSize="11" Foreground="#FF888899" Margin="0,6,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 操作按钮 -->
+                        <Border Style="{StaticResource GlassCard}" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <Button x:Name="BtnScreenshotChoose" Content="选择图片" Click="BtnScreenshotChoose_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="36" Margin="0,0,0,6" />
+                                <Button x:Name="BtnScreenshotClear" Content="清除图片" Click="BtnScreenshotClear_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" Margin="0,0,0,6" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Content="应用" Click="BtnScreenshotApply_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="36" Margin="0,0,4,0" />
+                                    <Button Grid.Column="1" Content="取消" Click="BtnScreenshotCancel_Click" Style="{StaticResource GlassButton}" Background="#FF6C757D" Height="36" Margin="4,0,0,0" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="原理：将图片写入配置，DLL注入后在教师端监控时显示该图片替换真实屏幕。支持png/jpg/jpeg/bmp格式。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,4" />
+                    </StackPanel>
+                </ScrollViewer>
+
 
                 <!-- 帮助文档页面 -->
                 <Grid x:Name="PageHelp" Visibility="Collapsed">
@@ -822,6 +929,8 @@
                                         <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
                                         <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
                                         <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
+                                        <Button x:Name="NavChat" Content="小小私聊" Click="NavChat_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
+                                        <Button x:Name="NavScreenshot" Content="截图替换" Click="NavScreenshot_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                     </StackPanel>
                                 </Grid>
                             </ScrollViewer>
