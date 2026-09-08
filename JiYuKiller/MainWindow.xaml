@@ -53,7 +53,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40" />
                     <RowDefinition Height="*" />
-                    <RowDefinition Height="56" />
+                    <RowDefinition Height="90" />
                 </Grid.RowDefinitions>
 
             <!-- 标题栏（整行可拖动，Background=Transparent确保空白区域也接收鼠标事件） -->
@@ -80,7 +80,7 @@
             <Grid Grid.Row="1" Margin="16,8">
 
                 <!-- 设置页面 -->
-                <ScrollViewer x:Name="PageSettings" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer x:Name="PageSettings" VerticalScrollBarVisibility="Hidden">
                     <StackPanel Margin="0,0,0,8">
                         <!-- 进程控制分组 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
@@ -129,7 +129,7 @@
                 </ScrollViewer>
 
                 <!-- 快捷栏页面（液态玻璃卡片效果） -->
-                <ScrollViewer x:Name="PageQuick" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                <ScrollViewer x:Name="PageQuick" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
                     <StackPanel Margin="0,0,0,8">
                         <!-- 当前状态 - 玻璃卡片 -->
                         <Grid Margin="0,0,0,12">
@@ -208,7 +208,7 @@
 
                 <!-- 关于页面 -->
                 <Grid x:Name="PageAbout" Visibility="Collapsed">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer VerticalScrollBarVisibility="Hidden">
                         <StackPanel HorizontalAlignment="Center" Margin="0,20">
                             <Image Source="Assets/about.png" Width="280" Margin="0,0,0,16" Stretch="Uniform" />
                             <TextBlock Text="学习不通" FontSize="24" FontWeight="Bold" Foreground="#FF0A0A0A" HorizontalAlignment="Center" />
@@ -230,7 +230,7 @@
 
                 <!-- 关于我页面 -->
                 <Grid x:Name="PageAboutMe" Visibility="Collapsed">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer VerticalScrollBarVisibility="Hidden">
                         <StackPanel HorizontalAlignment="Center" Margin="0,20">
                             <!-- 返回按钮 -->
                             <Button x:Name="BtnBackFromAboutMe" Content="← 返回" Style="{StaticResource GlassButton}" Click="BtnBackFromAboutMe_Click" HorizontalAlignment="Left" Margin="0,0,0,12" Background="#FF6C757D" Padding="12,6" />
@@ -261,7 +261,7 @@
                 </Grid>
 
                 <!-- 极客工具页面 -->
-                <ScrollViewer x:Name="PageGeek" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                <ScrollViewer x:Name="PageGeek" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
                     <StackPanel Margin="0,0,0,8">
                         <TextBlock Text="极客工具" FontSize="20" FontWeight="Bold" Foreground="#FF000000" HorizontalAlignment="Center" Margin="0,0,0,12" />
                         <TextBlock Text="增强功能模块" FontSize="13" Foreground="#FF555555" HorizontalAlignment="Center" Margin="0,0,0,16" />
@@ -310,7 +310,7 @@
                     </Grid>
 
                     <!-- 内容区域 -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden">
                         <StackPanel Margin="0,0,0,8">
                             <!-- 驱动设置 -->
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
@@ -449,7 +449,7 @@
                     </UniformGrid>
 
                     <!-- 内容区域 -->
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Hidden">
                         <StackPanel Margin="4,0,4,8">
 
                             <!-- 介绍 -->
@@ -543,7 +543,7 @@
 
                 <!-- 自定义设置页面 -->
                 <Grid x:Name="PageCustom" Visibility="Collapsed">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="16,12">
                             <TextBlock Text="自定义设置" FontSize="18" FontWeight="Bold" Foreground="#FF0A0A0A" Margin="0,0,0,12" />
 
@@ -658,64 +658,92 @@
                              Foreground="#FFD4D4D4"
                              BorderBrush="#FF0A0A0A"
                              BorderThickness="1"
-                             VerticalScrollBarVisibility="Auto"
-                             HorizontalScrollBarVisibility="Auto"
+                             VerticalScrollBarVisibility="Hidden"
+                             HorizontalScrollBarVisibility="Hidden"
                              TextWrapping="NoWrap" />
                 </Grid>
 
             </Grid>
 
             <!-- 底部悬浮导航栏（液态玻璃 - 可横向滚动） -->
-            <Grid Grid.Row="2" Margin="10,0,10,8" HorizontalAlignment="Stretch" Height="66">
-                <!-- 层1: 外阴影（悬浮感） -->
-                <Border CornerRadius="28" Background="#2E000000" Margin="0,5,0,-3" Opacity="0.7">
-                    <Border.Effect><BlurEffect Radius="14" /></Border.Effect>
-                </Border>
-                <!-- 层2: 外层光晕（液态膨胀） -->
-                <Border CornerRadius="28" Background="#40A8D0F0" Margin="-4" Opacity="0.5">
+            <Grid Grid.Row="2" Margin="10,0,10,20" HorizontalAlignment="Stretch" Height="66">
+                <!-- 层1: 外阴影（增强悬浮感，参考liquid-glass-arc 0 4px 24px rgba(0,0,0,0.18)） -->
+                <Border CornerRadius="28" Background="#45000000" Margin="0,6,0,-4" Opacity="0.8">
                     <Border.Effect><BlurEffect Radius="16" /></Border.Effect>
+                </Border>
+                <!-- 层2: 外层光晕（液态膨胀，增强与背景区分） -->
+                <Border CornerRadius="28" Background="#50A8D0F0" Margin="-5" Opacity="0.55">
+                    <Border.Effect><BlurEffect Radius="18" /></Border.Effect>
                 </Border>
                 <!-- 层3: 边缘折射边框 -->
                 <Border CornerRadius="26" BorderThickness="1.5">
                     <Border.BorderBrush>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#D0FFFFFF" Offset="0" />
-                            <GradientStop Color="#70FFFFFF" Offset="0.25" />
-                            <GradientStop Color="#30FFFFFF" Offset="0.6" />
-                            <GradientStop Color="#90B0C8D8" Offset="1" />
+                            <GradientStop Color="#E0FFFFFF" Offset="0" />
+                            <GradientStop Color="#80FFFFFF" Offset="0.2" />
+                            <GradientStop Color="#30FFFFFF" Offset="0.55" />
+                            <GradientStop Color="#A0B0C8D8" Offset="1" />
                         </LinearGradientBrush>
                     </Border.BorderBrush>
                     <!-- 层4: 玻璃主体 -->
                     <Border CornerRadius="24" Padding="4">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#55FFFFFF" Offset="0" />
-                                <GradientStop Color="#38FFFFFF" Offset="0.5" />
-                                <GradientStop Color="#28FFFFFF" Offset="1" />
+                                <GradientStop Color="#60FFFFFF" Offset="0" />
+                                <GradientStop Color="#40FFFFFF" Offset="0.4" />
+                                <GradientStop Color="#2AFFFFFF" Offset="0.75" />
+                                <GradientStop Color="#1FFFFFFF" Offset="1" />
                             </LinearGradientBrush>
                         </Border.Background>
                         <Grid>
-                            <!-- 层5: 顶部高光 -->
-                            <Border CornerRadius="24,24,0,0" Height="18" VerticalAlignment="Top" IsHitTestVisible="False">
+                            <!-- 层5: 顶部高光（增强，模拟光线照射） -->
+                            <Border CornerRadius="24,24,0,0" Height="22" VerticalAlignment="Top" IsHitTestVisible="False">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#70FFFFFF" Offset="0" />
+                                        <GradientStop Color="#85FFFFFF" Offset="0" />
+                                        <GradientStop Color="#30FFFFFF" Offset="0.5" />
                                         <GradientStop Color="#00FFFFFF" Offset="1" />
                                     </LinearGradientBrush>
                                 </Border.Background>
                             </Border>
+                            <!-- 层6: 底部暗化（增强立体感，与顶部高光对比） -->
+                            <Border CornerRadius="0,0,24,24" Height="14" VerticalAlignment="Bottom" IsHitTestVisible="False">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#00000000" Offset="0" />
+                                        <GradientStop Color="#20000000" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                            <!-- 层7: 内阴影边缘（参考liquid-glass-arc inset 0 0 20px -5px rgba(255,255,255,0.45)） -->
+                            <Border CornerRadius="24" BorderThickness="2" IsHitTestVisible="False">
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#50FFFFFF" Offset="0" />
+                                        <GradientStop Color="#10FFFFFF" Offset="0.5" />
+                                        <GradientStop Color="#30000000" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+                            </Border>
                             <!-- 可横向滚动的导航区域 -->
-                            <ScrollViewer x:Name="NavScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="2,4" PreviewMouseWheel="NavScrollViewer_PreviewMouseWheel">
+                            <ScrollViewer x:Name="NavScrollViewer" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Padding="2,4" PreviewMouseWheel="NavScrollViewer_PreviewMouseWheel">
                                 <Grid x:Name="NavContentGrid" HorizontalAlignment="Left" Height="48">
                                     <!-- 滑动指示器（微妙背景高亮） -->
                                     <Border x:Name="NavIndicator" HorizontalAlignment="Left" VerticalAlignment="Center"
                                             Height="44" CornerRadius="18" Margin="0" Width="60" IsHitTestVisible="False">
                                         <Border.Background>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                <GradientStop Color="#50FFFFFF" Offset="0" />
-                                                <GradientStop Color="#30FFFFFF" Offset="1" />
+                                                <GradientStop Color="#60FFFFFF" Offset="0" />
+                                                <GradientStop Color="#38FFFFFF" Offset="1" />
                                             </LinearGradientBrush>
                                         </Border.Background>
+                                        <Border.BorderBrush>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#80FFFFFF" Offset="0" />
+                                                <GradientStop Color="#30FFFFFF" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Border.BorderBrush>
+                                        <Border.BorderThickness>1</Border.BorderThickness>
                                         <Border.RenderTransform>
                                             <TranslateTransform x:Name="NavIndicatorTransform" X="0" />
                                         </Border.RenderTransform>
