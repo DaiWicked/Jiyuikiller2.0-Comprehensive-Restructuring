@@ -8,7 +8,7 @@
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
-        ResizeMode="NoResize"
+        ResizeMode="NoResize" ShowInTaskbar="True"
         MinWidth="400" MinHeight="450">
 
     <Window.Resources>

@@ -127,18 +127,19 @@ namespace JiYuKiller
         private void ShowMainWindow()
         {
             Services.Logger.Instance.ButtonClick("显示主界面", "TrayMenu");
-            this.Visibility = Visibility.Visible;
+            this.ShowInTaskbar = true;
+            this.Show();
             this.WindowState = WindowState.Normal;
             this.Activate();
             this.Topmost = true;
             this.Topmost = false;
             Services.Logger.Instance.Info("主窗口已显示");
         }
-
         private void HideToTray()
         {
             Services.Logger.Instance.FunctionCall("HideToTray");
-            this.Visibility = Visibility.Collapsed;
+            this.ShowInTaskbar = false;
+            this.Hide();
 
             if (!_hideTipShown)
             {
@@ -149,7 +150,6 @@ namespace JiYuKiller
 
             Services.Logger.Instance.Info("主窗口已隐藏到托盘");
         }
-
         private void ExitApplication()
         {
             Services.Logger.Instance.ButtonClick("退出软件", "TrayMenu");
