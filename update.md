@@ -1,5 +1,26 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 教师端模拟控制台修复与增强
+
+### 教师端模拟控制台修复
+- 修复控制台无反馈问题：teacher_sim.py的print()输出到stdout，之前只监控日志文件导致收不到输出
+- 修复编码问题：teacher_sim.exe输出是GBK编码，改为Encoding.GetEncoding("GB2312")解码
+- 修复Python stdout全缓冲问题：重新打包teacher_sim.exe，在文件开头添加sys.stdout.reconfigure(line_buffering=True)
+- 添加OutputDataReceived事件异步接收stdout输出
+- 添加ErrorDataReceived事件接收stderr输出
+- 启动前验证teacher_sim.exe是否存在，不存在时显示错误提示
+- 启动后等待2秒检查进程是否存活，启动失败显示退出码
+
+### 教师端模拟功能增强
+- 新增目标操作区域：目标IP输入框
+- 新增快捷操作按钮：发送消息、黑屏锁定、解锁、关机、重启、屏幕预览、学生信息
+- 关机/重启操作添加确认弹窗
+- 发送消息自动填充命令到控制台输入框
+
+### teacher_sim.py修改说明
+- 仅添加3行：sys.stdout.reconfigure(line_buffering=True)和sys.stderr.reconfigure(line_buffering=True)
+- 目的：确保重定向stdout时print()实时输出，不修改任何业务逻辑
+
 ## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 教师端模拟与单文件打包
 
 ### 极域教师端模拟 (TeacherSimService)

@@ -61,11 +61,16 @@ namespace JiYuKiller.Services
                     string workDir = string.IsNullOrEmpty(WorkDir) ? Path.GetDirectoryName(ExePath) : WorkDir;
                     Directory.CreateDirectory(workDir);
 
-                    // 清理旧日志
-                    string logPath = Path.Combine(workDir, "teacher_sim.log");
-                    if (File.Exists(logPath))
+                    // 验证文件
+                    FileInfo fi = new FileInfo(ExePath);
+                    Logger.Instance.Info($"[TeacherSim] 文件验证: {ExePath}, 大小: {fi.Length} bytes");
+                    OnLogOutput?.Invoke($"[系统] 正在启动 teacher_sim.exe ({fi.Length / 1024 / 1024}MB)...");
+
+                    // 清理桌面旧日志（teacher_sim.py硬编码日志到桌面）
+                    string desktopLogPath = GetLogPath();
+                    if (File.Exists(desktopLogPath))
                     {
-                        try { File.Delete(logPath); } catch { }
+                        try { File.Delete(desktopLogPath); } catch { }
                     }
                     _lastLogPosition = 0;
 
@@ -78,8 +83,9 @@ namespace JiYuKiller.Services
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         CreateNoWindow = true,
-                        StandardOutputEncoding = Encoding.UTF8,
-                        StandardErrorEncoding = Encoding.UTF8
+                        // teacher_sim.exe 输出是GBK编码（中文Windows控制台默认编码）
+                        StandardOutputEncoding = Encoding.GetEncoding("GB2312"),
+                        StandardErrorEncoding = Encoding.GetEncoding("GB2312")
                     };
 
                     // 设置环境变量
@@ -88,6 +94,25 @@ namespace JiYuKiller.Services
                     _process = new Process();
                     _process.StartInfo = psi;
                     _process.EnableRaisingEvents = true;
+
+                    // 接收stdout输出（teacher_sim的print输出到stdout）
+                    _process.OutputDataReceived += (s, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            Logger.Instance.Debug($"[TeacherSim] stdout: {e.Data}");
+                            OnLogOutput?.Invoke(e.Data);
+                        }
+                    };
+                    _process.ErrorDataReceived += (s, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            Logger.Instance.Error($"[TeacherSim] stderr: {e.Data}");
+                            OnLogOutput?.Invoke($"[错误] {e.Data}");
+                        }
+                    };
+
                     _process.Exited += (s, e) =>
                     {
                         _isRunning = false;
@@ -97,11 +122,27 @@ namespace JiYuKiller.Services
                     };
 
                     Logger.Instance.Info($"[TeacherSim] 启动 teacher_sim.exe, 频道: {Channel}, 工作目录: {workDir}");
-                    _process.Start();
+                    bool started = _process.Start();
+
+                    // 开始异步读取stdout/stderr
+                    _process.BeginOutputReadLine();
+                    _process.BeginErrorReadLine();
+
+                    // 等待2秒检查进程是否还在运行
+                    Thread.Sleep(2000);
+                    if (_process.HasExited)
+                    {
+                        Logger.Instance.Error($"[TeacherSim] 进程启动后立即退出，退出码: {_process.ExitCode}");
+                        OnLogOutput?.Invoke($"[错误] teacher_sim.exe 启动失败，退出码: {_process.ExitCode}");
+                        _isRunning = false;
+                        OnStateChanged?.Invoke(false);
+                        return false;
+                    }
 
                     _isRunning = true;
                     OnStateChanged?.Invoke(true);
-                    OnLogOutput?.Invoke($"[系统] 教师端模拟已启动，频道: {Channel}");
+                    OnLogOutput?.Invoke($"[系统] 教师端模拟已启动，PID: {_process.Id}，频道: {Channel}");
+                    OnLogOutput?.Invoke("[系统] 等待学生端登录... 输入 help 查看命令");
 
                     // 启动日志监控线程
                     _logMonitorThread = new Thread(MonitorLogFile)
@@ -190,15 +231,37 @@ namespace JiYuKiller.Services
         }
 
         /// <summary>
+        /// 获取日志文件路径（teacher_sim.py硬编码为用户桌面）
+        /// </summary>
+        public string GetLogPath()
+        {
+            // teacher_sim.py中 LOG_DIR = os.path.join(os.path.expanduser('~'), 'Desktop')
+            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            return Path.Combine(desktop, "teacher_sim.log");
+        }
+
+        /// <summary>
         /// 监控日志文件线程
         /// </summary>
         private void MonitorLogFile()
         {
-            string logPath = Path.Combine(
-                string.IsNullOrEmpty(WorkDir) ? Path.GetDirectoryName(ExePath) : WorkDir,
-                "teacher_sim.log");
-
+            string logPath = GetLogPath();
             Logger.Instance.Info($"[TeacherSim] 日志监控线程启动，监控: {logPath}");
+            OnLogOutput?.Invoke($"[系统] 日志文件: {logPath}");
+
+            // 等待日志文件创建
+            int waitCount = 0;
+            while (_isRunning && !File.Exists(logPath) && waitCount < 20)
+            {
+                Thread.Sleep(500);
+                waitCount++;
+            }
+
+            if (!File.Exists(logPath))
+            {
+                Logger.Instance.Warn("[TeacherSim] 日志文件未创建，可能teacher_sim.exe启动失败");
+                OnLogOutput?.Invoke("[警告] 日志文件未创建，请检查teacher_sim.exe是否正常启动");
+            }
 
             while (_isRunning)
             {
@@ -239,15 +302,6 @@ namespace JiYuKiller.Services
             }
 
             Logger.Instance.Info("[TeacherSim] 日志监控线程结束");
-        }
-
-        /// <summary>
-        /// 获取日志文件路径
-        /// </summary>
-        public string GetLogPath()
-        {
-            string workDir = string.IsNullOrEmpty(WorkDir) ? Path.GetDirectoryName(ExePath) : WorkDir;
-            return Path.Combine(workDir, "teacher_sim.log");
         }
     }
 }

@@ -1835,6 +1835,62 @@ namespace JiYuKiller
             _teacherSimService.SendCommand("help");
         }
 
+
+        private void BtnTeacherSimQuickMsg_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = TextTeacherSimTargetIP.Text.Trim();
+            if (string.IsNullOrEmpty(ip)) { MessageBox.Show("请先输入目标IP", "提示"); return; }
+            TextTeacherSimCommand.Text = $"msg {ip} ";
+            TextTeacherSimCommand.Focus();
+        }
+
+        private void BtnTeacherSimQuickBlack_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = TextTeacherSimTargetIP.Text.Trim();
+            if (string.IsNullOrEmpty(ip)) { MessageBox.Show("请先输入目标IP", "提示"); return; }
+            _teacherSimService.SendCommand($"bs {ip}");
+        }
+
+        private void BtnTeacherSimQuickUnlock_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = TextTeacherSimTargetIP.Text.Trim();
+            if (string.IsNullOrEmpty(ip)) { MessageBox.Show("请先输入目标IP", "提示"); return; }
+            _teacherSimService.SendCommand($"unlock {ip}");
+        }
+
+        private void BtnTeacherSimQuickShutdown_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = TextTeacherSimTargetIP.Text.Trim();
+            if (string.IsNullOrEmpty(ip)) { MessageBox.Show("请先输入目标IP", "提示"); return; }
+            if (MessageBox.Show($"确定要关闭 {ip} 吗？", "确认", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                _teacherSimService.SendCommand($"shutdown {ip}");
+            }
+        }
+
+        private void BtnTeacherSimQuickReboot_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = TextTeacherSimTargetIP.Text.Trim();
+            if (string.IsNullOrEmpty(ip)) { MessageBox.Show("请先输入目标IP", "提示"); return; }
+            if (MessageBox.Show($"确定要重启 {ip} 吗？", "确认", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                _teacherSimService.SendCommand($"reboot {ip}");
+            }
+        }
+
+        private void BtnTeacherSimQuickPreview_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = TextTeacherSimTargetIP.Text.Trim();
+            if (string.IsNullOrEmpty(ip)) { MessageBox.Show("请先输入目标IP", "提示"); return; }
+            _teacherSimService.SendCommand($"preview {ip}");
+        }
+
+        private void BtnTeacherSimQuickInfo_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = TextTeacherSimTargetIP.Text.Trim();
+            if (string.IsNullOrEmpty(ip)) { MessageBox.Show("请先输入目标IP", "提示"); return; }
+            _teacherSimService.SendCommand($"info {ip}");
+        }
         #endregion
     }
 }

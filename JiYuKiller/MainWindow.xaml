@@ -670,6 +670,30 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- 目标操作快捷命令 -->
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="目标操作（需先在控制台输入目标IP）" FontSize="13" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="目标IP:" FontSize="12" Foreground="#FF555566" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox Grid.Column="1" x:Name="TextTeacherSimTargetIP" Text="" Style="{StaticResource GlassTextBox}" FontSize="12" Padding="6,4" Height="28" />
+                                </Grid>
+                                <WrapPanel>
+                                    <Button Content="发送消息" Click="BtnTeacherSimQuickMsg_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="黑屏锁定" Click="BtnTeacherSimQuickBlack_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="解锁" Click="BtnTeacherSimQuickUnlock_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="关机" Click="BtnTeacherSimQuickShutdown_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="重启" Click="BtnTeacherSimQuickReboot_Click" Style="{StaticResource GlassButton}" Background="#FFFFC107" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="屏幕预览" Click="BtnTeacherSimQuickPreview_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="学生信息" Click="BtnTeacherSimQuickInfo_Click" Style="{StaticResource GlassButton}" Background="#FF6C757D" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- 操作按钮 -->
                         <Grid>
                             <Grid.ColumnDefinitions>
