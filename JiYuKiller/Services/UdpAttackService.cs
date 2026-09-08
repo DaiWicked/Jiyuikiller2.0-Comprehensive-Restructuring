@@ -211,6 +211,7 @@ namespace JiYuKiller.Services
                 {
                     OnLog?.Invoke($"[{ip}:{port}] {description} == 发送失败: {ex.Message}");
                     Logger.Instance.Error($"[UDP攻击] 发送失败 -> {ip}:{port}", ex);
+                    OnSendResult?.Invoke(false, $"发送失败！目标 {ip}:{port}\n错误: {ex.Message}");
                 }
             });
         }

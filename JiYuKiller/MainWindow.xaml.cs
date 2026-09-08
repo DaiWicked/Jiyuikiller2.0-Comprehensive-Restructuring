@@ -706,6 +706,8 @@ namespace JiYuKiller
                 case "udpattack":
                     PageUdpAttack.Visibility = Visibility.Visible;
                     NavUdpAttack.FontWeight = FontWeights.Bold;
+                    UpdateUdpLocalInfo();
+                    RegisterUdpLog();
                     break;
             }
 
@@ -1320,26 +1322,59 @@ namespace JiYuKiller
             {
                 var svc = Services.UdpAttackService.Instance;
                 string ip = svc.GetLocalIP();
-                // 先快速显示IP
-                TextUdpLocalInfo.Text = $"本机: 获取MAC中 - {ip}";
                 Services.Logger.Instance.Info($"UDP攻击-本机IP: {ip}");
-                // MAC用SendARP异步获取
+                if (string.IsNullOrEmpty(ip))
+                {
+                    TextUdpLocalInfo.Text = "本机: 无网络";
+                    return;
+                }
+                // 先显示IP
+                TextUdpLocalInfo.Text = $"本机: ... - {ip}";
+                // 异步获取MAC
                 Task.Run(() =>
                 {
+                    string mac = "未知";
                     try
                     {
-                        string mac = svc.GetMacAddress(ip);
-                        Dispatcher.Invoke(() =>
+                        // 遍历网卡找匹配IP的MAC
+                        foreach (var ni in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
                         {
-                            TextUdpLocalInfo.Text = $"本机: {mac} - {ip}";
-                        });
-                        Services.Logger.Instance.Info($"UDP攻击-本机MAC: {mac}");
+                            if (ni.OperationalStatus != System.Net.NetworkInformation.OperationalStatus.Up) continue;
+                            if (ni.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Loopback) continue;
+                            var props = ni.GetIPProperties();
+                            foreach (var ua in props.UnicastAddresses)
+                            {
+                                if (ua.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                                {
+                                    Services.Logger.Instance.Debug($"网卡: {ni.Name} IP={ua.Address} MAC={ni.GetPhysicalAddress()}");
+                                    if (ua.Address.ToString() == ip)
+                                    {
+                                        byte[] macBytes = ni.GetPhysicalAddress().GetAddressBytes();
+                                        if (macBytes.Length >= 6)
+                                        {
+                                            mac = BitConverter.ToString(macBytes, 0, 6);
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                            if (mac != "未知") break;
+                        }
+                        // 如果没找到，用SendARP
+                        if (mac == "未知")
+                        {
+                            mac = svc.GetMacAddress(ip);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        Dispatcher.Invoke(() => { TextUdpLocalInfo.Text = $"本机: 未知 - {ip}"; });
-                        Services.Logger.Instance.Error("获取本机MAC失败: " + ex.Message);
+                        Services.Logger.Instance.Error("获取本机MAC异常: " + ex.Message);
                     }
+                    Services.Logger.Instance.Info($"UDP攻击-本机MAC: {mac}");
+                    Dispatcher.Invoke(() =>
+                    {
+                        TextUdpLocalInfo.Text = $"本机: {mac} - {ip}";
+                    });
                 });
             }
             catch (Exception ex)
