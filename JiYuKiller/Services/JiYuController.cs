@@ -27,7 +27,6 @@ namespace JiYuKiller.Services
 
         // 状态
         private bool _virusInstalled = false;
-        private bool _masterHelperInjected = false;
         private bool _studentControlled = false;
         private IntPtr _currentBroadcastWnd = IntPtr.Zero;
         private IntPtr _currentBlackScreenWnd = IntPtr.Zero;
@@ -369,16 +368,44 @@ namespace JiYuKiller.Services
         /// <summary>
         /// 发送设置到注入的DLL
         /// </summary>
+        /// <summary>
+        /// 发送设置到注入的DLL（通过INI文件，与原项目机制一致）
+        /// </summary>
         private void SendSettingsToVirus()
         {
-            // 对应原项目 hk: 开头的命令
-            SendVirusMessage("hk:allowgbtop:" + (_settings.AllowGbTop ? "1" : "0"));
-            SendVirusMessage("hk:prohibitkill:" + (_settings.ProhibitKillProcess ? "1" : "0"));
-            SendVirusMessage("hk:allowmonitor:" + (_settings.AllowMonitor ? "1" : "0"));
-            SendVirusMessage("hk:prohibitclose:" + (_settings.ProhibitCloseWindow ? "1" : "0"));
-            SendVirusMessage("hk:allowcontrol:" + (_settings.AllowControl ? "1" : "0"));
-            Logger.Instance.Info("[JiYuController] 已发送设置到DLL");
+            try
+            {
+                string iniPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "i.chaoxing.ini");
+                WriteSettingsToIni(iniPath);
+                Logger.Instance.Info("[JiYuController] 设置已写入INI: " + iniPath);
+                SendVirusMessage("hk:inipath:" + iniPath);
+                Logger.Instance.Info("[JiYuController] 已通知DLL重新读取设置");
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("[JiYuController] 写入设置INI失败: " + ex.Message);
+            }
         }
+
+        /// <summary>
+        /// 将设置写入INI文件（配置节[JTSettings]）
+        /// </summary>
+        private void WriteSettingsToIni(string iniPath)
+        {
+            WritePrivateProfileString("JTSettings", "AutoForceKill", _settings.AutoForceKill ? "TRUE" : "FALSE", iniPath);
+            WritePrivateProfileString("JTSettings", "AllowAllRunOp", "FALSE", iniPath);
+            WritePrivateProfileString("JTSettings", "BandAllRunOp", _settings.BanJiYuRunOp ? "TRUE" : "FALSE", iniPath);
+            WritePrivateProfileString("JTSettings", "ProhibitKillProcess", _settings.ProhibitKillProcess ? "TRUE" : "FALSE", iniPath);
+            WritePrivateProfileString("JTSettings", "ProhibitCloseWindow", _settings.ProhibitCloseWindow ? "TRUE" : "FALSE", iniPath);
+            WritePrivateProfileString("JTSettings", "DoNotShowVirusWindow", "TRUE", iniPath);
+            WritePrivateProfileString("JTSettings", "ForceDisableWatchDog", _settings.ForceDisableWatchDog ? "TRUE" : "FALSE", iniPath);
+            WritePrivateProfileString("JTSettings", "AllowGbTop", _settings.AllowGbTop ? "TRUE" : "FALSE", iniPath);
+            WritePrivateProfileString("JTSettings", "AllowMonitor", _settings.AllowMonitor ? "TRUE" : "FALSE", iniPath);
+            WritePrivateProfileString("JTSettings", "AllowControl", _settings.AllowControl ? "TRUE" : "FALSE", iniPath);
+        }
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+        private static extern bool WritePrivateProfileString(string lpAppName, string lpKeyName, string lpString, string lpFileName);
 
         /// <summary>
         /// 发送消息到注入的DLL
