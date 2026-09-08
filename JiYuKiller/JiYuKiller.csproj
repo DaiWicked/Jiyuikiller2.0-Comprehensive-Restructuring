@@ -116,24 +116,12 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Assets\JiYuTrainerLogo.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\JiYuTrainerLogo16.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\JiYuTrainerWarn.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\JiYuTrainerBug.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\about.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\me.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Resource Include="Assets\JiYuTrainerLogo.ico" />
+    <Resource Include="Assets\JiYuTrainerLogo16.png" />
+    <Resource Include="Assets\JiYuTrainerWarn.ico" />
+    <Resource Include="Assets\JiYuTrainerBug.ico" />
+    <Resource Include="Assets\about.png" />
+    <Resource Include="Assets\me.png" />
     <EmbeddedResource Include="Drivers\JiYuTrainerDriver.sys" />
     <EmbeddedResource Include="Drivers\JiYuTrainerHooks.dll" />
     <Content Include="Drivers\teacher_sim.exe">

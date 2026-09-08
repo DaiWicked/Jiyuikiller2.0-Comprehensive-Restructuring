@@ -264,7 +264,7 @@
 
                 <!-- 极域UDP攻击页面 -->
                 <!-- 极域UDP攻击页面 -->
-                <ScrollViewer x:Name="PageUdpAttack" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                <ScrollViewer x:Name="PageUdpAttack" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
                     <StackPanel Margin="0,0,0,8">
                         <!-- 标题栏 -->
                         <Grid Margin="0,0,0,12">
@@ -313,7 +313,7 @@
                         <Border Background="#18000000" CornerRadius="12" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
                                 <TextBlock Text="消息 / 命令内容" FontSize="13" FontWeight="Bold" Foreground="#FF1A1A1A" Margin="0,0,0,8" />
-                                <TextBox x:Name="TextUdpMessage" Text="Hello from 学习不通2.0" Style="{StaticResource GlassTextBox}" FontSize="13" Padding="8,6" Height="60" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                                <TextBox x:Name="TextUdpMessage" Text="Hello from 学习不通2.0" Style="{StaticResource GlassTextBox}" FontSize="13" Padding="8,6" Height="60" TextWrapping="Wrap" VerticalScrollBarVisibility="Hidden" />
                                 <TextBlock Text="发送消息时为聊天内容，发送命令时为指令文本" FontSize="10" Foreground="#FF888888" Margin="0,6,0,0" />
                             </StackPanel>
                         </Border>
@@ -352,7 +352,7 @@
                                     <TextBlock Text="操作日志" FontSize="13" FontWeight="Bold" Foreground="#FF1A1A1A" Grid.Column="0" />
                                     <Button x:Name="BtnUdpClearLog" Content="清空" Click="BtnUdpClearLog_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Padding="8,4" FontSize="11" Background="#20000000" Foreground="#FF555555" BorderBrush="Transparent" />
                                 </Grid>
-                                <TextBox x:Name="TextUdpLog" Text="等待操作..." Style="{StaticResource GlassTextBox}" Height="140" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontSize="11" Padding="8" Background="#0A000000" />
+                                <TextBox x:Name="TextUdpLog" Text="等待操作..." Style="{StaticResource GlassTextBox}" Height="140" TextWrapping="Wrap" VerticalScrollBarVisibility="Hidden" IsReadOnly="True" FontSize="11" Padding="8" Background="#0A000000" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -494,7 +494,7 @@
                     </ScrollViewer>
                 </Grid>
                 <!-- 小小私聊页面 -->
-                <ScrollViewer x:Name="PageChat" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                <ScrollViewer x:Name="PageChat" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
                     <StackPanel Margin="16,12">
                         <!-- 标题栏 -->
                         <Grid Margin="0,0,0,10">
@@ -531,7 +531,7 @@
                         <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <TextBlock Text="消息内容 (最多80字)" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6" />
-                                <TextBox x:Name="TextChatMessage" Style="{StaticResource GlassTextBox}" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" />
+                                <TextBox x:Name="TextChatMessage" Style="{StaticResource GlassTextBox}" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Hidden" />
                                 <Button Content="发送消息" Click="BtnChatSend_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Margin="0,8,0,0" Height="36" />
                             </StackPanel>
                         </Border>
@@ -543,7 +543,7 @@
                                     <TextBlock Text="聊天记录" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
                                     <Button Content="清空" Click="BtnChatClear_Click" Style="{StaticResource GlassButton}" Width="56" Height="26" FontSize="11" Padding="0" HorizontalAlignment="Right" />
                                 </Grid>
-                                <TextBox x:Name="TextChatLog" Style="{StaticResource GlassTextBox}" Height="160" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" />
+                                <TextBox x:Name="TextChatLog" Style="{StaticResource GlassTextBox}" Height="160" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Hidden" FontFamily="Consolas" FontSize="12" />
                             </StackPanel>
                         </Border>
 
@@ -552,7 +552,7 @@
                 </ScrollViewer>
 
                 <!-- 截图替换页面 -->
-                <ScrollViewer x:Name="PageScreenshot" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                <ScrollViewer x:Name="PageScreenshot" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
                     <StackPanel Margin="16,12">
                         <!-- 标题栏 -->
                         <Grid Margin="0,0,0,10">
@@ -605,7 +605,7 @@
                 </ScrollViewer>
 
                 <!-- 极域教师端模拟页面 -->
-                <ScrollViewer x:Name="PageTeacherSim" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                <ScrollViewer x:Name="PageTeacherSim" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
                     <StackPanel Margin="16,12">
                         <!-- 标题栏 -->
                         <Grid Margin="0,0,0,10">
@@ -644,7 +644,7 @@
                         <Border Background="#FF0A0A0A" CornerRadius="10" Padding="8" Margin="0,0,0,10">
                             <StackPanel>
                                 <TextBlock Text="模拟控制台" FontSize="12" FontWeight="Bold" Foreground="#FF00FF00" Margin="0,0,0,4" />
-                                <TextBox x:Name="TextTeacherSimConsole" Background="#FF000000" Foreground="#FF00FF00" FontSize="11" FontFamily="Consolas" Height="200" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" Padding="4" BorderThickness="0" />
+                                <TextBox x:Name="TextTeacherSimConsole" Background="#FF000000" Foreground="#FF00FF00" FontSize="11" FontFamily="Consolas" Height="200" TextWrapping="Wrap" VerticalScrollBarVisibility="Hidden" IsReadOnly="True" Padding="4" BorderThickness="0" />
                                 <Grid Margin="0,6,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
