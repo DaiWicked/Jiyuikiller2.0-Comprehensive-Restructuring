@@ -149,14 +149,38 @@ namespace JiYuKiller.Effects
         {
             if (_glassyEffect == null)
             {
-                _glassyEffect = new GlassyEffect();
-                Services.Logger.Instance.Info("GlassyEffect 像素着色器创建成功");
+                try
+                {
+                    _glassyEffect = new GlassyEffect();
+                    if (_glassyEffect.IsShaderLoaded)
+                    {
+                        Services.Logger.Instance.Info("GlassyEffect 像素着色器创建成功");
+                    }
+                    else
+                    {
+                        Services.Logger.Instance.Warn("GlassyEffect 像素着色器加载失败，将使用普通半透明效果");
+                        _glassyEffect = null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Services.Logger.Instance.Warn($"GlassyEffect 创建失败: {ex.Message}，将使用普通半透明效果");
+                    _glassyEffect = null;
+                }
             }
 
-            if (_glassyBorder != null)
+            if (_glassyEffect != null && _glassyBorder != null)
             {
-                _glassyBorder.Effect = _glassyEffect;
-                Services.Logger.Instance.Info("GlassyEffect 已应用到 GlassyLayer");
+                try
+                {
+                    _glassyBorder.Effect = _glassyEffect;
+                    Services.Logger.Instance.Info("GlassyEffect 已应用到 GlassyLayer");
+                }
+                catch (Exception ex)
+                {
+                    Services.Logger.Instance.Warn($"GlassyEffect 应用失败: {ex.Message}");
+                    _glassyBorder.Effect = null;
+                }
             }
         }
 

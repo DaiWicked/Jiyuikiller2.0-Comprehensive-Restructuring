@@ -43,18 +43,35 @@ namespace JiYuKiller.Effects
                 typeof(GlassyEffect),
                 new UIPropertyMetadata(0.2, PixelShaderConstantCallback(3)));
 
+        /// <summary>
+        /// 着色器是否加载成功
+        /// </summary>
+        public bool IsShaderLoaded { get; private set; }
+
         public GlassyEffect()
         {
-            PixelShader = new PixelShader
+            try
             {
-                UriSource = new Uri("pack://application:,,,/i.chaoxing;component/Effects/GlassyEffect.ps", UriKind.Absolute)
-            };
+                PixelShader shader = new PixelShader
+                {
+                    UriSource = new Uri("pack://application:,,,/i.chaoxing;component/Effects/GlassyEffect.ps", UriKind.Absolute)
+                };
 
-            UpdateShaderValue(InputProperty);
-            UpdateShaderValue(TextureSizeProperty);
-            UpdateShaderValue(GlassCenterProperty);
-            UpdateShaderValue(GlassSizeProperty);
-            UpdateShaderValue(BlurIntensityProperty);
+                // 通过设置属性来验证着色器可用
+                this.PixelShader = shader;
+                UpdateShaderValue(InputProperty);
+                UpdateShaderValue(TextureSizeProperty);
+                UpdateShaderValue(GlassCenterProperty);
+                UpdateShaderValue(GlassSizeProperty);
+                UpdateShaderValue(BlurIntensityProperty);
+                IsShaderLoaded = true;
+            }
+            catch (Exception ex)
+            {
+                // 像素着色器加载失败（如老显卡/虚拟机不支持Pixel Shader 2.0）
+                Services.Logger.Instance.Warn($"GlassyEffect 像素着色器加载失败: {ex.Message}");
+                IsShaderLoaded = false;
+            }
         }
 
         public Brush Input
