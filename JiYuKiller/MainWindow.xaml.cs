@@ -893,14 +893,18 @@ namespace JiYuKiller
         {
             if (_isInitializing) return;
             _settings.DebugMode = true;
-            Services.Logger.Instance.Info("调试模式已开启");
+            _settings.Save();
+            Services.Logger.Instance.Enable();
+            Services.Logger.Instance.Info("调试模式已开启，日志已启用");
         }
 
         private void DebugMode_Unchecked(object sender, RoutedEventArgs e)
         {
             if (_isInitializing) return;
             _settings.DebugMode = false;
-            Services.Logger.Instance.Info("调试模式已关闭");
+            _settings.Save();
+            Services.Logger.Instance.Info("调试模式已关闭，即将禁用日志");
+            Services.Logger.Instance.Disable();
         }
 
         private void BtnRefreshLog_Click(object sender, RoutedEventArgs e)
