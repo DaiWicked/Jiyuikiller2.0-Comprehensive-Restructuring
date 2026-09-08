@@ -264,7 +264,7 @@
 
                 <!-- 极域UDP攻击页面 -->
                 <!-- 极域UDP攻击页面 -->
-                <ScrollViewer x:Name="PageUdpAttack" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
+                <ScrollViewer x:Name="PageUdpAttack" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
                     <StackPanel Margin="0,0,0,8">
                         <!-- 标题栏 -->
                         <Grid Margin="0,0,0,12">
@@ -287,7 +287,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="TextUdpTargetIp" Text="" Style="{StaticResource GlassTextBox}" Grid.Column="0" Margin="0,0,6,0" FontSize="13" Padding="8,6" />
-                                    <Button x:Name="BtnScanLan" Content="扫描局域网" Click="BtnScanLan_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Padding="12,6" FontSize="12" Background="#FF4A90D9" />
+                                    <Button x:Name="BtnScanLan" Content="扫描局域网" Click="BtnScanLan_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Padding="12,6" FontSize="12" Background="#FF4A90D9" Foreground="#FFFFFFFF" />
                                 </Grid>
                                 <Border Background="#10000000" CornerRadius="6" Padding="8,6">
                                     <TextBlock x:Name="TextUdpScanResult" Text="点击扫描局域网发现目标，右键结果选择IP" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" />
@@ -313,16 +313,16 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Button x:Name="BtnUdpSendMsg" Content="发送消息" Click="BtnUdpSendMsg_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,10" FontSize="13" Background="#FF5B9BD5" />
-                                    <Button x:Name="BtnUdpSendCmd" Content="发送命令" Click="BtnUdpSendCmd_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,10" FontSize="13" Background="#FF70AD47" />
+                                    <Button x:Name="BtnUdpSendMsg" Content="发送消息" Click="BtnUdpSendMsg_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,10" FontSize="13" Background="#FF5B9BD5" Foreground="#FFFFFFFF" />
+                                    <Button x:Name="BtnUdpSendCmd" Content="发送命令" Click="BtnUdpSendCmd_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,10" FontSize="13" Background="#FF70AD47" Foreground="#FFFFFFFF" />
                                 </Grid>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Button x:Name="BtnUdpShutdown" Content="远程关机" Click="BtnUdpShutdown_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,10" FontSize="13" Background="#FFC5504B" />
-                                    <Button x:Name="BtnUdpReboot" Content="远程重启" Click="BtnUdpReboot_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,10" FontSize="13" Background="#FFED7D31" />
+                                    <Button x:Name="BtnUdpShutdown" Content="远程关机" Click="BtnUdpShutdown_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,10" FontSize="13" Background="#FFC5504B" Foreground="#FFFFFFFF" />
+                                    <Button x:Name="BtnUdpReboot" Content="远程重启" Click="BtnUdpReboot_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,10" FontSize="13" Background="#FFED7D31" Foreground="#FFFFFFFF" />
                                 </Grid>
                             </StackPanel>
                         </Border>
