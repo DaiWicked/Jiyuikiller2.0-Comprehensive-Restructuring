@@ -62,8 +62,6 @@ namespace JiYuKiller.Models
         /// <summary>隐藏本软件任务栏图标</summary>
         public bool DoNotShowTrayIcon { get; set; } = false;
 
-        /// <summary>总是检查更新</summary>
-        public bool AlwaysCheckUpdate { get; set; } = false;
 
         /// <summary>强制安装在当前目录</summary>
         public bool ForceInstallInCurrentDir { get; set; } = false;

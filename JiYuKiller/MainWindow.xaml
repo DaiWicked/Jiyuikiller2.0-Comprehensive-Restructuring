@@ -397,7 +397,6 @@
                             <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
                                     <TextBlock Text="高级程序配置" FontSize="14" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
-                                    <CheckBox x:Name="CheckAlwaysCheckUpdate" Content="总是检查更新" Style="{StaticResource GlassCheckBox}" />
                                     <CheckBox x:Name="CheckForceInstallInCurrentDir" Content="强制安装在当前目录" Style="{StaticResource GlassCheckBox}" />
                                     <CheckBox x:Name="CheckForceDisableWatchDog" Content="强制禁用看门狗" Style="{StaticResource GlassCheckBox}" />
                                     <Grid Margin="0,6,0,0">

@@ -559,7 +559,6 @@ namespace JiYuKiller
             CheckAutoIncludeFullWindow.IsChecked = _settings.AutoIncludeFullWindow;
             CheckDoNotShowVirusWindow.IsChecked = _settings.DoNotShowVirusWindow;
             CheckDoNotShowTrayIcon.IsChecked = _settings.DoNotShowTrayIcon;
-            CheckAlwaysCheckUpdate.IsChecked = _settings.AlwaysCheckUpdate;
             CheckForceInstallInCurrentDir.IsChecked = _settings.ForceInstallInCurrentDir;
             CheckForceDisableWatchDog.IsChecked = _settings.ForceDisableWatchDog;
             CheckInjectMasterHelper.IsChecked = _settings.InjectMasterHelper;
@@ -590,7 +589,6 @@ namespace JiYuKiller
             _settings.AutoIncludeFullWindow = CheckAutoIncludeFullWindow.IsChecked ?? false;
             _settings.DoNotShowVirusWindow = CheckDoNotShowVirusWindow.IsChecked ?? true;
             _settings.DoNotShowTrayIcon = CheckDoNotShowTrayIcon.IsChecked ?? false;
-            _settings.AlwaysCheckUpdate = CheckAlwaysCheckUpdate.IsChecked ?? false;
             _settings.ForceInstallInCurrentDir = CheckForceInstallInCurrentDir.IsChecked ?? false;
             _settings.ForceDisableWatchDog = CheckForceDisableWatchDog.IsChecked ?? false;
             _settings.InjectMasterHelper = CheckInjectMasterHelper.IsChecked ?? false;
