@@ -1380,6 +1380,12 @@ namespace JiYuKiller
             svc.SendReboot(ip, 4705);
         }
 
+
+        private void BtnUdpClearLog_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("UDP攻击-清空日志", "BtnUdpClearLog");
+            TextUdpLog.Text = "日志已清空\n";
+        }
         #endregion
     }
 }

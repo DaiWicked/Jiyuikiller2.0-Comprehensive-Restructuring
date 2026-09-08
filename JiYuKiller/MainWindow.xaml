@@ -263,50 +263,82 @@
 
 
                 <!-- 极域UDP攻击页面 -->
+                <!-- 极域UDP攻击页面 -->
                 <ScrollViewer x:Name="PageUdpAttack" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
                     <StackPanel Margin="0,0,0,8">
-                        <Button x:Name="BtnBackFromUdpAttack" Content="← 返回" Click="BtnBackFromUdpAttack_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" Padding="4,6" FontSize="12" HorizontalAlignment="Left" Margin="0,0,0,8" />
-                        <TextBlock Text="极域 UDP 攻击" FontSize="20" FontWeight="Bold" Foreground="#FF000000" HorizontalAlignment="Center" Margin="0,0,0,12" />
-                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                        <!-- 标题栏 -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="BtnBackFromUdpAttack" Content="←" Click="BtnBackFromUdpAttack_Click" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Padding="12,6" FontSize="14" Grid.Column="0" HorizontalAlignment="Left" />
+                            <TextBlock Text="极域 UDP 攻击" FontSize="18" FontWeight="Bold" Foreground="#FF0A0A0A" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+
+                        <!-- 目标配置 -->
+                        <Border Background="#18000000" CornerRadius="12" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="目标 IP" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,6" />
+                                <TextBlock Text="目标配置" FontSize="13" FontWeight="Bold" Foreground="#FF1A1A1A" Margin="0,0,0,10" />
+                                <TextBlock Text="目标 IP 地址" FontSize="11" Foreground="#FF555555" Margin="0,0,0,4" />
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="TextUdpTargetIp" Text="192.168.1.100" Style="{StaticResource GlassTextBox}" Grid.Column="0" Margin="0,0,6,0" />
-                                    <Button x:Name="BtnScanLan" Content="扫描局域网" Click="BtnScanLan_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Padding="10,6" FontSize="12" />
+                                    <TextBox x:Name="TextUdpTargetIp" Text="" Style="{StaticResource GlassTextBox}" Grid.Column="0" Margin="0,0,6,0" FontSize="13" Padding="8,6" />
+                                    <Button x:Name="BtnScanLan" Content="扫描局域网" Click="BtnScanLan_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Padding="12,6" FontSize="12" Background="#FF4A90D9" />
                                 </Grid>
-                                <TextBlock x:Name="TextUdpScanResult" Text="未扫描" FontSize="11" Foreground="#FF888888" TextWrapping="Wrap" />
+                                <Border Background="#10000000" CornerRadius="6" Padding="8,6">
+                                    <TextBlock x:Name="TextUdpScanResult" Text="点击扫描局域网发现目标，右键结果选择IP" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" />
+                                </Border>
                             </StackPanel>
                         </Border>
-                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+
+                        <!-- 消息/命令内容 -->
+                        <Border Background="#18000000" CornerRadius="12" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="攻击模式" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
-                                <Grid Margin="0,0,0,6">
+                                <TextBlock Text="消息 / 命令内容" FontSize="13" FontWeight="Bold" Foreground="#FF1A1A1A" Margin="0,0,0,8" />
+                                <TextBox x:Name="TextUdpMessage" Text="Hello from 学习不通" Style="{StaticResource GlassTextBox}" FontSize="13" Padding="8,6" Height="60" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                                <TextBlock Text="发送消息时为聊天内容，发送命令时为指令文本" FontSize="10" Foreground="#FF888888" Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 攻击操作 -->
+                        <Border Background="#18000000" CornerRadius="12" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="攻击操作" FontSize="13" FontWeight="Bold" Foreground="#FF1A1A1A" Margin="0,0,0,10" />
+                                <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Button x:Name="BtnUdpSendMsg" Content="发送消息" Click="BtnUdpSendMsg_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,8" FontSize="12" />
-                                    <Button x:Name="BtnUdpSendCmd" Content="发送命令" Click="BtnUdpSendCmd_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,8" FontSize="12" />
+                                    <Button x:Name="BtnUdpSendMsg" Content="发送消息" Click="BtnUdpSendMsg_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,10" FontSize="13" Background="#FF5B9BD5" />
+                                    <Button x:Name="BtnUdpSendCmd" Content="发送命令" Click="BtnUdpSendCmd_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,10" FontSize="13" Background="#FF70AD47" />
                                 </Grid>
-                                <Grid Margin="0,0,0,6">
+                                <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Button x:Name="BtnUdpShutdown" Content="远程关机" Click="BtnUdpShutdown_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,8" FontSize="12" />
-                                    <Button x:Name="BtnUdpReboot" Content="远程重启" Click="BtnUdpReboot_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,8" FontSize="12" />
+                                    <Button x:Name="BtnUdpShutdown" Content="远程关机" Click="BtnUdpShutdown_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,10" FontSize="13" Background="#FFC5504B" />
+                                    <Button x:Name="BtnUdpReboot" Content="远程重启" Click="BtnUdpReboot_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,10" FontSize="13" Background="#FFED7D31" />
                                 </Grid>
-                                <TextBox x:Name="TextUdpMessage" Text="Hello from JiYuKiller" Style="{StaticResource GlassTextBox}" Margin="0,4,0,0" FontSize="12" />
                             </StackPanel>
                         </Border>
-                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+
+                        <!-- 操作日志 -->
+                        <Border Background="#18000000" CornerRadius="12" Padding="14" Margin="0,0,0,4">
                             <StackPanel>
-                                <TextBlock Text="攻击日志" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,6" />
-                                <TextBox x:Name="TextUdpLog" Text="等待操作..." Style="{StaticResource GlassTextBox}" Height="120" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontSize="11" />
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="操作日志" FontSize="13" FontWeight="Bold" Foreground="#FF1A1A1A" Grid.Column="0" />
+                                    <Button x:Name="BtnUdpClearLog" Content="清空" Click="BtnUdpClearLog_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Padding="8,4" FontSize="11" Background="#20000000" Foreground="#FF555555" BorderBrush="Transparent" />
+                                </Grid>
+                                <TextBox x:Name="TextUdpLog" Text="等待操作..." Style="{StaticResource GlassTextBox}" Height="140" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontSize="11" Padding="8" Background="#0A000000" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
