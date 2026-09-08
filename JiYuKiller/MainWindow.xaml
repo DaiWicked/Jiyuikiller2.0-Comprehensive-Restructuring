@@ -71,7 +71,6 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,0">
-                    <Button x:Name="BtnMinimize" Content="─" Width="32" Height="28" Click="BtnMinimize_Click" Style="{StaticResource GlassButton}" Padding="0" FontSize="13" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" />
                     <Button x:Name="BtnClose" Content="✕" Width="32" Height="28" Click="BtnClose_Click" Style="{StaticResource GlassButton}" Padding="0" FontSize="13" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" />
                 </StackPanel>
             </Grid>

@@ -20,12 +20,6 @@ namespace JiYuKiller
         private WinForms.NotifyIcon _trayIcon;
         private bool _hideTipShown = false;
         private bool _isExiting = false;
-
-        // Win32 API - 用于无边框透明窗口最小化
-        [DllImport("user32.dll")]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-        private const int SW_MINIMIZE = 6;
-        private const int SW_RESTORE = 9;
         private bool _isTopMost = false;
         private Effects.GlassyWindowManager _glassyManager;
 
@@ -297,14 +291,6 @@ namespace JiYuKiller
             DragMove();
         }
 
-        private void BtnMinimize_Click(object sender, RoutedEventArgs e)
-        {
-            Services.Logger.Instance.ButtonClick("最小化(到任务栏)", "BtnMinimize");
-            // 最小化到任务栏（不是隐藏到托盘）
-            // 无边框透明窗口用 Win32 API 最小化，确保任务栏图标正常
-            IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
-            ShowWindow(hwnd, SW_MINIMIZE);
-        }
 
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
