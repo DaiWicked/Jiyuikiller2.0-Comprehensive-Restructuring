@@ -197,6 +197,12 @@ namespace JiYuKiller
             Services.Logger.Instance.Info("正在退出程序");
             _trayIcon.Visible = false;
             _trayIcon.Dispose();
+            // 停止教师端模拟进程
+            if (_teacherSimService != null && _teacherSimService.IsRunning)
+            {
+                _teacherSimService.Stop();
+                Services.Logger.Instance.Info("已停止教师端模拟进程");
+            }
             _controller.Stop();
             Services.Logger.Instance.Close();
             System.Windows.Application.Current.Shutdown();
