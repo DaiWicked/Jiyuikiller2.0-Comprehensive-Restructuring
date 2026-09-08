@@ -1600,6 +1600,28 @@ namespace JiYuKiller
             var img = _screenshotService.LoadPreviewImage();
             ImgScreenshotPreview.Source = img;
             TextScreenshotPath.Text = string.IsNullOrEmpty(_screenshotService.CurrentImagePath) ? "（未设置）" : _screenshotService.CurrentImagePath;
+            UpdateScreenshotState();
+        }
+
+        /// <summary>
+        /// 更新截图替换状态显示
+        /// </summary>
+        private void UpdateScreenshotState()
+        {
+            if (!string.IsNullOrEmpty(_screenshotService.CurrentImagePath) && System.IO.File.Exists(_screenshotService.CurrentImagePath))
+            {
+                TextScreenshotState.Text = "已替换";
+                TextScreenshotState.Foreground = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
+                ScreenshotStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
+                TextScreenshotStatus.Text = "当前替换图片: " + _screenshotService.CurrentImagePath;
+            }
+            else
+            {
+                TextScreenshotState.Text = "未替换";
+                TextScreenshotState.Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
+                ScreenshotStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
+                TextScreenshotStatus.Text = "尚未设置截图替换图片";
+            }
         }
 
         private void BtnScreenshotChoose_Click(object sender, RoutedEventArgs e)
@@ -1639,6 +1661,15 @@ namespace JiYuKiller
             Services.Logger.Instance.Info("[Screenshot] 点击取消");
             _screenshotService.LoadCurrent();
             UpdateScreenshotPreview();
+        }
+
+        private void BtnScreenshotCancelReplace_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.Info("[Screenshot] 点击取消替换");
+            _screenshotService.ClearImage();
+            bool ok = _screenshotService.Apply(_controller);
+            UpdateScreenshotPreview();
+            System.Windows.MessageBox.Show(ok ? "已取消截图替换" : "取消失败", "截图替换");
         }
 
         private void BtnScreenshotBack_Click(object sender, RoutedEventArgs e)

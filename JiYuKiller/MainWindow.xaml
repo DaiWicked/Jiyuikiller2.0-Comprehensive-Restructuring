@@ -564,9 +564,19 @@
                             <TextBlock Grid.Column="1" Text="截图替换" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#FF1a1a2e" />
                         </Grid>
 
-                        <!-- 状态 -->
+                        <!-- 状态监测 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
-                            <TextBlock x:Name="TextScreenshotStatus" Text="加载中..." FontSize="13" Foreground="#FF2d2d44" TextWrapping="Wrap" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse x:Name="ScreenshotStatusDot" Width="12" Height="12" Fill="#FF999999" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock x:Name="TextScreenshotState" Text="未替换" FontSize="15" FontWeight="Bold" Foreground="#FF666666" />
+                                    <TextBlock x:Name="TextScreenshotStatus" Text="尚未设置截图替换图片" FontSize="12" Foreground="#FF888899" Margin="0,2,0,0" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
                         </Border>
 
                         <!-- 图片预览 -->
@@ -584,15 +594,9 @@
                         <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <Button x:Name="BtnScreenshotChoose" Content="选择图片" Click="BtnScreenshotChoose_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="36" Margin="0,0,0,6" />
-                                <Button x:Name="BtnScreenshotClear" Content="清除图片" Click="BtnScreenshotClear_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" Margin="0,0,0,6" />
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Button Content="应用" Click="BtnScreenshotApply_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="36" Margin="0,0,4,0" />
-                                    <Button Grid.Column="1" Content="取消" Click="BtnScreenshotCancel_Click" Style="{StaticResource GlassButton}" Background="#FF6C757D" Height="36" Margin="4,0,0,0" />
-                                </Grid>
+                                <Button x:Name="BtnScreenshotApply" Content="应用替换" Click="BtnScreenshotApply_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="36" Margin="0,0,0,6" />
+                                <Button x:Name="BtnScreenshotCancelReplace" Content="取消替换" Click="BtnScreenshotCancelReplace_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" Margin="0,0,0,6" />
+                                <Button x:Name="BtnScreenshotCancel" Content="放弃选择" Click="BtnScreenshotCancel_Click" Style="{StaticResource GlassButton}" Background="#FF6C757D" Height="36" />
                             </StackPanel>
                         </Border>
 
