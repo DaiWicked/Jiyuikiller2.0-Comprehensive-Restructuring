@@ -665,8 +665,8 @@
 
             </Grid>
 
-            <!-- 底部悬浮导航栏（液态玻璃） -->
-            <Grid Grid.Row="2" Margin="10,2,10,12" HorizontalAlignment="Center" Height="56">
+            <!-- 底部悬浮导航栏（液态玻璃 - 可横向滚动） -->
+            <Grid Grid.Row="2" Margin="10,2,10,12" HorizontalAlignment="Stretch" Height="60">
                 <!-- 层1: 外阴影（悬浮感） -->
                 <Border CornerRadius="28" Background="#2E000000" Margin="0,5,0,-3" Opacity="0.7">
                     <Border.Effect><BlurEffect Radius="14" /></Border.Effect>
@@ -686,7 +686,7 @@
                         </LinearGradientBrush>
                     </Border.BorderBrush>
                     <!-- 层4: 玻璃主体 -->
-                    <Border CornerRadius="24" Padding="3">
+                    <Border CornerRadius="24" Padding="4">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                 <GradientStop Color="#55FFFFFF" Offset="0" />
@@ -704,31 +704,31 @@
                                     </LinearGradientBrush>
                                 </Border.Background>
                             </Border>
-                            <!-- 可横向滚动的导航区域（指示器和按钮同坐标系） -->
-                            <ScrollViewer x:Name="NavScrollViewer" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Padding="2,0">
-                                <Grid x:Name="NavContentGrid" HorizontalAlignment="Left">
-                                    <!-- 滑动指示器（微妙背景高亮，不遮挡文字） -->
+                            <!-- 可横向滚动的导航区域 -->
+                            <ScrollViewer x:Name="NavScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="2,4">
+                                <Grid x:Name="NavContentGrid" HorizontalAlignment="Left" Height="48">
+                                    <!-- 滑动指示器（微妙背景高亮） -->
                                     <Border x:Name="NavIndicator" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                            Height="40" CornerRadius="16" Margin="0" Width="52" IsHitTestVisible="False">
+                                            Height="44" CornerRadius="18" Margin="0" Width="60" IsHitTestVisible="False">
                                         <Border.Background>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                <GradientStop Color="#40FFFFFF" Offset="0" />
-                                                <GradientStop Color="#20FFFFFF" Offset="1" />
+                                                <GradientStop Color="#50FFFFFF" Offset="0" />
+                                                <GradientStop Color="#30FFFFFF" Offset="1" />
                                             </LinearGradientBrush>
                                         </Border.Background>
                                         <Border.RenderTransform>
                                             <TranslateTransform x:Name="NavIndicatorTransform" X="0" />
                                         </Border.RenderTransform>
                                     </Border>
-                                    <!-- 导航按钮 -->
+                                    <!-- 导航按钮（每个都有高斯模糊玻璃效果） -->
                                     <StackPanel Orientation="Horizontal" x:Name="NavStackPanel">
-                                        <Button x:Name="NavQuick" Content="快捷栏" Click="NavQuick_Click" Style="{StaticResource NavGlassButton}" Padding="10,5" Margin="2,0" MinWidth="52" Height="44" />
-                                        <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource NavGlassButton}" Padding="10,5" Margin="2,0" MinWidth="72" Height="44" />
-                                        <Button x:Name="NavCustom" Content="自定义设置" Click="NavCustom_Click" Style="{StaticResource NavGlassButton}" Padding="10,5" Margin="2,0" MinWidth="62" Height="44" />
-                                        <Button x:Name="NavGeek" Content="极客工具" Click="NavGeek_Click" Style="{StaticResource NavGlassButton}" Padding="10,5" Margin="2,0" MinWidth="52" Height="44" />
-                                        <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource NavGlassButton}" Padding="10,5" Margin="2,0" MinWidth="52" Height="44" />
-                                        <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource NavGlassButton}" Padding="10,5" Margin="2,0" MinWidth="44" Height="44" />
-                                        <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource NavGlassButton}" Padding="10,5" Margin="2,0" MinWidth="44" Height="44" />
+                                        <Button x:Name="NavQuick" Content="快捷栏" Click="NavQuick_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
+                                        <Button x:Name="NavSetting" Content="控制台和设置" Click="NavSetting_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="88" Height="44" />
+                                        <Button x:Name="NavCustom" Content="自定义设置" Click="NavCustom_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="76" Height="44" />
+                                        <Button x:Name="NavGeek" Content="极客工具" Click="NavGeek_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
+                                        <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
+                                        <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
+                                        <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
                                     </StackPanel>
                                 </Grid>
                             </ScrollViewer>

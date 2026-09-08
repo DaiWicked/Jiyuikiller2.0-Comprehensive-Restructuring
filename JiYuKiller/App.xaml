@@ -64,27 +64,35 @@
                 </Setter>
             </Style>
             <!-- 导航栏液态玻璃按钮样式（文字纯黑加深） -->
+            <!-- 导航栏液态玻璃按钮样式（高斯模糊玻璃背景+文字分层） -->
             <Style x:Key="NavGlassButton" TargetType="Button">
-                <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Foreground" Value="#FF000000" />
-                <Setter Property="BorderBrush" Value="Transparent" />
-                <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="FontSize" Value="13" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="Cursor" Value="Hand" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="18" Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
+                            <Grid>
+                                <!-- 高斯模糊玻璃背景层（不模糊文字） -->
+                                <Border x:Name="glassBg" Background="#28FFFFFF" CornerRadius="16">
+                                    <Border.Effect>
+                                        <BlurEffect Radius="6" />
+                                    </Border.Effect>
+                                </Border>
+                                <!-- 边缘高光 -->
+                                <Border x:Name="glassBorder" CornerRadius="16" BorderThickness="1" BorderBrush="#40FFFFFF" IsHitTestVisible="False" />
+                                <!-- 文字层（在模糊层上方） -->
+                                <ContentPresenter x:Name="content" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                            </Grid>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#40FFFFFF" />
+                                    <Setter TargetName="glassBg" Property="Background" Value="#48FFFFFF" />
+                                    <Setter TargetName="glassBorder" Property="BorderBrush" Value="#70FFFFFF" />
                                     <Setter Property="RenderTransform"><Setter.Value><TranslateTransform Y="-2" /></Setter.Value></Setter>
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter Property="Background" Value="#60FFFFFF" />
+                                    <Setter TargetName="glassBg" Property="Background" Value="#60FFFFFF" />
                                     <Setter Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.95" ScaleY="0.95" /></Setter.Value></Setter>
                                 </Trigger>
                             </ControlTemplate.Triggers>
