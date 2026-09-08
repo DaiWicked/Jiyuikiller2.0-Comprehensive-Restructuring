@@ -18,6 +18,7 @@ namespace JiYuKiller
     {
         private Models.AppSettings _settings;
         private Services.JiYuController _controller;
+        private bool _isInitializing = false;
         private WinForms.NotifyIcon _trayIcon;
         private bool _hideTipShown = false;
         private bool _isExiting = false;
@@ -191,6 +192,7 @@ namespace JiYuKiller
 
         private void ApplySettingsToUI()
         {
+                _isInitializing = true;
             Services.Logger.Instance.FunctionCall("ApplySettingsToUI");
 
             CheckMonitorProcess.IsChecked = _settings.MonitorJiYuProcess;
@@ -211,10 +213,12 @@ namespace JiYuKiller
             }
 
             Services.Logger.Instance.Debug("设置已应用到 UI");
+                _isInitializing = false;
         }
 
         private void SaveSettingsFromUI()
         {
+            if (_isInitializing) return;
             Services.Logger.Instance.FunctionCall("SaveSettingsFromUI");
 
             _settings.MonitorJiYuProcess = CheckMonitorProcess.IsChecked ?? false;
@@ -857,12 +861,14 @@ namespace JiYuKiller
 
         private void DebugMode_Checked(object sender, RoutedEventArgs e)
         {
+            if (_isInitializing) return;
             _settings.DebugMode = true;
             Services.Logger.Instance.Info("调试模式已开启");
         }
 
         private void DebugMode_Unchecked(object sender, RoutedEventArgs e)
         {
+            if (_isInitializing) return;
             _settings.DebugMode = false;
             Services.Logger.Instance.Info("调试模式已关闭");
         }

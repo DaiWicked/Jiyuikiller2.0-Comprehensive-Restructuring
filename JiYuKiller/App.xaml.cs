@@ -7,56 +7,97 @@ namespace JiYuKiller
     {
         protected override void OnStartup(StartupEventArgs e)
         {
-            // 全局异常捕获 - UI线程
-            this.DispatcherUnhandledException += App_DispatcherUnhandledException;
+            // 先加载设置，根据DebugMode决定是否启用日志
+            Models.AppSettings settings = Models.AppSettings.Load();
 
-            // 全局异常捕获 - 非UI线程
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            if (settings.DebugMode)
+            {
+                Services.Logger.Instance.Enable();
+            }
+            // DebugMode为false时不启用日志，不生成日志文件
 
-            // 初始化日志系统
             Services.Logger.Instance.Info("应用程序启动");
             Services.Logger.Instance.Info($"当前目录: {AppDomain.CurrentDomain.BaseDirectory}");
             Services.Logger.Instance.Info($"操作系统: {Environment.OSVersion}");
             Services.Logger.Instance.Info($".NET版本: {Environment.Version}");
             Services.Logger.Instance.Info($"64位系统: {Environment.Is64BitOperatingSystem}");
             Services.Logger.Instance.Info($"64位进程: {Environment.Is64BitProcess}");
+            Services.Logger.Instance.Info($"调试模式: {settings.DebugMode}");
+
+            // 全局异常捕获 - UI线程
+            this.DispatcherUnhandledException += App_DispatcherUnhandledException;
+
+            // 全局异常捕获 - 非UI线程
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             base.OnStartup(e);
         }
 
         private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            Services.Logger.Instance.Error($"UI线程未处理异常: {e.Exception.Message}", e.Exception);
-            Services.Logger.Instance.Error($"异常堆栈: {e.Exception.StackTrace}");
+            // 生成错误报告（功能异常，非致命）
+            string reportPath = Services.CrashReportService.GenerateReport(
+                e.Exception,
+                "UI线程",
+                "未处理UI异常",
+                isFatal: false);
+
+            // 显示错误弹窗
+            Services.CrashReportService.ShowErrorDialog(
+                e.Exception,
+                "UI线程",
+                "未处理UI异常",
+                reportPath,
+                isFatal: false);
 
             // 尝试继续运行，不崩溃
             e.Handled = true;
-
-            try
-            {
-                MessageBox.Show($"程序发生错误：\n{e.Exception.Message}\n\n详情请查看日志文件。",
-                    "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            catch { }
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Exception ex = e.ExceptionObject as Exception;
+            string moduleName = "非UI线程";
+            string functionName = "未处理非UI异常";
+
             if (ex != null)
             {
-                Services.Logger.Instance.Error($"非UI线程未处理异常: {ex.Message}", ex);
-                Services.Logger.Instance.Error($"异常堆栈: {ex.StackTrace}");
+                // 生成错误报告（致命错误，可能导致程序终止）
+                string reportPath = Services.CrashReportService.GenerateReport(
+                    ex,
+                    moduleName,
+                    functionName,
+                    isFatal: e.IsTerminating);
+
+                // 显示错误弹窗
+                Services.CrashReportService.ShowErrorDialog(
+                    ex,
+                    moduleName,
+                    functionName,
+                    reportPath,
+                    isFatal: e.IsTerminating);
             }
             else
             {
-                Services.Logger.Instance.Error($"非UI线程未处理异常: {e.ExceptionObject}");
+                // 非Exception类型的异常
+                string reportPath = Services.CrashReportService.GenerateReport(
+                    new Exception($"非异常对象: {e.ExceptionObject}"),
+                    moduleName,
+                    functionName,
+                    isFatal: e.IsTerminating);
+
+                System.Windows.MessageBox.Show(
+                    $"模块: {moduleName}\n功能: {functionName}\n\n异常对象: {e.ExceptionObject}\n\n错误报告已保存至:\n{reportPath}",
+                    e.IsTerminating ? "程序致命错误" : "功能异常",
+                    MessageBoxButton.OK,
+                    e.IsTerminating ? MessageBoxImage.Stop : MessageBoxImage.Error);
             }
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
             Services.Logger.Instance.Info($"应用程序退出，退出码: {e.ApplicationExitCode}");
+            Services.Logger.Instance.Close();
             base.OnExit(e);
         }
     }

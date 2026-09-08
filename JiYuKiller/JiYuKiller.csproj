@@ -73,6 +73,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Services\Logger.cs" />
+    <Compile Include="Services\CrashReportService.cs" />
     <Compile Include="Models\AppSettings.cs" />
     <Compile Include="Services\JiYuController.cs" />
     <Compile Include="Services\UdpAttackService.cs" />

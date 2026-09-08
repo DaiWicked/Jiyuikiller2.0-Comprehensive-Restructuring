@@ -41,7 +41,7 @@ namespace JiYuKiller.Models
         public bool TopMost { get; set; } = false;
 
         /// <summary>调试模式</summary>
-        public bool DebugMode { get; set; } = false;
+        public bool DebugMode { get; set; } = true;
 
         // === 软件高级设置（参考原项目 ConfigWindow）===
         /// <summary>禁用软件内核驱动</summary>
@@ -126,8 +126,14 @@ namespace JiYuKiller.Models
                     {
                         AppSettings settings = (AppSettings)serializer.Deserialize(fs);
                         // 强制更新版本号（版本号总是使用编译时的默认值，不使用保存的旧值）
+                        string oldVersion = settings.Version;
                         settings.Version = new AppSettings().Version;
-                        Services.Logger.Instance.Info($"设置加载成功，从: {SettingsPath}，版本号已更新为: {settings.Version}");
+                        // 版本升级时，调试模式默认开启（用户可手动关闭）
+                        if (oldVersion != settings.Version)
+                        {
+                            settings.DebugMode = true;
+                        }
+                        Services.Logger.Instance.Info($"设置加载成功，从: {SettingsPath}，旧版本: {oldVersion}，新版本: {settings.Version}，调试模式: {settings.DebugMode}");
                         return settings;
                     }
                 }
