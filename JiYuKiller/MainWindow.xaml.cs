@@ -265,8 +265,22 @@ namespace JiYuKiller
             {
                 Services.Logger.Instance.Error("毛玻璃效果管理器初始化失败", ex);
             }
+            // 初始化导航指示器位置到第一个按钮
+            try
+            {
+                if (NavQuick != null && NavIndicator != null)
+                {
+                    this.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        AnimateNavIndicator(NavQuick);
+                    }), System.Windows.Threading.DispatcherPriority.Loaded);
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Warn("导航指示器初始化失败: " + ex.Message);
+            }
         }
-
         #endregion
 
         #region 窗口控制
@@ -346,15 +360,25 @@ namespace JiYuKiller
 
         private void AnimateNavIndicator(Button targetBtn)
         {
-            if (targetBtn == null || NavIndicator == null || NavIndicatorTransform == null) return;
+            if (targetBtn == null || NavIndicator == null || NavIndicatorTransform == null || NavContentGrid == null) return;
             try
             {
-                Point relativePoint = targetBtn.TranslatePoint(new Point(0, 0), NavStackPanel);
+                // 指示器和按钮同在 NavContentGrid 内，相对于 NavContentGrid 计算位置
+                Point relativePoint = targetBtn.TranslatePoint(new Point(0, 0), NavContentGrid);
                 double targetX = relativePoint.X;
                 double targetWidth = targetBtn.ActualWidth;
+                if (targetWidth <= 0) targetWidth = targetBtn.MinWidth;
                 NavIndicator.Width = targetWidth;
+                Services.Logger.Instance.Debug("指示器动画: 目标X=" + targetX.ToString("F1") + ", 宽度=" + targetWidth.ToString("F1") + ", 按钮=" + targetBtn.Content);
                 DoubleAnimation anim = new DoubleAnimation { To = targetX, Duration = TimeSpan.FromMilliseconds(350), EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut } };
                 NavIndicatorTransform.BeginAnimation(TranslateTransform.XProperty, anim);
+                // 滚动到可见区域
+                if (NavScrollViewer != null)
+                {
+                    double scrollTo = targetX - 20;
+                    if (scrollTo < 0) scrollTo = 0;
+                    NavScrollViewer.ScrollToHorizontalOffset(scrollTo);
+                }
             }
             catch (Exception ex)
             {
