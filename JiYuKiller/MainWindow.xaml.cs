@@ -660,6 +660,8 @@ namespace JiYuKiller
             PageDebug.Visibility = Visibility.Collapsed;
             PageCustom.Visibility = Visibility.Collapsed;
             PageGeek.Visibility = Visibility.Collapsed;
+            PageUdpAttack.Visibility = Visibility.Collapsed;
+            PageIMTeacher.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
             NavQuick.FontWeight = FontWeights.Normal;
@@ -1303,6 +1305,123 @@ namespace JiYuKiller
                 }
             }
             return IntPtr.Zero;
+        }
+
+        #endregion
+
+        #region 极客工具 - 极域UDP攻击
+
+        private void BtnOpenUdpAttack_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("极客工具-极域UDP攻击", "BtnOpenUdpAttack");
+            ShowPage("udpattack");
+        }
+
+        private void BtnBackFromUdpAttack_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("UDP攻击-返回", "BtnBackFromUdpAttack");
+            ShowPage("geek");
+        }
+
+        private void BtnScanLan_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("UDP攻击-扫描局域网", "BtnScanLan");
+            TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " 局域网扫描功能开发中...\n");
+            TextUdpScanResult.Text = "扫描功能开发中";
+        }
+
+        private void BtnUdpSendMsg_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("UDP攻击-发送消息", "BtnUdpSendMsg");
+            TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " 发送消息功能开发中...\n");
+        }
+
+        private void BtnUdpSendCmd_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("UDP攻击-发送命令", "BtnUdpSendCmd");
+            TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " 发送命令功能开发中...\n");
+        }
+
+        private void BtnUdpShutdown_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("UDP攻击-远程关机", "BtnUdpShutdown");
+            TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " 远程关机功能开发中...\n");
+        }
+
+        private void BtnUdpReboot_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("UDP攻击-远程重启", "BtnUdpReboot");
+            TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " 远程重启功能开发中...\n");
+        }
+
+        #endregion
+
+        #region 极客工具 - 教师端模拟
+
+        private void BtnOpenIMTeacher_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("极客工具-教师端模拟", "BtnOpenIMTeacher");
+            ShowPage("imteacher");
+        }
+
+        private void BtnBackFromIMTeacher_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("教师端模拟-返回", "BtnBackFromIMTeacher");
+            ShowPage("geek");
+        }
+
+        private void BtnStartIMTeacher_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("教师端模拟-启动", "BtnStartIMTeacher");
+            TextIMTeacherStatus.Text = "启动中...";
+            string exePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "teacher_sim.exe");
+            if (!System.IO.File.Exists(exePath))
+            {
+                TextIMTeacherStatus.Text = "错误: 未找到 teacher_sim.exe";
+                Services.Logger.Instance.Error("[IMTeacher] 未找到 teacher_sim.exe: " + exePath);
+                return;
+            }
+            try
+            {
+                Process.Start(new ProcessStartInfo(exePath) { WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory });
+                TextIMTeacherStatus.Text = "已启动";
+                Services.Logger.Instance.Info("[IMTeacher] 已启动 teacher_sim.exe");
+            }
+            catch (Exception ex)
+            {
+                TextIMTeacherStatus.Text = "启动失败: " + ex.Message;
+                Services.Logger.Instance.Error("[IMTeacher] 启动失败", ex);
+            }
+        }
+
+        private void BtnStopIMTeacher_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("教师端模拟-停止", "BtnStopIMTeacher");
+            try
+            {
+                Process[] procs = Process.GetProcessesByName("teacher_sim");
+                foreach (var p in procs) p.Kill();
+                TextIMTeacherStatus.Text = "已停止";
+                Services.Logger.Instance.Info("[IMTeacher] 已停止 teacher_sim.exe");
+            }
+            catch (Exception ex)
+            {
+                TextIMTeacherStatus.Text = "停止失败: " + ex.Message;
+                Services.Logger.Instance.Error("[IMTeacher] 停止失败", ex);
+            }
+        }
+
+        private void BtnOpenIMTeacherLog_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("教师端模拟-打开日志", "BtnOpenIMTeacherLog");
+            try
+            {
+                Process.Start("explorer.exe", AppDomain.CurrentDomain.BaseDirectory);
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("[IMTeacher] 打开日志目录失败", ex);
+            }
         }
 
         #endregion

@@ -291,6 +291,87 @@
                     </StackPanel>
                 </ScrollViewer>
 
+
+                <!-- 极域UDP攻击页面 -->
+                <ScrollViewer x:Name="PageUdpAttack" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
+                    <StackPanel Margin="0,0,0,8">
+                        <Button x:Name="BtnBackFromUdpAttack" Content="← 返回" Click="BtnBackFromUdpAttack_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" Padding="4,6" FontSize="12" HorizontalAlignment="Left" Margin="0,0,0,8" />
+                        <TextBlock Text="极域 UDP 攻击" FontSize="20" FontWeight="Bold" Foreground="#FF000000" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="目标 IP" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,6" />
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TextUdpTargetIp" Text="192.168.1.100" Style="{StaticResource GlassTextBox}" Grid.Column="0" Margin="0,0,6,0" />
+                                    <Button x:Name="BtnScanLan" Content="扫描局域网" Click="BtnScanLan_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Padding="10,6" FontSize="12" />
+                                </Grid>
+                                <TextBlock x:Name="TextUdpScanResult" Text="未扫描" FontSize="11" Foreground="#FF888888" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="攻击模式" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="BtnUdpSendMsg" Content="发送消息" Click="BtnUdpSendMsg_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,8" FontSize="12" />
+                                    <Button x:Name="BtnUdpSendCmd" Content="发送命令" Click="BtnUdpSendCmd_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,8" FontSize="12" />
+                                </Grid>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="BtnUdpShutdown" Content="远程关机" Click="BtnUdpShutdown_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,8" FontSize="12" />
+                                    <Button x:Name="BtnUdpReboot" Content="远程重启" Click="BtnUdpReboot_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,8" FontSize="12" />
+                                </Grid>
+                                <TextBox x:Name="TextUdpMessage" Text="Hello from JiYuKiller" Style="{StaticResource GlassTextBox}" Margin="0,4,0,0" FontSize="12" />
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="攻击日志" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,6" />
+                                <TextBox x:Name="TextUdpLog" Text="等待操作..." Style="{StaticResource GlassTextBox}" Height="120" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontSize="11" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 教师端模拟页面 -->
+                <ScrollViewer x:Name="PageIMTeacher" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
+                    <StackPanel Margin="0,0,0,8">
+                        <Button x:Name="BtnBackFromIMTeacher" Content="← 返回" Click="BtnBackFromIMTeacher_Click" Style="{StaticResource GlassButton}" Background="Transparent" Foreground="#FF3A3A3A" BorderBrush="Transparent" Padding="4,6" FontSize="12" HorizontalAlignment="Left" Margin="0,0,0,8" />
+                        <TextBlock Text="极域教师端模拟 (beta)" FontSize="20" FontWeight="Bold" Foreground="#FF000000" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="状态" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,6" />
+                                <TextBlock x:Name="TextIMTeacherStatus" Text="未启动" FontSize="12" Foreground="#FF888888" />
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#15000000" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="操作" FontSize="13" FontWeight="Bold" Foreground="#FF2A2A2A" Margin="0,0,0,8" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="BtnStartIMTeacher" Content="启动模拟" Click="BtnStartIMTeacher_Click" Style="{StaticResource GlassButton}" Grid.Column="0" Margin="0,0,4,0" Padding="8,8" FontSize="12" />
+                                    <Button x:Name="BtnStopIMTeacher" Content="停止模拟" Click="BtnStopIMTeacher_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Margin="4,0,0,0" Padding="8,8" FontSize="12" />
+                                </Grid>
+                                <Button x:Name="BtnOpenIMTeacherLog" Content="打开日志目录" Click="BtnOpenIMTeacherLog_Click" Style="{StaticResource GlassButton}" Padding="8,8" FontSize="12" />
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#FFF5F5DC" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <TextBlock Text="注意：教师端模拟依赖外部 teacher_sim.exe，需要放在程序目录下。首次使用请确认文件存在。" FontSize="11" Foreground="#FF8B4513" TextWrapping="Wrap" />
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
                 <!-- 软件高级设置页面 -->
                 <Grid x:Name="PageAdvancedSettings" Visibility="Collapsed">
                     <Grid.RowDefinitions>
