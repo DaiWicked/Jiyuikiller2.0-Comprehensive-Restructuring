@@ -358,6 +358,17 @@ namespace JiYuKiller
             ShowPage("geek");
         }
 
+        private void NavScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // 将鼠标滚轮垂直滚动转换为横向滚动
+            if (NavScrollViewer != null && e.Delta != 0)
+            {
+                double newOffset = NavScrollViewer.HorizontalOffset - e.Delta;
+                NavScrollViewer.ScrollToHorizontalOffset(newOffset);
+                e.Handled = true;
+            }
+        }
+
         private void AnimateNavIndicator(Button targetBtn)
         {
             if (targetBtn == null || NavIndicator == null || NavIndicatorTransform == null || NavContentGrid == null) return;

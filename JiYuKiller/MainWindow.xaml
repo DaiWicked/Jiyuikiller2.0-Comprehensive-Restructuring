@@ -666,7 +666,7 @@
             </Grid>
 
             <!-- 底部悬浮导航栏（液态玻璃 - 可横向滚动） -->
-            <Grid Grid.Row="2" Margin="10,2,10,12" HorizontalAlignment="Stretch" Height="60">
+            <Grid Grid.Row="2" Margin="10,0,10,8" HorizontalAlignment="Stretch" Height="66">
                 <!-- 层1: 外阴影（悬浮感） -->
                 <Border CornerRadius="28" Background="#2E000000" Margin="0,5,0,-3" Opacity="0.7">
                     <Border.Effect><BlurEffect Radius="14" /></Border.Effect>
@@ -705,7 +705,7 @@
                                 </Border.Background>
                             </Border>
                             <!-- 可横向滚动的导航区域 -->
-                            <ScrollViewer x:Name="NavScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="2,4">
+                            <ScrollViewer x:Name="NavScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="2,4" PreviewMouseWheel="NavScrollViewer_PreviewMouseWheel">
                                 <Grid x:Name="NavContentGrid" HorizontalAlignment="Left" Height="48">
                                     <!-- 滑动指示器（微妙背景高亮） -->
                                     <Border x:Name="NavIndicator" HorizontalAlignment="Left" VerticalAlignment="Center"
