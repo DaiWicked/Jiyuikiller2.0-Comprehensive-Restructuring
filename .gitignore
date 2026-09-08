@@ -50,9 +50,15 @@ logs/
 *.pdb
 
 # ==========================================
-# 运行时生成的设置文件
+# 运行时生成的设置和配置文件
 # ==========================================
 JiYuKillerSettings.xml
+i.chaoxing.xml
+i.chaoxing.ini
+i.chaoxing.log
+学习不通.log
+学习不通.xml
+学习不通.ini
 *.config.user
 appsettings.local.json
 *.local.config
@@ -117,3 +123,18 @@ env/
 *.sublime-project
 *.sublime-workspace
 *.iml
+
+# ==========================================
+# 错误转储文件
+# ==========================================
+*.dmp
+*.crash
+*.wer
+
+# ==========================================
+# 驱动相关临时文件
+# ==========================================
+*.sys
+!JiYuKiller/Drivers/*.sys
+*.cat
+*.inf

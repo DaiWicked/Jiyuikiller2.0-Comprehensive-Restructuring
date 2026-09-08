@@ -1,118 +1,169 @@
-﻿# JiYuKiller 2.0 全面重构 - 更新日志
+# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
-## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-08)
+## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09)
 
-### 液态玻璃悬浮底栏（7层结构）
+### 程序重命名
+- exe文件名: i.chaoxing.exe → 学习不通.exe
+- 进程名: i.chaoxing → 学习不通
+- 窗口标题: 学习不通 → 学习不通2.0
+- 界面显示文字统一为"学习不通2.0"
+- GlassyEffect pack URI同步修改(关键,否则毛玻璃失效)
+- 日志/设置/INI文件名保持 i.chaoxing.* 不变
 
-#### 底栏设计
-- 悬浮式设计，从窗口内容区独立出来
-- 7层液态玻璃结构：外阴影/外层光晕/边缘折射边框/玻璃主体/顶部高光/底部暗化/内阴影边缘
-- 参考 liquid-glass-arc 参数：外阴影 `0 4px 24px rgba(0,0,0,0.18)`、内阴影 `inset 0 0 20px -5px rgba(255,255,255,0.45)`
-- 顶部高光 + 底部暗化形成强烈光影对比，增强立体感
-- 外阴影加深让底栏从背景中"浮出来"
+### 文件命名统一
+- 日志文件: JiYuKiller.log → i.chaoxing.log
+- 设置文件: JiYuKillerSettings.xml → i.chaoxing.xml
+- 与INI文件(i.chaoxing.ini)统一命名
 
-#### 导航按钮
-- 7个按钮：快捷栏/控制台和设置/自定义设置/极客工具/帮助文档/调试/关于
-- 每个按钮独立高斯模糊玻璃效果（分层：模糊背景层+边缘高光层+文字层）
-- 文字纯黑 #000000 SemiBold 13px，保证可读性
-- 悬停：背景变亮 + 上移2px + 边框变亮
-- 按下：背景更亮 + 缩放0.95
+### 截图替换功能增强
+- 新增状态监测: 状态指示灯(圆点)+状态文字(已替换/未替换)
+- 已替换: 绿色圆点+绿色文字+显示当前图片路径
+- 未替换: 灰色圆点+灰色文字+提示尚未设置
+- 新增"取消替换"按钮: 清除图片并立即应用,弹窗反馈
+- 原"取消"按钮改名为"放弃选择"
+- 按钮布局: 选择图片(蓝)→应用替换(绿)→取消替换(红)→放弃选择(灰)
 
-#### 滑动指示器
-- 微妙背景高亮，在按钮下方不遮挡文字
-- iOS风格平滑切换动画（CubicEase 350ms）
-- 切换页面时自动滚动到可见区域
+### 底栏按钮排序与页面逻辑修复
+- 底栏按钮重新排序: 快捷栏/控制台和设置/自定义设置/UDP攻击/小小私聊/截图替换/帮助文档/调试/关于
+- "关于"按钮移到最后面
+- 修复ShowPage()缺少PageChat/PageScreenshot隐藏导致页面不隐藏的bug
+- 修复ShowPage()缺少NavChat/NavScreenshot样式重置导致按钮状态异常的bug
 
-#### 交互
-- 鼠标滚轮横向滚动（PreviewMouseWheel 转换为 HorizontalOffset）
-- 所有滚动条隐藏（Hidden），滚动功能保留
-- 底栏固定高度66px，行高90px防止裁剪
+### 极域UDP攻击模块
+- 完整移植JyUdpAttack协议(4个硬编码DMOC包)
+- 支持发送消息/命令/关机/重启
+- 局域网扫描: Ping并行+SendARP获取MAC,结果格式[MAC]-IP
+- 本机信息显示: MAC+IP
+- 发送成功/失败弹窗反馈
+- 操作日志实时显示
 
-### 极客工具页面
-- 预留增强功能入口：极域UDP攻击/小小私聊/截图替换/教师端模拟
+### 小小私聊模块
+- 座位号↔IP换算(6人一排布局,算法保持原样)
+- 本机IP/座位号自动获取
+- Ping检测同学在线状态
+- UDP消息发送(格式「X号同学:消息」,UTF-16LE,端口4705)
+- 聊天记录显示
 
-### 核心功能完整移植（驱动 + DLL注入 + 控制器）
+### 核心功能完整移植(驱动 + DLL注入 + 控制器)
 
-#### 内核驱动交互（DriverService.cs）
-- 驱动加载/卸载：SCM 服务管理，自动创建/删除服务
-- 全部 IOCTL 控制码移植：杀进程/终止/挂起/恢复/关机/重启/自我保护/初始化参数
-- 驱动打开/关闭句柄管理
-- 驱动文件：JiYuTrainerDriver.sys（复用原项目）
+#### 内核驱动交互(DriverService.cs)
+- 驱动加载/卸载: SCM服务管理,自动创建/删除服务
+- 全部IOCTL控制码: 杀进程/终止/挂起/恢复/关机/重启/自我保护/初始化参数
+- 驱动文件: JiYuTrainerDriver.sys(复用原项目)
 
-#### DLL注入服务（DllInjectService.cs）
-- CreateRemoteThread + LoadLibraryW 注入/卸载
-- WM_COPYDATA 与 DLL 通信（消息格式 `hk:xxx`，与原 JiYuTrainerHooks.dll 兼容）
-- 目标窗口标题 "JiYu Trainer Virus Window"
-- DLL文件：JiYuTrainerHooks.dll（复用原项目）
+#### DLL注入服务(DllInjectService.cs)
+- CreateRemoteThread + LoadLibraryW注入/卸载
+- WM_COPYDATA与DLL通信(消息格式hk:xxx,与原JiYuTrainerHooks.dll兼容)
+- DLL回调消息处理: hkb:succ/jyk/gbmfull
+- DLL文件: JiYuTrainerHooks.dll(复用原项目)
 
-#### JiYuController 完整重构
-- 进程监控：定时检测 StudentMain.exe，CKInterval 可配置
-- DLL自动注入：检测到极域后自动注入 Hooks DLL
-- 窗口处理：广播窗口化（移除TOPMOST，调整为屏幕3/4大小居中）、黑屏处理
-- 驱动管理：LoadDriver/UnloadDriver，自动发送系统版本参数
-- 内核级杀进程：驱动 IOCTL CTL_KILL_PROCESS
-- 解除网络控制：卸载 TDNetFilter 驱动（sc stop/delete）
-- 极域定位：注册表 + 6种常见安装路径
+#### JiYuController完整重构
+- 进程监控: 定时检测StudentMain.exe,CKInterval可配置
+- DLL自动注入: 检测到极域后自动注入Hooks DLL
+- 窗口处理: 广播窗口化(移除TOPMOST,调整为屏幕3/4大小居中)、黑屏处理
+- 驱动管理: LoadDriver/UnloadDriver,自动发送系统版本参数
+- 内核级杀进程: 驱动IOCTL + NtTerminateProcess原生API(3种模式)
+- 解除网络控制: 卸载TDNetFilter驱动(sc stop/delete)
+- 极域定位: 注册表+6种常见安装路径
 - 停止时自动卸载注入的DLL
 
-### UI 功能链接修复
-- 复选框实时更新设置并通知 Controller（之前只记日志）
-- 保存设置后通知 Controller
-- 杀死/重启极域改用 Controller 方法（之前直接用 Process）
-- 新增加载/卸载内核驱动按钮
-- 新增驱动状态显示（已加载/未加载）
-- 状态定时更新同时刷新极域状态和驱动状态
+#### DLL设置传递机制(关键修复)
+- 设置通过INI配置文件传递,非DLL消息
+- 主程序写入i.chaoxing.ini的[JTSettings]节
+- 发送hk:inipath:路径让DLL调用VInitSettings()重新读取
+- 支持11个DLL设置项: AutoForceKill/AllowAllRunOp/BandAllRunOp/ProhibitKillProcess/ProhibitCloseWindow/DoNotShowVirusWindow/ForceDisableWatchDog/AllowGbTop/AllowMonitor/AllowControl/FakeScreenImage
 
-### 软件高级设置功能启用
-- 驱动设置：禁用内核驱动/自我保护 从禁用改为可用
-- 结束进程模式：KernelMode 从禁用改为可用
-- DLL注入模式：启用 InjectMasterHelper，移除 InjectProcHelper64（32位专用）
-- 移除所有"开发中/暂不可用"提示文字
-- Controller UpdateSettings 增强：CKInterval更新、驱动禁用自动卸载、自我保护自动启用
+### 软件高级设置(17项)
+- 监控极域运行进程
+- 禁止极域运行进程
+- 允许屏幕广播窗口置顶
+- 禁止极域结束进程
+- 允许教师监视你的电脑
+- 禁止极域关闭窗口
+- 允许老师控制你的电脑
+- 解除网络控制
+- 选择极域主进程位置
+- 检查间隔(CKInterval)
+- 结束进程模式(KillProcess/TaskKill/NtTerminateProcess)
+- 禁用内核驱动
+- 驱动自我保护
+- DLL注入模式(InjectMasterHelper)
+- 禁止所有运行操作
+- 强制关闭看门狗
+- 不显示病毒窗口
 
-### UI 视觉优化
-- 全局文字颜色加深：主要 #0A0A0A，分组 #2A2A2A，次要 #3A3A3A
-- 内容层透明度默认 50%
-- 光晕调节修复：Margin 问题导致光晕被主窗口遮挡
-- 窗口四角黑色空隙修复：移除 AllowsTransparency 窗口上的 DropShadowEffect
-
-### 真正毛玻璃效果（移植自 WPF-Liquid-Glass-Effect-main）
-- 桌面截图背景 + HLSL 像素着色器折射
-- 自动刷新背景（窗口移动/大小变化/激活失活）
-- 光感效果：渐变边框 + 顶部高光
-- 外层光晕虚化：双层光晕
-- 圆角窗口
-
-### 自定义设置页面
-- 模糊强度调节（0-100%）
-- 内容层透明度调节（5%-100%）
-- 外层/中层光晕透明度调节
-- 刷新玻璃背景按钮
-
-### 新增功能
-- 快捷栏页面：当前状态/极域控制/窗口控制/电源控制
+### UI功能
+- 快捷栏页面: 当前状态/极域控制/窗口控制/电源控制
 - 本窗口置顶、杀死极域、重启极域
-- 帮助文档页面：介绍/快捷键/其他/免责声明
-- 软件高级参数配置：17项设置
+- 帮助文档页面: 介绍/快捷键/其他/免责声明
 - 调试命令执行
+- 关于页面 + 关于我页面
+- 全局快捷键: Ctrl+Alt+F紧急全屏, Ctrl+Alt+H显示/隐藏
+- 系统托盘: 关闭隐藏到托盘,双击显示/隐藏
+
+### 液态玻璃悬浮底栏
+- 悬浮式设计,7层液态玻璃结构
+- 9个导航按钮: 快捷栏/控制台和设置/自定义设置/UDP攻击/小小私聊/截图替换/帮助文档/调试/关于
+- iOS风格滑动指示器(CubicEase 350ms)
+- 鼠标滚轮横向滚动,所有滚动条隐藏
+- 每个按钮独立玻璃效果,悬停/按下动效
+
+### 真正毛玻璃效果(移植自WPF-Liquid-Glass-Effect)
+- 桌面截图背景 + HLSL像素着色器折射
+- 自动刷新背景(窗口移动/大小变化/激活失活)
+- 光感效果: 渐变边框 + 顶部高光
+- 外层/中层光晕,圆角窗口
+- 自定义设置: 模糊强度/内容透明度/光晕透明度
+
+### 代码质量修复
+- 修复_studentControlled永远为false
+- 修复KillProcessMode设置未生效
+- 修复UpdateSettings只发hk:reset
+- 实现MasterHelper注入功能
+- 实现NtTerminateProcess原生API调用(ntdll.dll P/Invoke)
+- 清除已删除的自动更新功能残留代码
+- 修复XAML中不存在的GlassCard样式导致启动崩溃
+
+## 移植进度统计
+
+### 已移植功能 (36/39 = 92.3%)
+- 核心控制: 12/12 ✅
+- 驱动/DLL: 8/8 ✅
+- 增强功能: 3/4 (UDP攻击✅, 小小私聊✅, 截图替换✅, 教师端模拟❌)
+- UI功能: 9/9 ✅
+- 系统功能: 4/4 ✅
+
+### 未移植/已删除功能 (3/39)
+1. 教师端模拟(IMTeacher) - 原Python项目,需外部exe调用,复杂度高
+2. 错误报告(BugReport) - 原项目有BugReportWindow,优先级低
+3. 自动更新(Updater) - 用户要求删除
+
+### 新增功能 (非原项目)
 - 关于我页面
+- 悬浮液态玻璃底栏
+- 真正毛玻璃效果(HLSL着色器)
+- 截图替换状态监测
+- 统一日志系统(详细到行号/方法名)
 
-### 程序信息
-- 程序显示名称：学习不通
-- 进程名：i.chaoxing
-- 程序图标：JiYuTrainerLogo.ico
-- 版本号：QD_V2.1_JiYuRebuild_Liquid-Glass
-- 目标框架：.NET Framework 4.7.2
+## 程序信息
+- 程序显示名称: 学习不通2.0
+- exe文件名: 学习不通.exe
+- 进程名: 学习不通
+- 程序图标: JiYuTrainerLogo.ico
+- 版本号: QD_V2.1_JiYuRebuild_Liquid-Glass
+- 目标框架: .NET Framework 4.7.2
+- 代码规模: C# 4402行(16文件) + XAML 997行(2文件)
+- 日志文件: i.chaoxing.log(exe同目录)
+- 设置文件: i.chaoxing.xml(exe同目录)
+- INI文件: i.chaoxing.ini(exe同目录,DLL设置)
 
-## QD_V1.1_TrayIcon (2026-09-07)
+## 历史版本
 
-### 新增功能
-- 系统托盘支持：关闭/最小化隐藏到托盘
-- 托盘双击显示/隐藏，右键菜单
+### QD_V1.1_TrayIcon (2026-09-07)
+- 系统托盘支持: 关闭/最小化隐藏到托盘
+- 托盘双击显示/隐藏,右键菜单
 - 窗口不可最大化
 
-## QD_V1.0_WPF-Rebuild (2026-09-07)
-
-### 项目重构
-- 从 C++/Sciter 迁移至 C# .NET 4.7.2 + WPF
+### QD_V1.0_WPF-Rebuild (2026-09-07)
+- 从C++/Sciter迁移至C# .NET 4.7.2 + WPF
 - 统一日志系统、设置持久化、进程监控、禁止运行、广播置顶控制
