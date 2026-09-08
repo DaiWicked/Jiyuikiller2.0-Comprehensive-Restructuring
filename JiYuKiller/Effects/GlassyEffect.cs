@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
@@ -54,7 +54,7 @@ namespace JiYuKiller.Effects
             {
                 PixelShader shader = new PixelShader
                 {
-                    UriSource = new Uri("pack://application:,,,/i.chaoxing;component/Effects/GlassyEffect.ps", UriKind.Absolute)
+                    UriSource = new Uri("pack://application:,,,/学习不通;component/Effects/GlassyEffect.ps", UriKind.Absolute)
                 };
 
                 // 通过设置属性来验证着色器可用
