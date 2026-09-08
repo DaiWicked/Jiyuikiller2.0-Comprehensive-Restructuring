@@ -1,4 +1,30 @@
-# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
+﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
+
+## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 错误报告与调试模式
+
+### 错误报告服务 (CrashReportService)
+- 程序异常时自动生成错误报告文件到exe目录
+- 报告文件名: i.chaoxing_Crash_时间戳.txt (致命错误) / i.chaoxing_Error_时间戳.txt (功能异常)
+- 报告内容: 异常位置(模块/功能)、异常信息、堆栈跟踪、内部异常链、系统信息、进程信息、加载的程序集
+- 弹窗显示错误信息和报告路径
+- 不需要在线提交
+- UI线程异常 → 功能异常报告, 尝试继续运行
+- 非UI线程异常 → 致命错误报告, 可能导致程序终止
+
+### 调试模式控制日志
+- DebugMode默认开启(true)
+- 开启时: 生成i.chaoxing.log, 记录所有日志
+- 关闭时: 不生成日志文件, 删除已有日志
+- Logger新增Enable()/Disable()方法
+- 启动时根据DebugMode决定是否启用日志
+- 切换调试模式时实时启用/禁用并保存设置
+
+### 修复: 初始化时设置保存错误
+- 新增_isInitializing标志
+- ApplySettingsToUI期间跳过SaveSettingsFromUI
+- 避免初始化过程中CheckBox事件触发导致DebugMode被错误保存为false
+
+---
 
 ## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09)
 
