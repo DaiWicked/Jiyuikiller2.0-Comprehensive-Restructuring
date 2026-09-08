@@ -1,5 +1,36 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 最终审核与资源修复
+
+### 代码最终审核
+- 总代码量：6032行（C# + XAML），16个.cs文件 + 2个.xaml文件
+- 70个Click事件全部有对应方法
+- 12个页面控件XAML和CS引用完整
+- 11个服务文件全部在csproj中编译
+- 编译结果：0错误，0警告
+
+### 修复ShowPage页面切换bug
+- 修复case "screenshot"被case "teachersim"吞掉的问题
+- 导致截图替换页面无法切换，代码无法访问
+
+### Assets图片嵌入资源修复
+- 将6个Assets文件从Content改为Resource，嵌入exe内部
+- 修复发布版缺少Assets文件夹导致XamlParseException启动崩溃
+- XAML图片引用改为pack URI格式：pack://application:,,,/学习不通;component/Assets/xxx
+- 修复系统托盘图标从文件路径加载改为GetResourceStream从嵌入资源加载
+- 修复StreamResourceInfo命名空间（System.Windows.Resources）
+- exe体积：813KB → 1291KB（含图片资源）
+
+### 隐藏所有滚动条
+- 将所有ScrollViewer的VerticalScrollBarVisibility从Auto改为Hidden
+- 涉及4个页面：UDP攻击、小小私聊、截图替换、教师端模拟
+
+### 单文件打包
+- 驱动JiYuTrainerDriver.sys和JiYuTrainerHooks.dll嵌入为EmbeddedResource
+- 程序启动时自动释放到%TEMP%\学习不通\目录
+- 文件已存在且大小相同时跳过释放
+- 发布包仅需：学习不通.exe + Drivers\teacher_sim.exe
+
 ## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 教师端模拟控制台修复与增强
 
 ### 教师端模拟控制台修复
