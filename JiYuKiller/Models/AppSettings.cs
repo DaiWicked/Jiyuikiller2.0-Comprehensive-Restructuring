@@ -110,7 +110,7 @@ namespace JiYuKiller.Models
         public string Version { get; set; } = "QD_V2.1_JiYuRebuild_Liquid-Glass";
 
         [XmlIgnore]
-        private static readonly string SettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "JiYuKillerSettings.xml");
+        private static readonly string SettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "i.chaoxing.xml");
 
         /// <summary>
         /// 加载设置

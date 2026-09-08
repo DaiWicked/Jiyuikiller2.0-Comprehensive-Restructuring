@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -7,7 +7,7 @@ namespace JiYuKiller.Services
 {
     /// <summary>
     /// 统一日志服务 - 单例模式，线程安全
-    /// 日志文件：exe目录\JiYuKiller.log
+    /// 日志文件：exe目录\i.chaoxing.log
     /// </summary>
     public class Logger
     {
@@ -23,7 +23,7 @@ namespace JiYuKiller.Services
         private Logger()
         {
             string exeDir = AppDomain.CurrentDomain.BaseDirectory;
-            _logPath = Path.Combine(exeDir, "JiYuKiller.log");
+            _logPath = Path.Combine(exeDir, "i.chaoxing.log");
 
             try
             {
@@ -44,7 +44,7 @@ namespace JiYuKiller.Services
             catch (Exception ex)
             {
                 // 日志初始化失败时，尝试写入临时目录
-                string fallback = Path.Combine(Path.GetTempPath(), "JiYuKiller.log");
+                string fallback = Path.Combine(Path.GetTempPath(), "i.chaoxing.log");
                 _logPath = fallback;
                 _writer = new StreamWriter(fallback, true, new UTF8Encoding(false)) { AutoFlush = true };
                 Error($"日志初始化失败，使用备用路径: {fallback}, 错误: {ex.Message}");
