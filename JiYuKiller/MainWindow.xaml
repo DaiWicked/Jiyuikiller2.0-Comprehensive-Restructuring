@@ -4,7 +4,7 @@
         Title="学习不通2.0"
         Height="600" Width="450"
         WindowStartupLocation="CenterScreen"
-        Icon="Assets/JiYuTrainerLogo.ico"
+        Icon="pack://application:,,,/学习不通;component/Assets/JiYuTrainerLogo.ico"
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
@@ -65,7 +65,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
-                    <Image Source="Assets/JiYuTrainerLogo16.png" Width="16" Height="16" Margin="0,0,8,0" />
+                    <Image Source="pack://application:,,,/学习不通;component/Assets/JiYuTrainerLogo16.png" Width="16" Height="16" Margin="0,0,8,0" />
                     <TextBlock Text="学习不通2.0" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Foreground="#FF0A0A0A" />
                     <TextBlock x:Name="VersionText" Text="QD_V2.1" FontSize="12" VerticalAlignment="Center" Foreground="#FF555555" Margin="8,0,0,0" />
                 </StackPanel>
@@ -209,7 +209,7 @@
                 <Grid x:Name="PageAbout" Visibility="Collapsed">
                     <ScrollViewer VerticalScrollBarVisibility="Hidden">
                         <StackPanel HorizontalAlignment="Center" Margin="0,20">
-                            <Image Source="Assets/about.png" Width="280" Margin="0,0,0,16" Stretch="Uniform" />
+                            <Image Source="pack://application:,,,/学习不通;component/Assets/about.png" Width="280" Margin="0,0,0,16" Stretch="Uniform" />
                             <TextBlock Text="学习不通2.0" FontSize="24" FontWeight="Bold" Foreground="#FF0A0A0A" HorizontalAlignment="Center" />
                             <TextBlock x:Name="AboutVersion" Text="QD_V2.1_JiYuRebuild_Liquid-Glass" FontSize="14" Foreground="#FF555555" HorizontalAlignment="Center" Margin="0,4,0,16" />
                             <TextBlock Text="基于 JiYuTrainer 重构的 C# WPF 版本" FontSize="12" Foreground="#FF3A3A3A" HorizontalAlignment="Center" />
@@ -236,7 +236,7 @@
 
                             <!-- 头像 -->
                             <Border Width="120" Height="120" CornerRadius="60" Margin="0,0,0,16" ClipToBounds="True">
-                                <Image Source="Assets/me.png" Stretch="UniformToFill" />
+                                <Image Source="pack://application:,,,/学习不通;component/Assets/me.png" Stretch="UniformToFill" />
                             </Border>
 
                             <!-- 标题 -->

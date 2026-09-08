@@ -111,18 +111,26 @@ namespace JiYuKiller
 
             _trayIcon = new WinForms.NotifyIcon();
             _trayIcon.Text = "学习不通";
-            // 使用绝对路径加载图标，避免工作目录变化导致找不到
-            string iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "JiYuTrainerLogo.ico");
-            if (System.IO.File.Exists(iconPath))
+            // 从嵌入资源加载图标
+            try
             {
-                _trayIcon.Icon = new Drawing.Icon(iconPath);
-                Services.Logger.Instance.Debug($"托盘图标已加载: {iconPath}");
+                System.Uri iconUri = new System.Uri("pack://application:,,,/学习不通;component/Assets/JiYuTrainerLogo.ico", System.UriKind.Absolute);
+                System.Windows.Resources.StreamResourceInfo sri = System.Windows.Application.GetResourceStream(iconUri);
+                if (sri != null)
+                {
+                    _trayIcon.Icon = new Drawing.Icon(sri.Stream);
+                    Services.Logger.Instance.Debug("托盘图标已从嵌入资源加载");
+                }
+                else
+                {
+                    _trayIcon.Icon = Drawing.SystemIcons.Application;
+                    Services.Logger.Instance.Warn("嵌入资源图标加载失败，使用系统默认图标");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // 回退：使用系统默认图标
                 _trayIcon.Icon = Drawing.SystemIcons.Application;
-                Services.Logger.Instance.Warn($"图标文件不存在，使用系统默认图标: {iconPath}");
+                Services.Logger.Instance.Warn("托盘图标加载异常: " + ex.Message);
             }
             _trayIcon.Visible = true;
 
