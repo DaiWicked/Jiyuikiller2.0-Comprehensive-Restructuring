@@ -214,6 +214,18 @@
                 </Setter>
             </Style>
 
+            <!-- 透明RepeatButton样式（Slider轨道点击用，不显示视觉） -->
+            <Style x:Key="SliderRepeatButtonTransparent" TargetType="RepeatButton">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RepeatButton">
+                            <Border Background="Transparent" />
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- 玻璃滑块样式（借鉴COUI: Thumb悬停放大1.1, 拖动放大1.25, 带阴影） -->
             <Style x:Key="GlassSlider" TargetType="Slider">
                 <Setter Property="Foreground" Value="{StaticResource GlassPrimaryBrush}" />
@@ -229,6 +241,12 @@
                                 <Border x:Name="TrackFill" Height="4" CornerRadius="2" Background="{TemplateBinding Foreground}" VerticalAlignment="Center" HorizontalAlignment="Left" Width="0" />
                                 <!-- Thumb -->
                                 <Track x:Name="PART_Track">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Style="{StaticResource SliderRepeatButtonTransparent}" Command="Slider.DecreaseLarge" />
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Style="{StaticResource SliderRepeatButtonTransparent}" Command="Slider.IncreaseLarge" />
+                                    </Track.IncreaseRepeatButton>
                                     <Track.Thumb>
                                         <Thumb Width="18" Height="18">
                                             <Thumb.Template>
