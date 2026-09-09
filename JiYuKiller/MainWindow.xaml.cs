@@ -689,13 +689,7 @@ namespace JiYuKiller
         {
             Services.Logger.Instance.CheckboxChanged("启用控制器", true, "CheckEnableController");
             _controller.Start();
-
-            // 初始化教师端模拟服务
-            _teacherSimService = new Services.TeacherSimService();
-            _teacherSimService.ExePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "teacher_sim.exe");
-            _teacherSimService.WorkDir = AppDomain.CurrentDomain.BaseDirectory;
-            _teacherSimService.OnLogOutput += TeacherSim_OnLogOutput;
-            _teacherSimService.OnStateChanged += TeacherSim_OnStateChanged;
+            // 教师端模拟服务已在构造函数中初始化, 此处不重复创建
         }
 
         private void CheckEnableController_Unchecked(object sender, RoutedEventArgs e)
