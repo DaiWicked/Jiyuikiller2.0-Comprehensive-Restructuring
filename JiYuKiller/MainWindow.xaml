@@ -849,7 +849,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Minimum="0" Maximum="1" Value="0.9" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
+                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.9" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
                                             <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="90%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
@@ -861,7 +861,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Minimum="0.05" Maximum="1" Value="0.5" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
+                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0.05" Maximum="1" Value="0.5" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
                                             <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="50%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
@@ -873,7 +873,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderOuterGlow" Grid.Column="0" Minimum="0" Maximum="1" Value="0.2" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderOuterGlow_ValueChanged" />
+                                            <Slider x:Name="SliderOuterGlow" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.2" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderOuterGlow_ValueChanged" />
                                             <TextBlock x:Name="TextOuterGlowValue" Grid.Column="1" Text="20%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
@@ -885,7 +885,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderInnerGlow" Grid.Column="0" Minimum="0" Maximum="1" Value="0.3" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderInnerGlow_ValueChanged" />
+                                            <Slider x:Name="SliderInnerGlow" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.3" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderInnerGlow_ValueChanged" />
                                             <TextBlock x:Name="TextInnerGlowValue" Grid.Column="1" Text="30%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>

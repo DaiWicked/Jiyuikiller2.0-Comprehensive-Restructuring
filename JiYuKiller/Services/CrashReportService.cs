@@ -9,7 +9,7 @@ namespace JiYuKiller.Services
     /// <summary>
     /// 错误报告服务
     /// 程序异常时生成错误报告文件到exe目录
-    /// 报告包含: 异常信息、堆栈、模块信息、系统信息、自定义壁纸状态
+    /// 报告包含: 异常信息、堆栈、模块信息、系统信息、自定义壁纸状态、UI/动效状态
     /// </summary>
     public static class CrashReportService
     {
@@ -46,14 +46,52 @@ namespace JiYuKiller.Services
 
         #endregion
 
+        #region UI/动效诊断信息
+
+        /// <summary>最后一次UI操作类型</summary>
+        public static string LastUIAction { get; set; } = "";
+
+        /// <summary>最后一次UI操作目标</summary>
+        public static string LastUITarget { get; set; } = "";
+
+        /// <summary>最后一次UI操作是否成功</summary>
+        public static bool LastUISuccess { get; set; } = false;
+
+        /// <summary>最后一次UI操作错误信息</summary>
+        public static string LastUIError { get; set; } = "";
+
+        /// <summary>最后一次UI操作时间</summary>
+        public static string LastUITime { get; set; } = "";
+
+        /// <summary>UI动画计数</summary>
+        public static int UIAnimationCount { get; set; } = 0;
+
+        /// <summary>UI动画失败计数</summary>
+        public static int UIAnimationFailCount { get; set; } = 0;
+
+        /// <summary>
+        /// 更新UI/动效状态
+        /// </summary>
+        /// <param name="action">操作类型(如page_fadein, button_press, slider_drag)</param>
+        /// <param name="target">操作目标(如页面名/控件名)</param>
+        /// <param name="success">是否成功</param>
+        /// <param name="error">错误信息</param>
+        public static void UpdateUIState(string action, string target, bool success, string error)
+        {
+            LastUIAction = action ?? "";
+            LastUITarget = target ?? "";
+            LastUISuccess = success;
+            LastUIError = error ?? "";
+            LastUITime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            UIAnimationCount++;
+            if (!success) UIAnimationFailCount++;
+        }
+
+        #endregion
+
         /// <summary>
         /// 生成错误报告
         /// </summary>
-        /// <param name="ex">异常对象</param>
-        /// <param name="moduleName">发生异常的模块名</param>
-        /// <param name="functionName">发生异常的功能名</param>
-        /// <param name="isFatal">是否是致命错误(导致程序终止)</param>
-        /// <returns>报告文件路径</returns>
         public static string GenerateReport(Exception ex, string moduleName = "未知模块", string functionName = "未知功能", bool isFatal = false)
         {
             lock (_lock)
@@ -117,6 +155,18 @@ namespace JiYuKiller.Services
                     sb.AppendLine($"  玻璃桌面可见度: {GlassOpacity}%");
                     sb.AppendLine();
 
+                    // UI/动效状态
+                    sb.AppendLine("【UI/动效状态】");
+                    sb.AppendLine($"  最后操作: {LastUIAction}");
+                    sb.AppendLine($"  操作目标: {LastUITarget}");
+                    sb.AppendLine($"  是否成功: {LastUISuccess}");
+                    sb.AppendLine($"  错误信息: {(string.IsNullOrEmpty(LastUIError) ? "(无)" : LastUIError)}");
+                    sb.AppendLine($"  操作时间: {(string.IsNullOrEmpty(LastUITime) ? "(无)" : LastUITime)}");
+                    sb.AppendLine($"  动画总次数: {UIAnimationCount}");
+                    sb.AppendLine($"  动画失败次数: {UIAnimationFailCount}");
+                    sb.AppendLine($"  失败率: {(UIAnimationCount > 0 ? $"{(double)UIAnimationFailCount / UIAnimationCount * 100:F1}%" : "N/A")}");
+                    sb.AppendLine();
+
                     // 系统信息
                     sb.AppendLine("【系统信息】");
                     sb.AppendLine($"  操作系统: {Environment.OSVersion}");
@@ -168,7 +218,6 @@ namespace JiYuKiller.Services
                 }
                 catch (Exception reportEx)
                 {
-                    // 报告生成失败时尝试写临时文件
                     try
                     {
                         string tempPath = Path.Combine(Path.GetTempPath(), $"i.chaoxing_error_{DateTime.Now:yyyyMMdd-HHmmss}.txt");
@@ -186,11 +235,6 @@ namespace JiYuKiller.Services
         /// <summary>
         /// 显示错误弹窗
         /// </summary>
-        /// <param name="ex">异常对象</param>
-        /// <param name="moduleName">模块名</param>
-        /// <param name="functionName">功能名</param>
-        /// <param name="reportPath">报告文件路径</param>
-        /// <param name="isFatal">是否致命错误</param>
         public static void ShowErrorDialog(Exception ex, string moduleName, string functionName, string reportPath, bool isFatal = false)
         {
             string title = isFatal ? "程序致命错误" : "功能异常";

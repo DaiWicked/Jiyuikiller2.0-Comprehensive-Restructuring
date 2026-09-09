@@ -782,6 +782,45 @@ namespace JiYuKiller
                     break;
             }
 
+            // 页面淡入动画（借鉴COUI NavTransition: 淡入过渡）
+            FrameworkElement targetPage = null;
+            switch (pageName)
+            {
+                case "quick": targetPage = PageQuick; break;
+                case "settings": targetPage = PageSettings; break;
+                case "about": targetPage = PageAbout; break;
+                case "aboutme": targetPage = PageAboutMe; break;
+                case "advanced": targetPage = PageAdvancedSettings; break;
+                case "help": targetPage = PageHelp; break;
+                case "debug": targetPage = PageDebug; break;
+                case "custom": targetPage = PageCustom; break;
+                case "udpattack": targetPage = PageUdpAttack; break;
+                case "chat": targetPage = PageChat; break;
+                case "screenshot": targetPage = PageScreenshot; break;
+                case "teachersim": targetPage = PageTeacherSim; break;
+            }
+            if (targetPage != null)
+            {
+                try
+                {
+                    targetPage.Opacity = 0;
+                    System.Windows.Media.Animation.DoubleAnimation fadeIn =
+                        new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300));
+                    fadeIn.EasingFunction = new System.Windows.Media.Animation.CubicEase
+                    {
+                        EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
+                    };
+                    targetPage.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+                    Services.Logger.Instance.Debug($"页面淡入动画: {pageName}");
+                    Services.CrashReportService.UpdateUIState("page_fadein", pageName, true, "");
+                }
+                catch (Exception ex)
+                {
+                    Services.Logger.Instance.Error($"页面淡入动画失败: {ex.Message}");
+                    Services.CrashReportService.UpdateUIState("page_fadein", pageName, false, ex.Message);
+                }
+            }
+
             Services.Logger.Instance.Debug($"页面切换: {pageName}");
         }
 
