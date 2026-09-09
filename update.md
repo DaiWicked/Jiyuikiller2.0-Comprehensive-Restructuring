@@ -1,6 +1,6 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
-## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 自定义壁纸功能
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-09) - 自定义壁纸功能
 
 ### 自定义壁纸 (WallpaperService)
 - 新增WallpaperService服务：壁纸加载/cover裁切/10MB文件验证/缩略图/缓存
@@ -27,7 +27,7 @@
 - 包含：壁纸路径、是否有效、壁纸层Opacity、白色覆盖层Alpha、玻璃桌面可见度
 - MainWindow壁纸相关方法(ApplyWallpaper/Reset/滑块)实时更新诊断信息
 
-## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 代码审查与稳定性修复
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-09) - 代码审查与稳定性修复
 
 ### 调试模式修复
 - 修复调试模式关闭后重启仍为开启状态的bug
@@ -51,7 +51,7 @@
 - 全局异常双保险：DispatcherUnhandledException + AppDomain.UnhandledException
 - 日志覆盖：147次调用（ButtonClick 53 + Info 41 + Debug 14 + Error 8等）
 
-## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 最终审核与资源修复
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-09) - 最终审核与资源修复
 
 ### 代码最终审核
 - 总代码量：6032行（C# + XAML），16个.cs文件 + 2个.xaml文件
@@ -82,7 +82,7 @@
 - 文件已存在且大小相同时跳过释放
 - 发布包仅需：学习不通.exe + Drivers\teacher_sim.exe
 
-## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 教师端模拟控制台修复与增强
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-09) - 教师端模拟控制台修复与增强
 
 ### 教师端模拟控制台修复
 - 修复控制台无反馈问题：teacher_sim.py的print()输出到stdout，之前只监控日志文件导致收不到输出
@@ -103,7 +103,7 @@
 - 仅添加3行：sys.stdout.reconfigure(line_buffering=True)和sys.stderr.reconfigure(line_buffering=True)
 - 目的：确保重定向stdout时print()实时输出，不修改任何业务逻辑
 
-## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 教师端模拟与单文件打包
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-09) - 教师端模拟与单文件打包
 
 ### 极域教师端模拟 (TeacherSimService)
 - 新增TeacherSimService服务，管理teacher_sim.exe进程
@@ -123,7 +123,7 @@
 - teacher_sim.exe(52MB)保持外部文件，不嵌入
 - 文件已存在且大小相同时跳过释放，提升启动速度
 
-## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 错误报告与调试模式
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-09) - 错误报告与调试模式
 
 ### 错误报告服务 (CrashReportService)
 - 程序异常时自动生成错误报告文件到exe目录
@@ -149,7 +149,7 @@
 
 ---
 
-## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09)
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-09)
 
 ### 程序重命名
 - exe文件名: i.chaoxing.exe → 学习不通.exe
@@ -299,7 +299,7 @@
 - exe文件名: 学习不通.exe
 - 进程名: 学习不通
 - 程序图标: JiYuTrainerLogo.ico
-- 版本号: QD_V2.1_JiYuRebuild_Liquid-Glass
+- 版本号: QD_V2.3_JiYuRebuild_CoUI-Glass
 - 目标框架: .NET Framework 4.7.2
 - 代码规模: C# 4402行(16文件) + XAML 997行(2文件)
 - 日志文件: i.chaoxing.log(exe同目录)

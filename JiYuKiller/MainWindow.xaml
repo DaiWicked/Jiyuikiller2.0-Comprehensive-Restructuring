@@ -219,7 +219,7 @@
                         <StackPanel HorizontalAlignment="Center" Margin="0,20">
                             <Image Source="pack://application:,,,/学习不通;component/Assets/about.png" Width="280" Margin="0,0,0,16" Stretch="Uniform" />
                             <TextBlock Text="学习不通2.0" FontSize="24" FontWeight="Bold" Foreground="#FF0A0A0A" HorizontalAlignment="Center" />
-                            <TextBlock x:Name="AboutVersion" Text="QD_V2.1_JiYuRebuild_Liquid-Glass" FontSize="14" Foreground="#FF555555" HorizontalAlignment="Center" Margin="0,4,0,16" />
+                            <TextBlock x:Name="AboutVersion" Text="QD_V2.3_JiYuRebuild_CoUI-Glass" FontSize="14" Foreground="#FF555555" HorizontalAlignment="Center" Margin="0,4,0,16" />
                             <TextBlock Text="基于 JiYuTrainer 重构的 C# WPF 版本" FontSize="12" Foreground="#FF3A3A3A" HorizontalAlignment="Center" />
 
                             <!-- 致谢 -->

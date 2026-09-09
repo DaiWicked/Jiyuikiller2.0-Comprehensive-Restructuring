@@ -107,7 +107,7 @@ namespace JiYuKiller.Models
         public int WallpaperOpacity { get; set; } = 80;
 
         // === 版本信息 ===
-        public string Version { get; set; } = "QD_V2.1_JiYuRebuild_Liquid-Glass";
+        public string Version { get; set; } = "QD_V2.3_JiYuRebuild_CoUI-Glass";
 
         [XmlIgnore]
         private static readonly string SettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "i.chaoxing.xml");
