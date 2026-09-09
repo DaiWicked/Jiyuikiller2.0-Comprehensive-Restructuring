@@ -131,6 +131,7 @@
     <Resource Include="Assets\JiYuTrainerBug.ico" />
     <Resource Include="Assets\about.png" />
     <Resource Include="Assets\me.png" />
+    <Resource Include="Assets\start.png" />
     <EmbeddedResource Include="Drivers\JiYuTrainerDriver.sys" />
     <EmbeddedResource Include="Drivers\JiYuTrainerHooks.dll" />
     <EmbeddedResource Include="Assets\egg.mp4" />

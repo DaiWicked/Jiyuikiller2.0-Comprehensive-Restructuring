@@ -28,7 +28,7 @@
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16">
                 <StackPanel>
                     <!-- 图片 -->
-                    <Image Source="pack://application:,,,/学习不通;component/Assets/about.png" Width="280" Height="140" Stretch="UniformToFill" Margin="0,0,0,16" HorizontalAlignment="Center" />
+                    <Image Source="pack://application:,,,/学习不通;component/Assets/start.png" Width="320" Height="160" Stretch="Uniform" Margin="0,0,0,16" HorizontalAlignment="Center" />
 
                     <!-- 免责声明 -->
                     <TextBlock Text="免责声明" FontSize="15" FontWeight="Bold" Foreground="#FFE53935" Margin="0,0,0,8" />

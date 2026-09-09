@@ -35,6 +35,7 @@ namespace JiYuKiller
                 if (!agreement.IsAgreed)
                 {
                     Services.Logger.Instance.Info("[协议] 用户拒绝协议, 程序退出");
+                    Services.Logger.Instance.Close();
                     Application.Current.Shutdown();
                     return;
                 }
@@ -54,7 +55,11 @@ namespace JiYuKiller
             // 全局异常捕获 - 非UI线程
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            base.OnStartup(e);
+            // 手动创建并显示主窗口(移除了StartupUri, 避免协议窗口关闭后应用退出)
+            Services.Logger.Instance.Info("[启动] 创建主窗口");
+            MainWindow mainWindow = new MainWindow();
+            mainWindow.Show();
+            Services.Logger.Instance.Info("[启动] 主窗口已显示");
         }
 
         private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
