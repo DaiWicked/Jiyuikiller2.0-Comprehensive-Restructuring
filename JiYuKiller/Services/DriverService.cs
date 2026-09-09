@@ -199,6 +199,11 @@ namespace JiYuKiller.Services
                 IsDriverLoaded = true;
                 return true;
             }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("[Driver] 加载驱动异常", ex);
+                return false;
+            }
             finally
             {
                 CloseServiceHandle(hSCM);
@@ -345,6 +350,11 @@ namespace JiYuKiller.Services
                 IsDriverLoaded = false;
                 return true;
             }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("[Driver] 卸载驱动异常", ex);
+                return false;
+            }
             finally
             {
                 CloseServiceHandle(hSCM);
@@ -411,6 +421,11 @@ namespace JiYuKiller.Services
                 }
 
                 return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("[Driver] IOCTL 0x" + ioControlCode.ToString("X") + " 异常", ex);
+                return false;
             }
             finally
             {

@@ -129,6 +129,11 @@ namespace JiYuKiller.Services
                 Logger.Instance.Info("[Inject] DLL 注入成功, TID=" + threadId);
                 return true;
             }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("[Inject] DLL注入异常", ex);
+                return false;
+            }
             finally
             {
                 CloseHandle(hProcess);
@@ -184,6 +189,11 @@ namespace JiYuKiller.Services
                 Logger.Instance.Info("[Inject] DLL 卸载成功");
                 return true;
             }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("[Inject] DLL卸载异常", ex);
+                return false;
+            }
             finally
             {
                 CloseHandle(hProcess);
@@ -203,17 +213,25 @@ namespace JiYuKiller.Services
                 return false;
             }
 
-            byte[] data = Encoding.Unicode.GetBytes(message + "\0");
-            COPYDATASTRUCT cds = new COPYDATASTRUCT();
-            cds.dwData = IntPtr.Zero;
-            cds.cbData = data.Length;
-            cds.lpData = Marshal.AllocHGlobal(data.Length);
-            Marshal.Copy(data, 0, cds.lpData, data.Length);
+            try
+            {
+                byte[] data = Encoding.Unicode.GetBytes(message + "\0");
+                COPYDATASTRUCT cds = new COPYDATASTRUCT();
+                cds.dwData = IntPtr.Zero;
+                cds.cbData = data.Length;
+                cds.lpData = Marshal.AllocHGlobal(data.Length);
+                Marshal.Copy(data, 0, cds.lpData, data.Length);
 
-            IntPtr result = SendMessageTimeout(receiveWnd, WM_COPYDATA, fromWnd, ref cds, SMTO_ABORTIFHUNG | SMTO_NORMAL, 500, IntPtr.Zero);
-            Marshal.FreeHGlobal(cds.lpData);
+                IntPtr result = SendMessageTimeout(receiveWnd, WM_COPYDATA, fromWnd, ref cds, SMTO_ABORTIFHUNG | SMTO_NORMAL, 500, IntPtr.Zero);
+                Marshal.FreeHGlobal(cds.lpData);
 
-            return result != IntPtr.Zero;
+                return result != IntPtr.Zero;
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("[Inject] 发送消息异常", ex);
+                return false;
+            }
         }
 
         private const uint WM_COPYDATA = 0x004A;
