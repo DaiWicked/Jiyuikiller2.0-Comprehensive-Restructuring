@@ -29,6 +29,8 @@ namespace JiYuKiller
         private int _lastPageIndex = -1; // 用于页面方向过渡
         private int _eggClickCount = 0; // 彩蛋点击计数
         private string _eggTempPath = null; // 彩蛋视频临时路径
+        private bool _eggShowing = false; // 彩蛋是否正在显示
+        private bool _eggExtracted = false; // 视频是否已释放
         private readonly Services.ChatService _chatService = new Services.ChatService();
         private readonly Services.ScreenshotService _screenshotService = new Services.ScreenshotService();
         private string _chatTargetIP = "";
@@ -2096,6 +2098,11 @@ namespace JiYuKiller
         /// </summary>
         private void AboutVersion_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            if (_eggShowing)
+            {
+                Services.Logger.Instance.Debug("[彩蛋] 彩蛋已显示, 忽略点击");
+                return;
+            }
             _eggClickCount++;
             Services.Logger.Instance.Debug($"彩蛋点击: {_eggClickCount}/3");
             if (_eggClickCount >= 3)
@@ -2112,37 +2119,47 @@ namespace JiYuKiller
         {
             try
             {
-                // 释放嵌入资源到临时目录
-                string tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "学习不通");
-                System.IO.Directory.CreateDirectory(tempDir);
-                _eggTempPath = System.IO.Path.Combine(tempDir, "egg.mp4");
+                _eggShowing = true;
 
-                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                string resourceName = null;
-                foreach (var name in assembly.GetManifestResourceNames())
+                // 文件只释放一次, 避免重复IO
+                if (!_eggExtracted || !System.IO.File.Exists(_eggTempPath))
                 {
-                    if (name.EndsWith("egg.mp4"))
+                    string tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "学习不通");
+                    System.IO.Directory.CreateDirectory(tempDir);
+                    _eggTempPath = System.IO.Path.Combine(tempDir, "egg.mp4");
+
+                    var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                    string resourceName = null;
+                    foreach (var name in assembly.GetManifestResourceNames())
                     {
-                        resourceName = name;
-                        break;
+                        if (name.EndsWith("egg.mp4"))
+                        {
+                            resourceName = name;
+                            break;
+                        }
                     }
-                }
 
-                if (resourceName == null)
-                {
-                    Services.Logger.Instance.Error("[彩蛋] 未找到嵌入资源 egg.mp4");
-                    return;
-                }
-
-                using (var stream = assembly.GetManifestResourceStream(resourceName))
-                {
-                    using (var file = new System.IO.FileStream(_eggTempPath, System.IO.FileMode.Create, System.IO.FileAccess.Write))
+                    if (resourceName == null)
                     {
-                        stream.CopyTo(file);
+                        Services.Logger.Instance.Error("[彩蛋] 未找到嵌入资源 egg.mp4");
+                        _eggShowing = false;
+                        return;
                     }
-                }
 
-                Services.Logger.Instance.Info($"[彩蛋] 视频已释放: {_eggTempPath}");
+                    using (var stream = assembly.GetManifestResourceStream(resourceName))
+                    {
+                        using (var file = new System.IO.FileStream(_eggTempPath, System.IO.FileMode.Create, System.IO.FileAccess.Write))
+                        {
+                            stream.CopyTo(file);
+                        }
+                    }
+                    _eggExtracted = true;
+                    Services.Logger.Instance.Info($"[彩蛋] 视频已释放: {_eggTempPath}");
+                }
+                else
+                {
+                    Services.Logger.Instance.Debug("[彩蛋] 视频已存在, 跳过释放");
+                }
 
                 EggWindow.Visibility = System.Windows.Visibility.Visible;
                 EggMedia.Source = new System.Uri(_eggTempPath);
@@ -2152,6 +2169,7 @@ namespace JiYuKiller
             catch (Exception ex)
             {
                 Services.Logger.Instance.Error("[彩蛋] 播放失败", ex);
+                _eggShowing = false;
             }
         }
 
@@ -2165,11 +2183,14 @@ namespace JiYuKiller
                 EggMedia.Stop();
                 EggMedia.Source = null;
                 EggWindow.Visibility = System.Windows.Visibility.Collapsed;
-                Services.Logger.Instance.Info("[彩蛋] 窗口已关闭");
+                _eggShowing = false;
+                _eggClickCount = 0;
+                Services.Logger.Instance.Info("[彩蛋] 窗口已关闭, 状态已重置");
             }
             catch (Exception ex)
             {
                 Services.Logger.Instance.Error("[彩蛋] 关闭失败", ex);
+                _eggShowing = false;
             }
         }
 
