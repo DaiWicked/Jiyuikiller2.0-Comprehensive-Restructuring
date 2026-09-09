@@ -7,54 +7,79 @@
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="NoResize"
-        WindowStartupLocation="CenterScreen">
-    <Border CornerRadius="16" Background="#FFF5F5F5" BorderBrush="#40000000" BorderThickness="1">
+        WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded">
+    <Border CornerRadius="16" BorderBrush="#60FFFFFF" BorderThickness="1">
         <Border.Effect>
-            <DropShadowEffect Color="#80000000" BlurRadius="20" ShadowDepth="4" />
+            <DropShadowEffect Color="#80000000" BlurRadius="24" ShadowDepth="4" />
         </Border.Effect>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+        <Grid ClipToBounds="True">
+            <!-- 层1: 桌面截图背景(模糊) -->
+            <Border x:Name="BackdropBorder" CornerRadius="16">
+                <Border.Effect>
+                    <BlurEffect x:Name="BackdropBlur" Radius="20" />
+                </Border.Effect>
+                <Image x:Name="BackdropImage" Stretch="None" />
+            </Border>
 
-            <!-- 标题栏 -->
-            <Grid Grid.Row="0" Background="#FF2D2D2D" Height="36">
-                <TextBlock Text="学习不通 用户许可协议" FontSize="14" FontWeight="Bold" Foreground="#FFFFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Grid>
+            <!-- 层2: 半透明白色覆盖层 -->
+            <Border CornerRadius="16" Background="#B8FFFFFF" />
 
-            <!-- 内容区 -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16">
-                <StackPanel>
-                    <!-- 图片 -->
-                    <Image Source="pack://application:,,,/学习不通;component/Assets/start.png" Width="320" Height="160" Stretch="Uniform" Margin="0,0,0,16" HorizontalAlignment="Center" />
+            <!-- 层3: 顶部高光 -->
+            <Border CornerRadius="16" IsHitTestVisible="False">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#40FFFFFF" Offset="0" />
+                        <GradientStop Color="#00FFFFFF" Offset="0.3" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
 
-                    <!-- 免责声明 -->
-                    <TextBlock Text="免责声明" FontSize="15" FontWeight="Bold" Foreground="#FFE53935" Margin="0,0,0,8" />
-                    <TextBlock Text="本软件研发之初仅供学习交流使用，被老师发现就给我受着。" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,12" />
+            <!-- 层4: 内容 -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                    <!-- 法律声明 -->
-                    <TextBlock Text="法律声明" FontSize="15" FontWeight="Bold" Foreground="#FFE53935" Margin="0,0,0,8" />
-                    <TextBlock Text="严禁将该软件用于不符合法律、道德的行为，本软件仅供技术交流，擅自用于不正当行为所造成的后果将由您自行承担！" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,12" />
+                <!-- 标题栏 -->
+                <Grid Grid.Row="0" Background="#402D2D2D" Height="36">
+                    <TextBlock Text="学习不通 用户许可协议" FontSize="14" FontWeight="Bold" Foreground="#FFFFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
 
-                    <!-- 版权声明 -->
-                    <TextBlock Text="版权声明" FontSize="15" FontWeight="Bold" Foreground="#FFE53935" Margin="0,0,0,8" />
-                    <TextBlock Text="该软件商标与版权受到国际法的保护，任何人不得将本软件用于任何商业用途！您在传播、分发本软件的副本时不得删除本软件的任何所有权声明或商标。" FontSize="12" Foreground="#FF333333" TextWrapping="Wrap" Margin="0,0,0,12" />
+                <!-- 内容区 -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16">
+                    <StackPanel>
+                        <!-- 图片 -->
+                        <Image Source="pack://application:,,,/学习不通;component/Assets/start.png" Width="320" Height="160" Stretch="Uniform" Margin="0,0,0,16" HorizontalAlignment="Center" />
 
-                    <!-- 同意提示 -->
-                    <TextBlock Text="自您使用本软件起，即表明您同意了该声明。" FontSize="11" Foreground="#FF888888" TextWrapping="Wrap" Margin="0,8,0,0" HorizontalAlignment="Center" />
-                </StackPanel>
-            </ScrollViewer>
+                        <!-- 免责声明 -->
+                        <TextBlock Text="免责声明" FontSize="15" FontWeight="Bold" Foreground="#FFE53935" Margin="0,0,0,8" />
+                        <TextBlock Text="本软件研发之初仅供学习交流使用，被老师发现就给我受着。" FontSize="12" Foreground="#FF222222" TextWrapping="Wrap" Margin="0,0,0,12" />
 
-            <!-- 按钮区 -->
-            <Grid Grid.Row="2" Background="#FFEDEDED" Height="56">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Content="极域给我爬" Click="BtnAgree_Click" Width="140" Height="32" FontSize="13" FontWeight="Bold" Background="#FF4CAF50" Foreground="White" BorderBrush="Transparent" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Content="杰哥不要" Click="BtnDisagree_Click" Width="100" Height="32" FontSize="13" Background="#FF9E9E9E" Foreground="White" BorderBrush="Transparent" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <!-- 法律声明 -->
+                        <TextBlock Text="法律声明" FontSize="15" FontWeight="Bold" Foreground="#FFE53935" Margin="0,0,0,8" />
+                        <TextBlock Text="严禁将该软件用于不符合法律、道德的行为，本软件仅供技术交流，擅自用于不正当行为所造成的后果将由您自行承担！" FontSize="12" Foreground="#FF222222" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                        <!-- 版权声明 -->
+                        <TextBlock Text="版权声明" FontSize="15" FontWeight="Bold" Foreground="#FFE53935" Margin="0,0,0,8" />
+                        <TextBlock Text="该软件商标与版权受到国际法的保护，任何人不得将本软件用于任何商业用途！您在传播、分发本软件的副本时不得删除本软件的任何所有权声明或商标。" FontSize="12" Foreground="#FF222222" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                        <!-- 同意提示 -->
+                        <TextBlock Text="自您使用本软件起，即表明您同意了该声明。" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" Margin="0,8,0,0" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 按钮区 -->
+                <Grid Grid.Row="2" Background="#30FFFFFF" Height="56">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Content="极域给我爬" Click="BtnAgree_Click" Width="140" Height="32" FontSize="13" FontWeight="Bold" Background="#FF4CAF50" Foreground="White" BorderBrush="Transparent" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="杰哥不要" Click="BtnDisagree_Click" Width="100" Height="32" FontSize="13" Background="#FF9E9E9E" Foreground="White" BorderBrush="Transparent" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
             </Grid>
         </Grid>
     </Border>
