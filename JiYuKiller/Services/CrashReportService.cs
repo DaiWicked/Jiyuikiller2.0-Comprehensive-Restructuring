@@ -9,11 +9,42 @@ namespace JiYuKiller.Services
     /// <summary>
     /// 错误报告服务
     /// 程序异常时生成错误报告文件到exe目录
-    /// 报告包含: 异常信息、堆栈、模块信息、系统信息
+    /// 报告包含: 异常信息、堆栈、模块信息、系统信息、自定义壁纸状态
     /// </summary>
     public static class CrashReportService
     {
         private static readonly object _lock = new object();
+
+        #region 自定义壁纸诊断信息
+
+        /// <summary>当前壁纸路径</summary>
+        public static string WallpaperPath { get; set; } = "";
+
+        /// <summary>壁纸是否有效</summary>
+        public static bool WallpaperIsValid { get; set; } = false;
+
+        /// <summary>壁纸层Opacity</summary>
+        public static double WallpaperLayerOpacity { get; set; } = 1.0;
+
+        /// <summary>白色覆盖层Alpha</summary>
+        public static int WhiteOverlayAlpha { get; set; } = 255;
+
+        /// <summary>玻璃桌面可见度(0-100)</summary>
+        public static int GlassOpacity { get; set; } = 72;
+
+        /// <summary>
+        /// 更新壁纸诊断信息
+        /// </summary>
+        public static void UpdateWallpaperInfo(string path, bool isValid, double wallpaperOpacity, int whiteAlpha, int glassOpacity)
+        {
+            WallpaperPath = path ?? "";
+            WallpaperIsValid = isValid;
+            WallpaperLayerOpacity = wallpaperOpacity;
+            WhiteOverlayAlpha = whiteAlpha;
+            GlassOpacity = glassOpacity;
+        }
+
+        #endregion
 
         /// <summary>
         /// 生成错误报告
@@ -76,6 +107,15 @@ namespace JiYuKiller.Services
                         }
                         sb.AppendLine();
                     }
+
+                    // 自定义壁纸状态
+                    sb.AppendLine("【自定义壁纸状态】");
+                    sb.AppendLine($"  壁纸路径: {(string.IsNullOrEmpty(WallpaperPath) ? "(未设置)" : WallpaperPath)}");
+                    sb.AppendLine($"  壁纸有效: {WallpaperIsValid}");
+                    sb.AppendLine($"  壁纸层Opacity: {WallpaperLayerOpacity:F2}");
+                    sb.AppendLine($"  白色覆盖层Alpha: {WhiteOverlayAlpha}");
+                    sb.AppendLine($"  玻璃桌面可见度: {GlassOpacity}%");
+                    sb.AppendLine();
 
                     // 系统信息
                     sb.AppendLine("【系统信息】");

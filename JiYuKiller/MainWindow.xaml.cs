@@ -499,6 +499,7 @@ namespace JiYuKiller
             }
 
             Services.Logger.Instance.Debug($"内容层透明度: {e.NewValue:F2}, whiteAlpha={whiteAlpha}, wallpaperOpacity={wallpaperOpacity:F2}");
+            Services.CrashReportService.UpdateWallpaperInfo(_settings?.WallpaperPath ?? "", !string.IsNullOrEmpty(_settings?.WallpaperPath), wallpaperOpacity, whiteAlpha, (int)(e.NewValue * 100));
         }
 
         private void BtnRefreshGlass_Click(object sender, RoutedEventArgs e)
@@ -1960,6 +1961,7 @@ namespace JiYuKiller
             {
                 WallpaperLayer.Background = new SolidColorBrush(Color.FromRgb(255, 255, 255));
             }
+            Services.CrashReportService.UpdateWallpaperInfo("", false, WallpaperLayer?.Opacity ?? 1.0, 255, _settings?.GlassOpacity ?? 72);
         }
 
         private void ApplyWallpaper(string path)
@@ -1967,7 +1969,12 @@ namespace JiYuKiller
             try
             {
                 BitmapSource wallpaper = _wallpaperService.LoadWallpaper(path);
-                if (wallpaper == null) { TextWallpaperError.Text = _wallpaperService.LastError; return; }
+                if (wallpaper == null)
+                {
+                    TextWallpaperError.Text = _wallpaperService.LastError;
+                    Services.CrashReportService.UpdateWallpaperInfo(path, false, WallpaperLayer?.Opacity ?? 1.0, 255, _settings?.GlassOpacity ?? 72);
+                    return;
+                }
                 if (WallpaperLayer != null)
                 {
                     WallpaperLayer.Background = new ImageBrush(wallpaper) { Stretch = Stretch.Fill };
@@ -1975,8 +1982,13 @@ namespace JiYuKiller
                 _settings.WallpaperPath = path;
                 _settings.Save();
                 TextWallpaperError.Text = "";
+                Services.CrashReportService.UpdateWallpaperInfo(path, true, WallpaperLayer?.Opacity ?? 1.0, 255, _settings?.GlassOpacity ?? 72);
             }
-            catch (Exception ex) { TextWallpaperError.Text = "应用失败: " + ex.Message; }
+            catch (Exception ex)
+            {
+                TextWallpaperError.Text = "应用失败: " + ex.Message;
+                Services.CrashReportService.UpdateWallpaperInfo(path, false, WallpaperLayer?.Opacity ?? 1.0, 255, _settings?.GlassOpacity ?? 72);
+            }
         }
 
         private void InitWallpaper()
