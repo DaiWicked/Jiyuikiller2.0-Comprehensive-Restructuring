@@ -1136,28 +1136,39 @@
         </Grid>
     </Border>
 
-    <!-- 彩蛋视频窗口 -->
-    <Border x:Name="EggWindow" CornerRadius="16" Background="#FF1A1A1A" Visibility="Collapsed" Margin="30" HorizontalAlignment="Center" VerticalAlignment="Center" Width="380" Height="320" BorderBrush="#40FFFFFF" BorderThickness="1">
+    <!-- 彩蛋视频窗口(毛玻璃效果) -->
+    <Border x:Name="EggWindow" CornerRadius="16" Background="#C81A1A1A" Visibility="Collapsed" Margin="30" HorizontalAlignment="Center" VerticalAlignment="Center" Width="380" Height="320" BorderBrush="#60FFFFFF" BorderThickness="1">
         <Border.Effect>
-            <DropShadowEffect Color="#80000000" BlurRadius="20" ShadowDepth="4" />
+            <DropShadowEffect Color="#A0000000" BlurRadius="24" ShadowDepth="4" />
         </Border.Effect>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="36" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="44" />
-            </Grid.RowDefinitions>
-            <!-- 标题栏 -->
-            <Grid Grid.Row="0" Background="#20FFFFFF">
-                <TextBlock Text="你发现了彩蛋" FontSize="14" FontWeight="Bold" Foreground="#FFFFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Grid>
-            <!-- 视频区域 -->
-            <Border Grid.Row="1" Background="#FF000000">
-                <MediaElement x:Name="EggMedia" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" />
+        <Grid ClipToBounds="True">
+            <!-- 顶部高光层 -->
+            <Border CornerRadius="16" IsHitTestVisible="False">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#30FFFFFF" Offset="0" />
+                        <GradientStop Color="#00FFFFFF" Offset="0.25" />
+                    </LinearGradientBrush>
+                </Border.Background>
             </Border>
-            <!-- 底部按钮 -->
-            <Grid Grid.Row="2" Background="#10FFFFFF">
-                <Button Content="关闭" Click="EggClose_Click" Style="{StaticResource GlassButton}" Width="100" Height="30" FontSize="13" Background="#FFDC3545" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="36" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="44" />
+                </Grid.RowDefinitions>
+                <!-- 标题栏 -->
+                <Grid Grid.Row="0" Background="#30FFFFFF">
+                    <TextBlock Text="你发现了彩蛋" FontSize="14" FontWeight="Bold" Foreground="#FFFFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
+                <!-- 视频区域(保持黑色不透明) -->
+                <Border Grid.Row="1" Background="#FF000000">
+                    <MediaElement x:Name="EggMedia" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" />
+                </Border>
+                <!-- 底部按钮 -->
+                <Grid Grid.Row="2" Background="#18FFFFFF">
+                    <Button Content="关闭" Click="EggClose_Click" Style="{StaticResource GlassButton}" Width="100" Height="30" FontSize="13" Background="#FFDC3545" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
             </Grid>
         </Grid>
     </Border>
