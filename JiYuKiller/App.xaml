@@ -22,6 +22,7 @@
             <SolidColorBrush x:Key="GlassDangerBrush" Color="{StaticResource GlassDangerColor}" />
 
             <!-- 玻璃按钮样式（借鉴COUI: Sink按压缩放 + 状态层覆盖 + Storyboard动画） -->
+            <!-- 注意: 不动画背景色, 只通过状态层叠加暗色, 保留按钮原始背景色 -->
             <Style x:Key="GlassButton" TargetType="Button">
                 <Setter Property="Background" Value="{StaticResource GlassPrimaryBrush}" />
                 <Setter Property="Foreground" Value="White" />
@@ -33,7 +34,13 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
-                            <Grid>
+                            <Grid x:Name="btnRoot">
+                                <Grid.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform x:Name="btnScale" ScaleX="1" ScaleY="1" CenterX="0.5" CenterY="0.5" />
+                                        <TranslateTransform x:Name="btnTranslate" Y="0" />
+                                    </TransformGroup>
+                                </Grid.RenderTransform>
                                 <!-- 主背景层 -->
                                 <Border x:Name="border"
                                         Background="{TemplateBinding Background}"
@@ -41,26 +48,19 @@
                                         BorderThickness="{TemplateBinding BorderThickness}"
                                         CornerRadius="8"
                                         Padding="{TemplateBinding Padding}">
-                                    <Border.RenderTransform>
-                                        <TransformGroup>
-                                            <ScaleTransform x:Name="btnScale" ScaleX="1" ScaleY="1" CenterX="0.5" CenterY="0.5" />
-                                            <TranslateTransform x:Name="btnTranslate" Y="0" />
-                                        </TransformGroup>
-                                    </Border.RenderTransform>
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
-                                <!-- 状态层（COUI: 悬停8%黑, 按压12%黑, ColorAnimation平滑过渡） -->
+                                <!-- 状态层（COUI: 悬停8%黑, 按压12%黑） -->
                                 <Border x:Name="stateLayer" CornerRadius="8" Background="#00000000" IsHitTestVisible="False" />
                             </Grid>
                             <ControlTemplate.Triggers>
-                                <!-- 悬停: 上移1px + 状态层8%黑 + 颜色变化 -->
+                                <!-- 悬停: 上移1px + 状态层8%黑 -->
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Trigger.EnterActions>
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="btnTranslate" Storyboard.TargetProperty="Y" To="-1" Duration="0:0:0.1" />
                                                 <ColorAnimation Storyboard.TargetName="stateLayer" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#14000000" Duration="0:0:0.15" />
-                                                <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#FF1E9EFF" Duration="0:0:0.15" />
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </Trigger.EnterActions>
@@ -69,7 +69,6 @@
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="btnTranslate" Storyboard.TargetProperty="Y" To="0" Duration="0:0:0.2" />
                                                 <ColorAnimation Storyboard.TargetName="stateLayer" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#00000000" Duration="0:0:0.2" />
-                                                <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#FF37B0FF" Duration="0:0:0.2" />
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </Trigger.ExitActions>
@@ -82,14 +81,12 @@
                                                 <DoubleAnimation Storyboard.TargetName="btnScale" Storyboard.TargetProperty="ScaleX" To="0.92" Duration="0:0:0.1" />
                                                 <DoubleAnimation Storyboard.TargetName="btnScale" Storyboard.TargetProperty="ScaleY" To="0.92" Duration="0:0:0.1" />
                                                 <ColorAnimation Storyboard.TargetName="stateLayer" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#1F000000" Duration="0:0:0.1" />
-                                                <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#FF0080E0" Duration="0:0:0.1" />
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </Trigger.EnterActions>
                                     <Trigger.ExitActions>
                                         <BeginStoryboard>
                                             <Storyboard>
-                                                <!-- 回弹: 先到1.02再回到1.0 -->
                                                 <DoubleAnimationUsingKeyFrames Storyboard.TargetName="btnScale" Storyboard.TargetProperty="ScaleX">
                                                     <EasingDoubleKeyFrame KeyTime="0:0:0.08" Value="1.02" />
                                                     <EasingDoubleKeyFrame KeyTime="0:0:0.25" Value="1.0">
@@ -107,7 +104,6 @@
                                                     </EasingDoubleKeyFrame>
                                                 </DoubleAnimationUsingKeyFrames>
                                                 <ColorAnimation Storyboard.TargetName="stateLayer" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#14000000" Duration="0:0:0.2" />
-                                                <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#FF1E9EFF" Duration="0:0:0.2" />
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </Trigger.ExitActions>
@@ -118,7 +114,7 @@
                 </Setter>
             </Style>
 
-            <!-- 导航栏液态玻璃按钮样式（高斯模糊玻璃背景 + 同样动画） -->
+            <!-- 导航栏液态玻璃按钮样式（动画作用在整个Grid, 整体缩放, 不受BlurEffect影响） -->
             <Style x:Key="NavGlassButton" TargetType="Button">
                 <Setter Property="Foreground" Value="#FF000000" />
                 <Setter Property="FontSize" Value="13" />
@@ -127,18 +123,18 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
-                            <Grid>
+                            <Grid x:Name="navRoot">
+                                <Grid.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform x:Name="navScale" ScaleX="1" ScaleY="1" CenterX="0.5" CenterY="0.5" />
+                                        <TranslateTransform x:Name="navTranslate" Y="0" />
+                                    </TransformGroup>
+                                </Grid.RenderTransform>
                                 <!-- 高斯模糊玻璃背景层 -->
                                 <Border x:Name="glassBg" Background="#28FFFFFF" CornerRadius="16">
                                     <Border.Effect>
                                         <BlurEffect Radius="6" />
                                     </Border.Effect>
-                                    <Border.RenderTransform>
-                                        <TransformGroup>
-                                            <ScaleTransform x:Name="navScale" ScaleX="1" ScaleY="1" CenterX="0.5" CenterY="0.5" />
-                                            <TranslateTransform x:Name="navTranslate" Y="0" />
-                                        </TransformGroup>
-                                    </Border.RenderTransform>
                                 </Border>
                                 <!-- 边缘高光 -->
                                 <Border x:Name="glassBorder" CornerRadius="16" BorderThickness="1" BorderBrush="#40FFFFFF" IsHitTestVisible="False" />
@@ -262,7 +258,6 @@
                                                         </Ellipse>
                                                     </Grid>
                                                     <ControlTemplate.Triggers>
-                                                        <!-- 悬停放大1.1 -->
                                                         <Trigger Property="IsMouseOver" Value="True">
                                                             <Trigger.EnterActions>
                                                                 <BeginStoryboard>
@@ -281,7 +276,6 @@
                                                                 </BeginStoryboard>
                                                             </Trigger.ExitActions>
                                                         </Trigger>
-                                                        <!-- 拖动放大1.25 -->
                                                         <Trigger Property="IsDragging" Value="True">
                                                             <Trigger.EnterActions>
                                                                 <BeginStoryboard>
