@@ -109,6 +109,9 @@ namespace JiYuKiller.Models
         // === 版本信息 ===
         public string Version { get; set; } = "QD_V2.3_JiYuRebuild_CoUI-Glass";
 
+        // === 用户协议 ===
+        public bool Argeed { get; set; } = false;
+
         [XmlIgnore]
         private static readonly string SettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "i.chaoxing.xml");
 

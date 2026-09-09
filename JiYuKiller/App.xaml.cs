@@ -25,6 +25,29 @@ namespace JiYuKiller
             Services.Logger.Instance.Info($"64位进程: {Environment.Is64BitProcess}");
             Services.Logger.Instance.Info($"调试模式: {settings.DebugMode}");
 
+            // 用户许可协议检查
+            if (!settings.Argeed)
+            {
+                Services.Logger.Instance.Info("[协议] 用户未同意协议, 弹出协议窗口");
+                AgreementWindow agreement = new AgreementWindow();
+                agreement.ShowDialog();
+
+                if (!agreement.IsAgreed)
+                {
+                    Services.Logger.Instance.Info("[协议] 用户拒绝协议, 程序退出");
+                    Application.Current.Shutdown();
+                    return;
+                }
+
+                settings.Argeed = true;
+                settings.Save();
+                Services.Logger.Instance.Info("[协议] 用户已同意协议, 已保存");
+            }
+            else
+            {
+                Services.Logger.Instance.Debug("[协议] 用户已同意协议, 跳过");
+            }
+
             // 全局异常捕获 - UI线程
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;
 
