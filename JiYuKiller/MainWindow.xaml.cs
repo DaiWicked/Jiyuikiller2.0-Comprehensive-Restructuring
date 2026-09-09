@@ -815,20 +815,15 @@ namespace JiYuKiller
                     var trans = new System.Windows.Media.TranslateTransform(fromX, 0);
                     targetPage.RenderTransform = trans;
 
-                    var sb = new System.Windows.Media.Animation.Storyboard();
+                    // 直接用BeginAnimation, 不用Storyboard(Storyboard无法对不在可视化树的TranslateTransform动画)
                     var fadeAnim = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(280));
                     fadeAnim.EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
-                    System.Windows.Media.Animation.Storyboard.SetTarget(fadeAnim, targetPage);
-                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(fadeAnim, new System.Windows.PropertyPath(UIElement.OpacityProperty));
-                    sb.Children.Add(fadeAnim);
+                    targetPage.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
 
                     var slideAnim = new System.Windows.Media.Animation.DoubleAnimation(fromX, 0, TimeSpan.FromMilliseconds(280));
                     slideAnim.EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
-                    System.Windows.Media.Animation.Storyboard.SetTarget(slideAnim, trans);
-                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(slideAnim, new System.Windows.PropertyPath(System.Windows.Media.TranslateTransform.XProperty));
-                    sb.Children.Add(slideAnim);
+                    trans.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, slideAnim);
 
-                    sb.Begin();
                     Services.Logger.Instance.Debug($"页面方向过渡: {pageName}, fromX={fromX}");
                     Services.CrashReportService.UpdateUIState("page_transition", pageName, true, "");
                 }
