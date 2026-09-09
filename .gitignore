@@ -153,6 +153,10 @@ i.chaoxing_Error_*.txt
 # teacher_sim日志
 teacher_sim.log
 
+# 协议窗口临时文件
+agreement_temp/
+*_agreement/
+
 # ==========================================
 # 发布和打包
 # ==========================================

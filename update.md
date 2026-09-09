@@ -1,5 +1,32 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-10) - 用户协议窗口 + 玻璃效果统一
+
+### 用户许可协议窗口 (AgreementWindow)
+- 移植原jiyukiller的IDD_DIALOG_ARGEEMENT协议对话框
+- 首次启动时弹出, 同意后才进入主界面
+- 协议内容: 免责声明/法律声明/版权声明, 保留原文案
+- 按钮: "极域给我爬"(同意) / "杰哥不要"(拒绝)
+- 协议窗口添加start.png图片(118KB)
+- AppSettings新增Argeed字段, 同意后保存到i.chaoxing.xml
+- 拒绝协议则程序退出
+
+### 协议窗口毛玻璃效果
+- 分层结构: 桌面截图(Blur Radius=20) -> 半透明白色覆盖(#B8FFFFFF) -> 顶部高光渐变 -> 内容
+- Window_Loaded中捕获全屏桌面, 按窗口位置裁剪区域作为背景
+- 标题栏/按钮区改为半透明, 文字颜色加深保证可读性
+
+### 彩蛋窗口毛玻璃效果
+- 背景: #FF1A1A1A -> #C81A1A1A(78%不透明深色, 可透视主窗口)
+- 新增顶部高光层: LinearGradient 30%白->透明
+- 边框/阴影/标题栏/按钮区统一调整为半透明玻璃风格
+- 视频区域保持黑色不透明(视频播放需要)
+
+### 启动流程修复
+- 移除App.xaml的StartupUri, 改为ShutdownMode=OnExplicitShutdown
+- 同意协议后手动new MainWindow().Show(), 避免协议窗口关闭后应用退出
+- 拒绝协议时关闭日志后Shutdown
+
 ## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-09) - COUI UI/动画三阶段升级
 
 ### 第一阶段: 按钮动画 + 滑块样式 + 页面过渡
