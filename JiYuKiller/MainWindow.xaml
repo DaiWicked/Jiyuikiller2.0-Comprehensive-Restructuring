@@ -33,12 +33,16 @@
             </Border.Effect>
         </Border>
 
-        <!-- 外层玻璃容器 -->
-        <Border x:Name="GlassContainer" CornerRadius="16" Margin="8">
+        <!-- 外层玻璃容器（BloomStroke简化版: 顶部亮底部暗的渐变边框, 模拟COUI半球光照） -->
+        <Border x:Name="GlassContainer" CornerRadius="16" Margin="8" BorderThickness="1">
             <Border.BorderBrush>
-                <SolidColorBrush Color="#60FFFFFF" />
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#A0FFFFFF" Offset="0" />
+                    <GradientStop Color="#60FFFFFF" Offset="0.3" />
+                    <GradientStop Color="#30FFFFFF" Offset="0.7" />
+                    <GradientStop Color="#10FFFFFF" Offset="1" />
+                </LinearGradientBrush>
             </Border.BorderBrush>
-            <Border.BorderThickness>1</Border.BorderThickness>
 
         <Grid>
             <!-- 层1容器：桌面截图 + 白色覆盖 + 壁纸 -->

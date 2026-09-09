@@ -318,6 +318,61 @@
                 </Setter>
             </Style>
 
+            <!-- 玻璃开关样式（借鉴COUI Switch: 滑块滑动动画） -->
+            <Style x:Key="GlassSwitch" TargetType="CheckBox">
+                <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="CheckBox">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <!-- 开关轨道 -->
+                                <Border x:Name="track" Width="44" Height="24" CornerRadius="12" Background="#40000000" VerticalAlignment="Center">
+                                    <Border.RenderTransform>
+                                        <TranslateTransform x:Name="knob" X="2" Y="0" />
+                                    </Border.RenderTransform>
+                                </Border>
+                                <!-- 开关滑块 -->
+                                <Ellipse x:Name="knobCircle" Width="20" Height="20" Fill="White" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0,0,0">
+                                    <Ellipse.RenderTransform>
+                                        <TranslateTransform x:Name="knobTrans" X="0" Y="0" />
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect Color="#40000000" BlurRadius="3" ShadowDepth="1" />
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                                <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <ColorAnimation Storyboard.TargetName="track" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#FF37B0FF" Duration="0:0:0.2" />
+                                                <DoubleAnimation Storyboard.TargetName="knobTrans" Storyboard.TargetProperty="X" To="22" Duration="0:0:0.2" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                    <Trigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <ColorAnimation Storyboard.TargetName="track" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#40000000" Duration="0:0:0.2" />
+                                                <DoubleAnimation Storyboard.TargetName="knobTrans" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.2" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.ExitActions>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- 玻璃复选框样式 -->
             <Style x:Key="GlassCheckBox" TargetType="CheckBox">
                 <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />

@@ -26,6 +26,7 @@ namespace JiYuKiller
         private bool _isExiting = false;
         private bool _isTopMost = false;
         private Effects.GlassyWindowManager _glassyManager;
+        private int _lastPageIndex = -1; // 用于页面方向过渡
         private readonly Services.ChatService _chatService = new Services.ChatService();
         private readonly Services.ScreenshotService _screenshotService = new Services.ScreenshotService();
         private string _chatTargetIP = "";
@@ -783,42 +784,58 @@ namespace JiYuKiller
                     break;
             }
 
-            // 页面淡入动画（借鉴COUI NavTransition: 淡入过渡）
+            // 页面方向过渡（借鉴COUI NavTransition: 左右滑入+淡入, 根据导航顺序决定方向）
             FrameworkElement targetPage = null;
+            int currentIndex = 0;
             switch (pageName)
             {
-                case "quick": targetPage = PageQuick; break;
-                case "settings": targetPage = PageSettings; break;
-                case "about": targetPage = PageAbout; break;
-                case "aboutme": targetPage = PageAboutMe; break;
-                case "advanced": targetPage = PageAdvancedSettings; break;
-                case "help": targetPage = PageHelp; break;
-                case "debug": targetPage = PageDebug; break;
-                case "custom": targetPage = PageCustom; break;
-                case "udpattack": targetPage = PageUdpAttack; break;
-                case "chat": targetPage = PageChat; break;
-                case "screenshot": targetPage = PageScreenshot; break;
-                case "teachersim": targetPage = PageTeacherSim; break;
+                case "quick": targetPage = PageQuick; currentIndex = 0; break;
+                case "settings": targetPage = PageSettings; currentIndex = 1; break;
+                case "custom": targetPage = PageCustom; currentIndex = 2; break;
+                case "udpattack": targetPage = PageUdpAttack; currentIndex = 3; break;
+                case "chat": targetPage = PageChat; currentIndex = 4; break;
+                case "screenshot": targetPage = PageScreenshot; currentIndex = 5; break;
+                case "teachersim": targetPage = PageTeacherSim; currentIndex = 6; break;
+                case "help": targetPage = PageHelp; currentIndex = 7; break;
+                case "debug": targetPage = PageDebug; currentIndex = 8; break;
+                case "about": targetPage = PageAbout; currentIndex = 9; break;
+                case "aboutme": targetPage = PageAboutMe; currentIndex = 9; break;
+                case "advanced": targetPage = PageAdvancedSettings; currentIndex = 1; break;
             }
             if (targetPage != null)
             {
                 try
                 {
+                    // 方向: 新页面索引 > 旧页面 -> 从右滑入; 否则从左滑入
+                    double fromX = (_lastPageIndex >= 0 && currentIndex < _lastPageIndex) ? -20 : 20;
+                    if (_lastPageIndex < 0) fromX = 0; // 首次无方向
+                    _lastPageIndex = currentIndex;
+
                     targetPage.Opacity = 0;
-                    System.Windows.Media.Animation.DoubleAnimation fadeIn =
-                        new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300));
-                    fadeIn.EasingFunction = new System.Windows.Media.Animation.CubicEase
-                    {
-                        EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
-                    };
-                    targetPage.BeginAnimation(UIElement.OpacityProperty, fadeIn);
-                    Services.Logger.Instance.Debug($"页面淡入动画: {pageName}");
-                    Services.CrashReportService.UpdateUIState("page_fadein", pageName, true, "");
+                    var trans = new System.Windows.Media.TranslateTransform(fromX, 0);
+                    targetPage.RenderTransform = trans;
+
+                    var sb = new System.Windows.Media.Animation.Storyboard();
+                    var fadeAnim = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(280));
+                    fadeAnim.EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+                    System.Windows.Media.Animation.Storyboard.SetTarget(fadeAnim, targetPage);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(fadeAnim, new System.Windows.PropertyPath(UIElement.OpacityProperty));
+                    sb.Children.Add(fadeAnim);
+
+                    var slideAnim = new System.Windows.Media.Animation.DoubleAnimation(fromX, 0, TimeSpan.FromMilliseconds(280));
+                    slideAnim.EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+                    System.Windows.Media.Animation.Storyboard.SetTarget(slideAnim, trans);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(slideAnim, new System.Windows.PropertyPath(System.Windows.Media.TranslateTransform.XProperty));
+                    sb.Children.Add(slideAnim);
+
+                    sb.Begin();
+                    Services.Logger.Instance.Debug($"页面方向过渡: {pageName}, fromX={fromX}");
+                    Services.CrashReportService.UpdateUIState("page_transition", pageName, true, "");
                 }
                 catch (Exception ex)
                 {
-                    Services.Logger.Instance.Error($"页面淡入动画失败: {ex.Message}");
-                    Services.CrashReportService.UpdateUIState("page_fadein", pageName, false, ex.Message);
+                    Services.Logger.Instance.Error($"页面方向过渡失败: {ex.Message}");
+                    Services.CrashReportService.UpdateUIState("page_transition", pageName, false, ex.Message);
                 }
             }
 
