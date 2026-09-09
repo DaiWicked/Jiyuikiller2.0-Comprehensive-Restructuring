@@ -125,6 +125,7 @@
     <Resource Include="Assets\me.png" />
     <EmbeddedResource Include="Drivers\JiYuTrainerDriver.sys" />
     <EmbeddedResource Include="Drivers\JiYuTrainerHooks.dll" />
+    <EmbeddedResource Include="Assets\egg.mp4" />
     <Content Include="Drivers\teacher_sim.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

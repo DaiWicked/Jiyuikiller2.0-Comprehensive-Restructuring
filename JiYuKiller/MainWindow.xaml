@@ -237,7 +237,7 @@
                         <StackPanel HorizontalAlignment="Center" Margin="0,20">
                             <Image Source="pack://application:,,,/学习不通;component/Assets/about.png" Width="280" Margin="0,0,0,16" Stretch="Uniform" />
                             <TextBlock Text="学习不通2.0" FontSize="24" FontWeight="Bold" Foreground="#FF0A0A0A" HorizontalAlignment="Center" />
-                            <TextBlock x:Name="AboutVersion" Text="QD_V2.3_JiYuRebuild_CoUI-Glass" FontSize="14" Foreground="#FF555555" HorizontalAlignment="Center" Margin="0,4,0,16" />
+                            <TextBlock x:Name="AboutVersion" Text="QD_V2.3_JiYuRebuild_CoUI-Glass" FontSize="14" Foreground="#FF555555" HorizontalAlignment="Center" Margin="0,4,0,16" MouseLeftButtonDown="AboutVersion_MouseLeftButtonDown" Cursor="Hand" />
                             <TextBlock Text="基于 JiYuTrainer 重构的 C# WPF 版本" FontSize="12" Foreground="#FF3A3A3A" HorizontalAlignment="Center" />
 
                             <!-- 致谢 -->
@@ -1133,6 +1133,18 @@
                     </LinearGradientBrush>
                 </Border.Background>
             </Border>
+        </Grid>
+    </Border>
+
+    <!-- 彩蛋视频窗口 -->
+    <Border x:Name="EggWindow" CornerRadius="16" Background="#FF000000" Visibility="Collapsed" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center" Width="360" Height="280">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="36" />
+            </Grid.RowDefinitions>
+            <MediaElement x:Name="EggMedia" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" />
+            <Button Grid.Row="1" Content="关闭" Click="EggClose_Click" Style="{StaticResource GlassButton}" Width="80" Height="28" FontSize="12" Background="#FF6C757D" />
         </Grid>
     </Border>
     </Grid>
