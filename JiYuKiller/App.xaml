@@ -13,6 +13,18 @@
             <Color x:Key="GlassSuccessColor">#FF28A745</Color>
             <Color x:Key="GlassDangerColor">#FFFF6B6B</Color>
 
+            <!-- COUI 5级Surface配色（从源码提取: F0F1F2->白->白->E6E6E6->白） -->
+            <Color x:Key="SurfaceLevel0Color">#FFF0F1F2</Color>
+            <Color x:Key="SurfaceLevel1Color">#FFFFFFFF</Color>
+            <Color x:Key="SurfaceLevel2Color">#FFFFFFFF</Color>
+            <Color x:Key="SurfaceLevel3Color">#FFE6E6E6</Color>
+            <Color x:Key="SurfaceLevel4Color">#FFFFFFFF</Color>
+            <SolidColorBrush x:Key="SurfaceLevel0Brush" Color="{StaticResource SurfaceLevel0Color}" />
+            <SolidColorBrush x:Key="SurfaceLevel1Brush" Color="{StaticResource SurfaceLevel1Color}" />
+            <SolidColorBrush x:Key="SurfaceLevel2Brush" Color="{StaticResource SurfaceLevel2Color}" />
+            <SolidColorBrush x:Key="SurfaceLevel3Brush" Color="{StaticResource SurfaceLevel3Color}" />
+            <SolidColorBrush x:Key="SurfaceLevel4Brush" Color="{StaticResource SurfaceLevel4Color}" />
+
             <!-- 玻璃背景画刷 -->
             <SolidColorBrush x:Key="GlassBackgroundBrush" Color="{StaticResource GlassBgColor}" />
             <SolidColorBrush x:Key="GlassBorderBrush" Color="{StaticResource GlassBorderColor}" />

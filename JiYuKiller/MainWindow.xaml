@@ -55,6 +55,20 @@
                 </Border.Background>
             </Border>
 
+            <!-- 层2.5: 光感层（借鉴COUI BloomStroke: 顶部光源RadialGradient, 顶部亮边缘暗） -->
+            <Border x:Name="GlowLayer" CornerRadius="16" ClipToBounds="True" IsHitTestVisible="False">
+                <Border.Background>
+                    <RadialGradientBrush Center="0.5,0.1" RadiusX="0.8" RadiusY="0.6" GradientOrigin="0.5,0.1">
+                        <GradientStop Color="#40FFFFFF" Offset="0" />
+                        <GradientStop Color="#15FFFFFF" Offset="0.5" />
+                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                    </RadialGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <!-- 层2.6: 噪声层（借鉴COUI noiseCoefficient=0.0045, 抗色带） -->
+            <Border x:Name="NoiseLayer" CornerRadius="16" ClipToBounds="True" IsHitTestVisible="False" Opacity="0.05" />
+
             <!-- 层3: 内容层（透明背景） -->
             <Border x:Name="ContentLayer" Background="Transparent" CornerRadius="16" ClipToBounds="True">
                 <Grid>
@@ -978,6 +992,16 @@
                 </Grid>
 
             </Grid>
+
+            <!-- 底栏顶部渐进模糊遮罩（借鉴COUI progressive blur, 内容到底栏的平滑过渡） -->
+            <Border Grid.Row="2" Margin="10,0,10,0" Height="20" VerticalAlignment="Top" IsHitTestVisible="False">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#00FFFFFF" Offset="0" />
+                        <GradientStop Color="#40FFFFFF" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
 
             <!-- 底部悬浮导航栏（液态玻璃 - 可横向滚动） -->
             <Grid Grid.Row="2" Margin="10,0,10,20" HorizontalAlignment="Stretch" Height="66">

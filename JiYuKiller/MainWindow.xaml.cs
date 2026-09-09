@@ -301,6 +301,7 @@ namespace JiYuKiller
                 _glassyManager = new Effects.GlassyWindowManager(this, BackdropLayer, GlassyLayer);
                 Services.Logger.Instance.Info("毛玻璃效果管理器初始化成功");
                 InitWallpaper();
+                InitNoiseLayer();
             }
             catch (Exception ex)
             {
@@ -2027,6 +2028,34 @@ namespace JiYuKiller
             {
                 TextWallpaperError.Text = "应用失败: " + ex.Message;
                 Services.CrashReportService.UpdateWallpaperInfo(path, false, WallpaperLayer?.Opacity ?? 1.0, 255, _settings?.GlassOpacity ?? 72);
+            }
+        }
+
+        /// <summary>
+        /// 初始化噪声层（借鉴COUI noiseCoefficient=0.0045, 抗色带）
+        /// 程序化生成128x128灰度噪声纹理, ImageBrush平铺
+        /// </summary>
+        private void InitNoiseLayer()
+        {
+            try
+            {
+                const int size = 128;
+                var bmp = new System.Windows.Media.Imaging.WriteableBitmap(size, size, 96, 96, System.Windows.Media.PixelFormats.Gray8, null);
+                var pixels = new byte[size * size];
+                var rand = new Random(42); // 固定种子保证一致
+                for (int i = 0; i < pixels.Length; i++)
+                    pixels[i] = (byte)rand.Next(0, 256);
+                bmp.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), pixels, size, 0);
+                var brush = new System.Windows.Media.ImageBrush(bmp);
+                brush.TileMode = System.Windows.Media.TileMode.Tile;
+                brush.Viewport = new System.Windows.Rect(0, 0, size, size);
+                brush.ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute;
+                NoiseLayer.Background = brush;
+                Services.Logger.Instance.Debug("噪声层初始化成功, 128x128平铺");
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("噪声层初始化失败", ex);
             }
         }
 
