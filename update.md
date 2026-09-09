@@ -1,5 +1,33 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-09) - COUI UI/动画三阶段升级
+
+### 第一阶段: 按钮动画 + 滑块样式 + 页面过渡
+- GlassButton: Storyboard按压缩放0.92+回弹1.02过冲, 悬停上移1px+状态层8%黑
+- NavGlassButton: 动画作用在Grid根元素整体缩放(不受BlurEffect影响), 悬停玻璃变亮
+- GlassSlider: 新样式, Thumb悬停放大1.1/拖动放大1.25, 带DropShadow阴影
+- 4个滑块引用GlassSlider样式
+- ShowPage页面淡入过渡: Opacity 0->1, 300ms CubicEase EaseOut
+- CrashReportService添加UI/动效状态诊断
+
+### 第二阶段: 视觉增强
+- 光感层: GlassyLayer上方RadialGradient, 顶部光源顶部亮边缘暗
+- 噪声抗色带: 程序化生成128x128 Gray8噪声纹理, ImageBrush平铺, Opacity=1%
+- 5级Surface配色资源
+- 渐进模糊底栏: 底栏顶部LinearGradient遮罩
+- 修复: 噪声层透明度从5%降到1%, 修复玻璃背景变暗
+
+### 第三阶段: 动画增强
+- 页面方向过渡: 根据导航顺序从左/右滑入+淡入, 280ms CubicEase
+- GlassSwitch样式: 开关滑块滑动动画
+- BloomStroke简化版: GlassContainer边框LinearGradient顶部亮底部暗
+- 修复: 页面方向过渡用BeginAnimation替代Storyboard
+
+### 按钮动画修复
+- 修复底栏按钮无动效: 动画移到Grid根元素整体缩放
+- 修复按钮变蓝色: 移除背景色ColorAnimation, 只通过stateLayer叠加暗色
+- 修复GlassSlider缺少SliderRepeatButtonTransparent样式
+
 ## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-09) - 自定义壁纸功能
 
 ### 自定义壁纸 (WallpaperService)
