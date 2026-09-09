@@ -67,7 +67,7 @@
             </Border>
 
             <!-- 层2.6: 噪声层（借鉴COUI noiseCoefficient=0.0045, 抗色带） -->
-            <Border x:Name="NoiseLayer" CornerRadius="16" ClipToBounds="True" IsHitTestVisible="False" Opacity="0.05" />
+            <Border x:Name="NoiseLayer" CornerRadius="16" ClipToBounds="True" IsHitTestVisible="False" Opacity="0.01" />
 
             <!-- 层3: 内容层（透明背景） -->
             <Border x:Name="ContentLayer" Background="Transparent" CornerRadius="16" ClipToBounds="True">
