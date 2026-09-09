@@ -1,5 +1,32 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 自定义壁纸功能
+
+### 自定义壁纸 (WallpaperService)
+- 新增WallpaperService服务：壁纸加载/cover裁切/10MB文件验证/缩略图/缓存
+- 支持格式：.jpg/.jpeg/.png/.bmp，最大10MB
+- 壁纸裁切到窗口尺寸450x600（cover模式，保持宽高比居中裁切）
+- 三按钮：选择壁纸/应用壁纸/恢复默认
+- 壁纸丢失检测：原文件删除时显示红色提示
+- 启动自动加载已保存壁纸
+
+### Liquid Glass分层结构重构
+- 原分层：BackdropLayer(桌面) → GlassyLayer(绑定桌面) → ContentLayer(半透明白+UI)
+- 新分层：BackdropContainer(桌面+白色覆盖层+壁纸层) → GlassyLayer(VisualBrush绑定整个容器) → ContentLayer(透明+UI)
+- 壁纸和桌面截图都被玻璃效果模糊
+- 白色覆盖层从ContentLayer移到BackdropContainer内部
+
+### 滑块正向逻辑
+- 0% → 白色层alpha=255 + 壁纸层opacity=1.0 → 壁纸遮住白色和桌面 → 看到壁纸
+- 100% → 白色层alpha=0 + 壁纸层opacity=0 → 看到桌面玻璃效果
+- 无壁纸时，0%看到白色默认背景（不是透明）
+- 数值越大，白色层和壁纸层越透明，桌面越可见
+
+### CrashReportService壁纸诊断
+- 错误报告新增【自定义壁纸状态】段落
+- 包含：壁纸路径、是否有效、壁纸层Opacity、白色覆盖层Alpha、玻璃桌面可见度
+- MainWindow壁纸相关方法(ApplyWallpaper/Reset/滑块)实时更新诊断信息
+
 ## QD_V2.1_JiYuRebuild_Liquid-Glass (2026-09-09) - 代码审查与稳定性修复
 
 ### 调试模式修复
