@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
 using Microsoft.Win32;
 using WinForms = System.Windows.Forms;
@@ -264,42 +265,32 @@ namespace JiYuKiller
 
         private void ApplyLiquidGlass()
         {
-            Services.Logger.Instance.FunctionCall("ApplyLiquidGlass", $"opacity={_settings.GlassOpacity}, color={_settings.GlassBgColor}");
+            Services.Logger.Instance.FunctionCall("ApplyLiquidGlass", $"opacity={_settings.GlassOpacity}");
 
-            // 根据背景色设置内容层透明度
-            byte alpha = (byte)(_settings.GlassOpacity * 2.55);
+            double value = _settings.GlassOpacity / 100.0;
+            byte whiteAlpha = (byte)((1 - value) * 255);
+            double wallpaperOpacity = 1 - value;
 
-            // 内容层背景色
-            Color bgColor;
-            switch (_settings.GlassBgColor.ToLower())
+            if (WhiteOverlayLayer != null)
             {
-                case "white":
-                    bgColor = Color.FromRgb(255, 255, 255);
-                    break;
-                case "blue":
-                    bgColor = Color.FromRgb(180, 210, 255);
-                    break;
-                case "gray":
-                    bgColor = Color.FromRgb(200, 200, 200);
-                    break;
-                case "dark":
-                    bgColor = Color.FromRgb(50, 50, 50);
-                    break;
-                case "purple":
-                    bgColor = Color.FromRgb(200, 180, 255);
-                    break;
-                case "green":
-                    bgColor = Color.FromRgb(180, 230, 180);
-                    break;
-                default:
-                    bgColor = Color.FromRgb(255, 255, 255);
-                    break;
+                SolidColorBrush whiteBrush = WhiteOverlayLayer.Background as SolidColorBrush;
+                if (whiteBrush != null)
+                {
+                    Color c = whiteBrush.Color;
+                    c.A = whiteAlpha;
+                    whiteBrush.Color = c;
+                }
             }
-            bgColor.A = alpha;
+            if (WallpaperLayer != null)
+            {
+                WallpaperLayer.Opacity = wallpaperOpacity;
+            }
+            if (SliderContentOpacity != null)
+            {
+                SliderContentOpacity.Value = value;
+            }
 
-            // 设置内容层背景（第三个Grid）
-            // 注意：毛玻璃效果由 GlassyWindowManager 管理桌面截图和像素着色器
-            Services.Logger.Instance.Debug($"Liquid Glass 已应用: ARGB={bgColor.A},{bgColor.R},{bgColor.G},{bgColor.B}");
+            Services.Logger.Instance.Debug($"Liquid Glass: value={value:F2}, whiteAlpha={whiteAlpha}, wallpaperOpacity={wallpaperOpacity:F2}");
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -309,6 +300,7 @@ namespace JiYuKiller
             {
                 _glassyManager = new Effects.GlassyWindowManager(this, BackdropLayer, GlassyLayer);
                 Services.Logger.Instance.Info("毛玻璃效果管理器初始化成功");
+                InitWallpaper();
             }
             catch (Exception ex)
             {
@@ -481,24 +473,32 @@ namespace JiYuKiller
                 TextContentOpacityValue.Text = string.Format("{0}%", (int)(e.NewValue * 100));
             }
 
-            // 调整内容层背景透明度
-            if (ContentLayer != null)
+            // 正向逻辑：值越大，白色层和壁纸层越透明，桌面越可见
+            byte whiteAlpha = (byte)((1 - e.NewValue) * 255);
+            double wallpaperOpacity = 1 - e.NewValue;
+
+            if (WhiteOverlayLayer != null)
             {
-                byte alpha = (byte)(e.NewValue * 255);
-                SolidColorBrush brush = ContentLayer.Background as SolidColorBrush;
-                if (brush != null)
+                SolidColorBrush whiteBrush = WhiteOverlayLayer.Background as SolidColorBrush;
+                if (whiteBrush != null)
                 {
-                    Color color = brush.Color;
-                    color.A = alpha;
-                    brush.Color = color;
-                }
-                else
-                {
-                    ContentLayer.Background = new SolidColorBrush(Color.FromArgb(alpha, 255, 255, 255));
+                    Color c = whiteBrush.Color;
+                    c.A = whiteAlpha;
+                    whiteBrush.Color = c;
                 }
             }
 
-            Services.Logger.Instance.Debug($"内容层透明度调整: {e.NewValue:F2}");
+            if (WallpaperLayer != null)
+            {
+                WallpaperLayer.Opacity = wallpaperOpacity;
+            }
+
+            if (_settings != null)
+            {
+                _settings.GlassOpacity = (int)(e.NewValue * 100);
+            }
+
+            Services.Logger.Instance.Debug($"内容层透明度: {e.NewValue:F2}, whiteAlpha={whiteAlpha}, wallpaperOpacity={wallpaperOpacity:F2}");
         }
 
         private void BtnRefreshGlass_Click(object sender, RoutedEventArgs e)
@@ -1910,5 +1910,90 @@ namespace JiYuKiller
             _teacherSimService.SendCommand($"info {ip}");
         }
         #endregion
+
+        #region 自定义壁纸
+
+        private Services.WallpaperService _wallpaperService = new Services.WallpaperService();
+        private string _pendingWallpaperPath = "";
+
+        private void BtnWallpaperSelect_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("选择壁纸", "BtnWallpaperSelect");
+            try
+            {
+                Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+                dlg.Title = "选择壁纸图片";
+                dlg.Filter = "图片文件|*.jpg;*.jpeg;*.png;*.bmp|所有文件|*.*";
+                dlg.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                if (dlg.ShowDialog() == true)
+                {
+                    _pendingWallpaperPath = dlg.FileName;
+                    if (_wallpaperService.ValidateWallpaper(dlg.FileName))
+                    {
+                        BitmapSource thumb = _wallpaperService.GetThumbnail(dlg.FileName);
+                        if (thumb != null) ImageWallpaperPreview.Source = thumb;
+                        TextWallpaperError.Text = "";
+                    }
+                    else { TextWallpaperError.Text = _wallpaperService.LastError; }
+                }
+            }
+            catch (Exception ex) { TextWallpaperError.Text = "选择失败: " + ex.Message; }
+        }
+
+        private void BtnWallpaperApply_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("应用壁纸", "BtnWallpaperApply");
+            string path = !string.IsNullOrEmpty(_pendingWallpaperPath) ? _pendingWallpaperPath : _settings.WallpaperPath;
+            if (string.IsNullOrEmpty(path)) { TextWallpaperError.Text = "请先选择壁纸"; return; }
+            ApplyWallpaper(path);
+        }
+
+        private void BtnWallpaperReset_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("恢复默认", "BtnWallpaperReset");
+            _settings.WallpaperPath = "";
+            _pendingWallpaperPath = "";
+            _settings.Save();
+            ImageWallpaperPreview.Source = null;
+            TextWallpaperError.Text = "";
+            if (WallpaperLayer != null)
+            {
+                WallpaperLayer.Background = new SolidColorBrush(Color.FromRgb(255, 255, 255));
+            }
+        }
+
+        private void ApplyWallpaper(string path)
+        {
+            try
+            {
+                BitmapSource wallpaper = _wallpaperService.LoadWallpaper(path);
+                if (wallpaper == null) { TextWallpaperError.Text = _wallpaperService.LastError; return; }
+                if (WallpaperLayer != null)
+                {
+                    WallpaperLayer.Background = new ImageBrush(wallpaper) { Stretch = Stretch.Fill };
+                }
+                _settings.WallpaperPath = path;
+                _settings.Save();
+                TextWallpaperError.Text = "";
+            }
+            catch (Exception ex) { TextWallpaperError.Text = "应用失败: " + ex.Message; }
+        }
+
+        private void InitWallpaper()
+        {
+            if (!string.IsNullOrEmpty(_settings.WallpaperPath))
+            {
+                if (_wallpaperService.ValidateWallpaper(_settings.WallpaperPath))
+                {
+                    BitmapSource thumb = _wallpaperService.GetThumbnail(_settings.WallpaperPath);
+                    if (thumb != null) ImageWallpaperPreview.Source = thumb;
+                    ApplyWallpaper(_settings.WallpaperPath);
+                }
+                else { TextWallpaperError.Text = "壁纸文件已丢失，请重新选择或恢复默认"; }
+            }
+        }
+
+        #endregion
+
     }
 }

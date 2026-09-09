@@ -79,6 +79,7 @@
     <Compile Include="Models\AppSettings.cs" />
     <Compile Include="Services\JiYuController.cs" />
     <Compile Include="Services\UdpAttackService.cs" />
+    <Compile Include="Services\WallpaperService.cs" />
     <Compile Include="Services\ChatService.cs" />
     <Compile Include="Services\ScreenshotService.cs" />
     <Compile Include="Services\ScreenCaptureHelper.cs" />

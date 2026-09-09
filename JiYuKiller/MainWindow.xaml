@@ -41,14 +41,22 @@
             <Border.BorderThickness>1</Border.BorderThickness>
 
         <Grid>
-            <!-- 层1: 桌面截图背景（毛玻璃底层） -->
-            <Border x:Name="BackdropLayer" CornerRadius="16" ClipToBounds="True" />
+            <!-- 层1容器：桌面截图 + 白色覆盖 + 壁纸 -->
+            <Grid x:Name="BackdropContainer" ClipToBounds="True">
+                <Border x:Name="BackdropLayer" />
+                <Border x:Name="WhiteOverlayLayer" Background="#FFFFFFFF" />
+                <Border x:Name="WallpaperLayer" Background="#FFFFFFFF" />
+            </Grid>
 
-            <!-- 层2: 玻璃像素着色器效果层（折射/模糊），背景绑定到截图层 -->
-            <Border x:Name="GlassyLayer" CornerRadius="16" Background="{Binding Background, ElementName=BackdropLayer}" ClipToBounds="True" />
+            <!-- 层2: 玻璃效果层，VisualBrush绑定整个容器 -->
+            <Border x:Name="GlassyLayer" CornerRadius="16" ClipToBounds="True">
+                <Border.Background>
+                    <VisualBrush Visual="{Binding ElementName=BackdropContainer}" />
+                </Border.Background>
+            </Border>
 
-            <!-- 层3: 半透明白色覆盖层 + 内容（圆角裁剪） -->
-            <Border x:Name="ContentLayer" Background="#80FFFFFF" CornerRadius="16" ClipToBounds="True">
+            <!-- 层3: 内容层（透明背景） -->
+            <Border x:Name="ContentLayer" Background="Transparent" CornerRadius="16" ClipToBounds="True">
                 <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40" />
@@ -886,7 +894,31 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- 说明 -->
+                            
+                            <!-- 自定义壁纸 -->
+                            <Border Background="#20000000" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="自定义壁纸" FontSize="14" FontWeight="Bold" Foreground="#FF0A0A0A" Margin="0,0,0,8" />
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="150" Height="100" CornerRadius="6" Background="#20000000" BorderBrush="#40000000" BorderThickness="1" ClipToBounds="True">
+                                            <Image x:Name="ImageWallpaperPreview" Stretch="UniformToFill" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                            <Button x:Name="BtnWallpaperSelect" Content="选择壁纸" Style="{StaticResource GlassButton}" Click="BtnWallpaperSelect_Click" Padding="12,6" FontSize="12" HorizontalAlignment="Left" Margin="0,0,0,6" />
+                                            <Button x:Name="BtnWallpaperApply" Content="应用壁纸" Style="{StaticResource GlassButton}" Click="BtnWallpaperApply_Click" Padding="12,6" FontSize="12" HorizontalAlignment="Left" Margin="0,0,0,6" Background="#FF28A745" Foreground="White" />
+                                            <Button x:Name="BtnWallpaperReset" Content="恢复默认" Style="{StaticResource GlassButton}" Click="BtnWallpaperReset_Click" Padding="12,6" FontSize="12" HorizontalAlignment="Left" Background="#FFDC3545" Foreground="White" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock x:Name="TextWallpaperError" Text="" FontSize="11" Foreground="#FFDC3545" TextWrapping="Wrap" Margin="0,0,0,4" />
+                                    <TextBlock Text="提示：内容层透明度0%=显示壁纸，100%=显示桌面玻璃效果" FontSize="11" Foreground="#FF555555" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+<!-- 说明 -->
                             <Border Background="#10000000" CornerRadius="8" Padding="12">
                                 <StackPanel>
                                     <TextBlock Text="说明" FontSize="13" FontWeight="Bold" Foreground="#FF0A0A0A" Margin="0,0,0,6" />
