@@ -1548,8 +1548,8 @@ namespace JiYuKiller
         private void BtnScanLan_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("UDP攻击-扫描局域网", "BtnScanLan");
+            RegisterUdpLog();
             var svc = Services.UdpAttackService.Instance;
-            svc.OnLog += (msg) => Dispatcher.Invoke(() => TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " " + msg + "\n"));
             svc.OnScanComplete += (hosts) => Dispatcher.Invoke(() =>
             {
                 ListUdpScanResult.Items.Clear();
@@ -1575,40 +1575,40 @@ namespace JiYuKiller
         private void BtnUdpSendMsg_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("UDP攻击-发送消息", "BtnUdpSendMsg");
+            RegisterUdpLog();
             string ip = TextUdpTargetIp.Text.Trim();
             if (string.IsNullOrEmpty(ip)) { TextUdpLog.AppendText("请输入目标IP\n"); return; }
             var svc = Services.UdpAttackService.Instance;
-            svc.OnLog += (msg) => Dispatcher.Invoke(() => TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " " + msg + "\n"));
             svc.SendText(ip, 4705, TextUdpMessage.Text);
         }
 
         private void BtnUdpSendCmd_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("UDP攻击-发送命令", "BtnUdpSendCmd");
+            RegisterUdpLog();
             string ip = TextUdpTargetIp.Text.Trim();
             if (string.IsNullOrEmpty(ip)) { TextUdpLog.AppendText("请输入目标IP\n"); return; }
             var svc = Services.UdpAttackService.Instance;
-            svc.OnLog += (msg) => Dispatcher.Invoke(() => TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " " + msg + "\n"));
             svc.SendCommand(ip, 4705, TextUdpMessage.Text);
         }
 
         private void BtnUdpShutdown_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("UDP攻击-远程关机", "BtnUdpShutdown");
+            RegisterUdpLog();
             string ip = TextUdpTargetIp.Text.Trim();
             if (string.IsNullOrEmpty(ip)) { TextUdpLog.AppendText("请输入目标IP\n"); return; }
             var svc = Services.UdpAttackService.Instance;
-            svc.OnLog += (msg) => Dispatcher.Invoke(() => TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " " + msg + "\n"));
             svc.SendShutdown(ip, 4705);
         }
 
         private void BtnUdpReboot_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("UDP攻击-远程重启", "BtnUdpReboot");
+            RegisterUdpLog();
             string ip = TextUdpTargetIp.Text.Trim();
             if (string.IsNullOrEmpty(ip)) { TextUdpLog.AppendText("请输入目标IP\n"); return; }
             var svc = Services.UdpAttackService.Instance;
-            svc.OnLog += (msg) => Dispatcher.Invoke(() => TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + " " + msg + "\n"));
             svc.SendReboot(ip, 4705);
         }
 
