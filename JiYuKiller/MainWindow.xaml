@@ -1,7 +1,7 @@
 ﻿<Window x:Class="JiYuKiller.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="学习不通2.0"
+        Title="i.chaoxing Main Window"
         Height="600" Width="450"
         WindowStartupLocation="CenterScreen"
         Icon="pack://application:,,,/学习不通;component/Assets/JiYuTrainerLogo.ico"

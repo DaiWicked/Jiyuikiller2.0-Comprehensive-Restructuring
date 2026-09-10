@@ -703,6 +703,12 @@ namespace JiYuKiller.Services
             // 先检查当前运行的进程
             if (IsJiYuRunning && !string.IsNullOrEmpty(JiYuProcessPath) && JiYuProcessPath != "(无法获取路径)")
             {
+                if (_settings != null && _settings.JiYuMainPath != JiYuProcessPath)
+                {
+                    _settings.JiYuMainPath = JiYuProcessPath;
+                    _settings.Save();
+                    Logger.Instance.Info("[JiYuController] 极域路径已保存: " + JiYuProcessPath);
+                }
                 return JiYuProcessPath;
             }
 
@@ -717,6 +723,11 @@ namespace JiYuKiller.Services
                         if (!string.IsNullOrEmpty(icon) && File.Exists(icon))
                         {
                             Logger.Instance.Info("[JiYuController] 从注册表定位到极域: " + icon);
+                            if (_settings != null && _settings.JiYuMainPath != icon)
+                            {
+                                _settings.JiYuMainPath = icon;
+                                _settings.Save();
+                            }
                             return icon;
                         }
                     }
@@ -729,6 +740,11 @@ namespace JiYuKiller.Services
                         if (!string.IsNullOrEmpty(icon) && File.Exists(icon))
                         {
                             Logger.Instance.Info("[JiYuController] 从注册表(WOW64)定位到极域: " + icon);
+                            if (_settings != null && _settings.JiYuMainPath != icon)
+                            {
+                                _settings.JiYuMainPath = icon;
+                                _settings.Save();
+                            }
                             return icon;
                         }
                     }
@@ -752,6 +768,11 @@ namespace JiYuKiller.Services
                 if (File.Exists(path))
                 {
                     Logger.Instance.Info("[JiYuController] 从常见路径定位到极域: " + path);
+                    if (_settings != null && _settings.JiYuMainPath != path)
+                    {
+                        _settings.JiYuMainPath = path;
+                        _settings.Save();
+                    }
                     return path;
                 }
             }

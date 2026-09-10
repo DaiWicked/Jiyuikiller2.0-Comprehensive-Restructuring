@@ -57,6 +57,15 @@ namespace JiYuKiller
         private const int HOTKEY_FAKEFULL = 9000;
         private const int HOTKEY_SHOWHIDE = 9001;
         private const int WM_COPYDATA = 0x004A;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct COPYDATASTRUCT
+        {
+            public IntPtr dwData;
+            public int cbData;
+            public IntPtr lpData;
+        }
+
         private System.Windows.Interop.HwndSource _hwndSource;
 
         public MainWindow()
@@ -984,12 +993,20 @@ namespace JiYuKiller
                 string logPath = Services.Logger.Instance.LogPath;
                 if (File.Exists(logPath))
                 {
-                    // 读取最后 500 行
-                    var lines = File.ReadAllLines(logPath);
-                    int start = Math.Max(0, lines.Length - 500);
-                    DebugLogBox.Text = string.Join("\n", lines, start, lines.Length - start);
+                    // 读取最后 500 行 (用FileShare.ReadWrite避免文件被占用)
+                    var lines = new System.Collections.Generic.List<string>();
+                    using (var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (var sr = new StreamReader(fs))
+                    {
+                        while (!sr.EndOfStream)
+                        {
+                            lines.Add(sr.ReadLine());
+                        }
+                    }
+                    int start = Math.Max(0, lines.Count - 500);
+                    DebugLogBox.Text = string.Join("\n", lines.ToArray(), start, lines.Count - start);
                     DebugLogBox.ScrollToEnd();
-                    Services.Logger.Instance.Debug($"日志已刷新，显示最后 {lines.Length - start} 行");
+                    Services.Logger.Instance.Debug($"日志已刷新，显示最后 {lines.Count - start} 行");
                 }
                 else
                 {
@@ -1436,7 +1453,89 @@ namespace JiYuKiller
                     handled = true;
                 }
             }
+            else if (msg == WM_COPYDATA)
+            {
+                // 接收DLL回调消息 (对应原项目VSendMessageBack)
+                try
+                {
+                    COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(lParam, typeof(COPYDATASTRUCT));
+                    if (cds.lpData != IntPtr.Zero)
+                    {
+                        string message = Marshal.PtrToStringUni(cds.lpData);
+                        if (!string.IsNullOrEmpty(message))
+                        {
+                            Services.Logger.Instance.Info("[DLL回调] " + message);
+                            HandleDllCallback(message);
+                        }
+                    }
+                    handled = true;
+                }
+                catch (Exception ex)
+                {
+                    Services.Logger.Instance.Error("[DLL回调] 处理WM_COPYDATA异常", ex);
+                }
+            }
             return IntPtr.Zero;
+        }
+
+        /// <summary>
+        /// 处理DLL回调消息 (对应原项目hkb:系列消息)
+        /// </summary>
+        private void HandleDllCallback(string message)
+        {
+            try
+            {
+                if (message.StartsWith("hkb:succ"))
+                {
+                    Services.Logger.Instance.Info("[DLL回调] DLL注入成功确认");
+                }
+                else if (message.StartsWith("hkb:jyk:"))
+                {
+                    string locked = message.Substring(7);
+                    Services.Logger.Instance.Info("[DLL回调] 键盘锁定状态: " + locked);
+                }
+                else if (message.StartsWith("hkb:wtf:"))
+                {
+                    string pid = message.Substring(8);
+                    Services.Logger.Instance.Warn("[DLL回调] 检测到非极域进程注入, PID=" + pid);
+                }
+                else if (message.StartsWith("hkb:immck"))
+                {
+                    Services.Logger.Instance.Info("[DLL回调] 输入法检查完成");
+                }
+                else if (message.StartsWith("hkb:showhelp"))
+                {
+                    Services.Logger.Instance.Info("[DLL回调] 请求显示帮助");
+                }
+                else if (message.StartsWith("hkb:gbuntop"))
+                {
+                    Services.Logger.Instance.Info("[DLL回调] 广播窗口取消置顶");
+                }
+                else if (message.StartsWith("hkb:algbtop"))
+                {
+                    Services.Logger.Instance.Info("[DLL回调] 请求允许广播窗口置顶");
+                }
+                else if (message.StartsWith("hkb:gbtop"))
+                {
+                    Services.Logger.Instance.Info("[DLL回调] 广播窗口已置顶");
+                }
+                else if (message.StartsWith("hkb:gbmfull"))
+                {
+                    Services.Logger.Instance.Info("[DLL回调] 广播窗口全屏");
+                }
+                else if (message.StartsWith("hkb:gbmnofull"))
+                {
+                    Services.Logger.Instance.Info("[DLL回调] 广播窗口退出全屏");
+                }
+                else
+                {
+                    Services.Logger.Instance.Debug("[DLL回调] 未知消息: " + message);
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("[DLL回调] HandleDllCallback异常", ex);
+            }
         }
 
         #endregion

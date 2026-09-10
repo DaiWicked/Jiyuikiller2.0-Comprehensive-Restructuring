@@ -131,6 +131,29 @@ namespace JiYuKiller.Services
         {
             Logger.Instance.Info("[Driver] 开始加载驱动: " + driverPath);
 
+            // 检查1: 64位系统不支持 (对应原项目XTestDriverCanUse)
+            if (Environment.Is64BitOperatingSystem)
+            {
+                Logger.Instance.Warn("[Driver] 驱动不支持64位系统, 跳过加载");
+                return false;
+            }
+
+            // 检查2: 非管理员且非XP系统不支持
+            bool isAdmin = false;
+            try
+            {
+                var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+                var principal = new System.Security.Principal.WindowsPrincipal(identity);
+                isAdmin = principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+            }
+            catch { }
+            bool isXp = Environment.OSVersion.Version.Major < 6;
+            if (!isAdmin && !isXp)
+            {
+                Logger.Instance.Warn("[Driver] 要加载驱动, 请以管理员身份运行本程序");
+                return false;
+            }
+
             if (!File.Exists(driverPath))
             {
                 Logger.Instance.Error("[Driver] 驱动文件不存在: " + driverPath);
