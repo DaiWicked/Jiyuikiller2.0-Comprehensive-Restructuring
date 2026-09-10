@@ -105,7 +105,11 @@ namespace JiYuKiller.Services
                 if (controller != null && controller.IsVirusInstalled)
                 {
                     controller.SendVirusMessage("hk:inipath:" + _iniPath);
-                    Logger.Instance.Info("[ScreenshotService] 已通知DLL重新读取设置");
+                    Logger.Instance.Info("[ScreenshotService] 已通知DLL重新读取设置, 路径=" + _iniPath);
+                }
+                else
+                {
+                    Logger.Instance.Warn("[ScreenshotService] DLL未注入, 跳过通知 (controller=" + (controller != null) + ", installed=" + (controller != null && controller.IsVirusInstalled) + ")");
                 }
 
                 if (_currentImagePath == "")

@@ -91,6 +91,17 @@ namespace JiYuKiller
             // 初始化系统托盘
             InitTrayIcon();
 
+            // 提前添加HwndHook，确保DLL注入后的回调消息能被接收
+            this.SourceInitialized += (s, e) =>
+            {
+                _hwndSource = System.Windows.Interop.HwndSource.FromHwnd(new System.Windows.Interop.WindowInteropHelper(this).Handle);
+                if (_hwndSource != null)
+                {
+                    _hwndSource.AddHook(HwndHook);
+                    Services.Logger.Instance.Info("[HwndHook] 已提前添加消息钩子");
+                }
+            };
+
             // 启动监控
             _controller.Start();
 
@@ -1384,6 +1395,11 @@ namespace JiYuKiller
             StatusText.Text = _controller.GetStatusText();
             UpdateJiYuStatus();
             UpdateDriverStatus();
+            // 同步极域路径（LocateJiYuPosition可能在后台保存了路径）
+            if (!string.IsNullOrEmpty(_settings.JiYuMainPath) && JiYuPathText.Text != $"极域路径: {_settings.JiYuMainPath}")
+            {
+                JiYuPathText.Text = $"极域路径: {_settings.JiYuMainPath}";
+            }
         }
 
         #endregion
@@ -1526,6 +1542,11 @@ namespace JiYuKiller
                 else if (message.StartsWith("hkb:gbmnofull"))
                 {
                     Services.Logger.Instance.Info("[DLL回调] 广播窗口退出全屏");
+                }
+                else if (message.StartsWith("wcd:"))
+                {
+                    // DLL看门狗心跳消息 (每6秒一次, wdCount递增)
+                    Services.Logger.Instance.Debug("[DLL回调] 看门狗心跳: " + message);
                 }
                 else
                 {
