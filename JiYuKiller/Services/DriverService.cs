@@ -14,7 +14,7 @@ namespace JiYuKiller.Services
     public class DriverService : IDisposable
     {
         private const string DRIVER_NAME = "JiYuTrainerDriver";
-        private const string DRIVER_DEVICE = @"\\.\JiYuTrainerDriver";
+        private const string DRIVER_DEVICE = @"\\.\JKRK";
 
         // IOCTL 控制码（对应原项目 IoCtl.h）
         private const uint FILE_DEVICE_UNKNOWN = 0x00000022;
@@ -219,7 +219,7 @@ namespace JiYuKiller.Services
                 }
 
                 CloseServiceHandle(hService);
-                IsDriverLoaded = true;
+                Logger.Instance.Info("[Driver] 服务创建/启动成功, 等待打开设备");
                 return true;
             }
             catch (Exception ex)
@@ -253,11 +253,13 @@ namespace JiYuKiller.Services
             {
                 Logger.Instance.Error("[Driver] 打开设备失败, 错误码: " + Marshal.GetLastWin32Error());
                 IsDriverOpened = false;
+                IsDriverLoaded = false;
                 return false;
             }
 
             IsDriverOpened = true;
-            Logger.Instance.Info("[Driver] 设备打开成功");
+            IsDriverLoaded = true;
+            Logger.Instance.Info("[Driver] 设备打开成功, 驱动已就绪");
             return true;
         }
 
