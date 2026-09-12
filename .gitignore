@@ -173,3 +173,12 @@ build/
 # teacher_sim backups and logs
 JiYuKiller/Drivers/teacher_sim.exe.bak_*
 JiYuKiller/Drivers/teacher_sim/*.log
+
+# WebView2 缓存（如果未来使用）
+WebView2/
+*.WebView2/
+EBWebView/
+
+# 游戏临时文件
+dino.html
+*.html.tmp

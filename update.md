@@ -1,5 +1,18 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-13) - 小游戏功能 + 截图替换禁用
+
+### 小游戏功能（新增）
+- 底栏新增「小游戏」入口
+- 游戏菜单：扫雷 + 恐龙跳两个卡片入口
+- **扫雷**：9×9网格/10雷，左键挖雷右键标旗，首次点击安全，显式栈展开防栈溢出，计时器，踩雷显示所有雷+标错旗，胜利自动插旗
+- **恐龙跳**：纯C# Canvas实现（按Chromium原版参数移植），速度6→12加速，重力/跳跃物理，逐盒碰撞检测，云朵/地平线碎石，距离计分+最高分，空格/点击跳跃
+- 恐龙跳放弃WebView2方案：主窗口AllowsTransparency分层窗口与原生HWND控件存在airspace问题，且需额外NuGet包+WebView2 Runtime依赖
+
+### 截图替换功能暂时禁用
+- 页面添加黄色警告告示：依赖allowMonitor关闭可能导致极域崩溃（原作者已知问题，32位Win10尤甚），DLL注入实现不稳定
+- 操作按钮IsEnabled=False
+
 ## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-13) - teacher_sim学生登录修复 + 功能增强
 
 ### teacher_sim学生登录修复（重大）
