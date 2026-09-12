@@ -545,16 +545,19 @@ def nanc():
 
 
 def canc():
-    """构造自动连接模式使用的教师宣告。"""
+    """构造自动连接模式使用的教师宣告（6.0协议：末尾56字节动态哈希）。"""
     nw, name_chars = get_teacher_name_field()
     af = (name_chars << 17) | CHANNEL_ID
-    channel_mask = 1 << (CHANNEL_ID - 1)
+    # 真实教师端CANC结构: af(4) + ip(4) + 1(4) + 1(4) + 教师名 + 56字节哈希
+    # 56字节哈希学生端不严格验证（填0也能登录），用随机数更接近真实行为
     body = (struct.pack('<I', af)
             + socket.inet_aton(ip)
-            + struct.pack('<II', channel_mask, 1)
+            + struct.pack('<II', 1, 1)
             + nw)
-    if len(body) > 84:
+    if len(body) > 28:  # 84 - 56 = 28，教师名+前面字段不能超过28字节
         raise ValueError('TEACHER_NAME 编码后超过 CANC 负载上限')
+    # 末尾56字节动态哈希（随机数，模拟真实教师端）
+    body += os.urandom(56)
     body += b'\x00' * (84 - len(body))
     return (struct.pack('<III', 0x434E4143, 0x10000, len(body))
             + TGUID.bytes_le
