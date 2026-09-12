@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
@@ -735,7 +735,12 @@ namespace JiYuKiller
             PageUdpAttack.Visibility = Visibility.Collapsed;
             PageChat.Visibility = Visibility.Collapsed;
             PageScreenshot.Visibility = Visibility.Collapsed;
-                    PageTeacherSim.Visibility = Visibility.Collapsed;
+            PageTeacherSim.Visibility = Visibility.Collapsed;
+            PageGames.Visibility = Visibility.Collapsed;
+
+            // 离开小游戏页面时必须清空内容：Visibility.Collapsed 不会触发 Unloaded，
+            // 否则游戏定时器会继续空跑（甚至弹窗到别的页面），挂在窗口上的空格键钩子也会一直吞按键
+            if (GameContent != null && GameContent.Content != null) GameContent.Content = null;
 
             // 重置导航按钮样式
             NavQuick.FontWeight = FontWeights.Normal;
@@ -747,7 +752,8 @@ namespace JiYuKiller
             NavUdpAttack.FontWeight = FontWeights.Normal;
             NavChat.FontWeight = FontWeights.Normal;
             NavScreenshot.FontWeight = FontWeights.Normal;
-                    NavTeacherSim.FontWeight = FontWeights.Normal;
+            NavTeacherSim.FontWeight = FontWeights.Normal;
+            NavGames.FontWeight = FontWeights.Normal;
 
             switch (pageName)
             {
@@ -802,6 +808,11 @@ namespace JiYuKiller
                     NavTeacherSim.FontWeight = FontWeights.Bold;
                     InitTeacherSim();
                     break;
+                case "games":
+                    PageGames.Visibility = Visibility.Visible;
+                    NavGames.FontWeight = FontWeights.Bold;
+                    ResetGameContent();
+                    break;
             }
 
             // 页面方向过渡（借鉴COUI NavTransition: 左右滑入+淡入, 根据导航顺序决定方向）
@@ -816,10 +827,11 @@ namespace JiYuKiller
                 case "chat": targetPage = PageChat; currentIndex = 4; break;
                 case "screenshot": targetPage = PageScreenshot; currentIndex = 5; break;
                 case "teachersim": targetPage = PageTeacherSim; currentIndex = 6; break;
-                case "help": targetPage = PageHelp; currentIndex = 7; break;
-                case "debug": targetPage = PageDebug; currentIndex = 8; break;
-                case "about": targetPage = PageAbout; currentIndex = 9; break;
-                case "aboutme": targetPage = PageAboutMe; currentIndex = 9; break;
+                case "games": targetPage = PageGames; currentIndex = 7; break;
+                case "help": targetPage = PageHelp; currentIndex = 8; break;
+                case "debug": targetPage = PageDebug; currentIndex = 9; break;
+                case "about": targetPage = PageAbout; currentIndex = 10; break;
+                case "aboutme": targetPage = PageAboutMe; currentIndex = 10; break;
                 case "advanced": targetPage = PageAdvancedSettings; currentIndex = 1; break;
             }
             if (targetPage != null)
@@ -1848,6 +1860,29 @@ namespace JiYuKiller
         private void BtnScreenshotBack_Click(object sender, RoutedEventArgs e)
         {
             ShowPage("quick");
+        }
+
+        #endregion
+
+        #region 小游戏
+
+        private void NavGames_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("小游戏", "NavGames");
+            ShowPage("games");
+        }
+
+        /// <summary>每次进入小游戏页面都回到菜单，避免残留上一局的状态。</summary>
+        private void ResetGameContent()
+        {
+            try
+            {
+                GameContent.Content = new Games.GameMenu();
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Debug("ResetGameContent 失败: " + ex.Message);
+            }
         }
 
         #endregion

@@ -1,4 +1,4 @@
-﻿<Window x:Class="JiYuKiller.MainWindow"
+<Window x:Class="JiYuKiller.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="i.chaoxing Main Window"
@@ -786,6 +786,11 @@
                 </ScrollViewer>
 
 
+                <!-- 小游戏页面（扫雷 / 恐龙跳，GameContent 是游戏与菜单的宿主） -->
+                <Grid x:Name="PageGames" Visibility="Collapsed">
+                    <ContentControl x:Name="GameContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                </Grid>
+
                 <!-- 帮助文档页面 -->
                 <Grid x:Name="PageHelp" Visibility="Collapsed">
                     <Grid.RowDefinitions>
@@ -1148,6 +1153,7 @@
                                         <Button x:Name="NavChat" Content="小小私聊" Click="NavChat_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavScreenshot" Content="截图替换" Click="NavScreenshot_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavTeacherSim" Content="教师模拟" Click="NavTeacherSim_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
+                                        <Button x:Name="NavGames" Content="小游戏" Click="NavGames_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
                                         <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
                                         <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
                                         <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
