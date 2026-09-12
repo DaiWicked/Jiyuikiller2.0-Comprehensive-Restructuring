@@ -2095,9 +2095,10 @@ def build_dmoc():
 
 
 def build_lpnt(policy_version=3, enabled=True, width=320, height=240, refresh_seconds=5):
-    """构造缩略图策略包：版本、启用标志、宽、高、刷新秒数。"""
+    """构造缩略图策略包：subtype固定为3（学生端只认subtype=2/3），启用标志、宽、高、刷新秒数。"""
     lg = bytes.fromhex('aa3a8dbe2b906645908ea29526218540')
-    policy = struct.pack('<IIIII', policy_version, int(enabled),
+    # 注意：第一个字段学生端当作subtype处理，只识别2和3，递增的version会被忽略
+    policy = struct.pack('<IIIII', 3, int(enabled),
                          width, height, refresh_seconds)
     return struct.pack('<III', 0x544E504C, 0x10000, len(policy)) + lg + policy
 
@@ -2520,7 +2521,7 @@ def session_recv():
                 logger.info('[LPNT] subtype=2 -> %s:%d', sip, PORT)
 
                 lp2 = bytes(lp)
-                lp2 = lp2[:28] + b'\x03\x00\x00\x00\x01\x00\x00\x00' + lp2[36:]
+                lp2 = lp2[:28] + b'\x03\x00\x00\x00\x00\x00\x00\x00' + lp2[36:]
                 sock.sendto(lp2, (sip, PORT))
                 logger.info('[LPNT] subtype=3 -> %s:%d', sip, PORT)
 
