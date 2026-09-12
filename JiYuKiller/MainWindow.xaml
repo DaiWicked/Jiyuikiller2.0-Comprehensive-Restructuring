@@ -323,7 +323,7 @@
                                     <Button x:Name="BtnScanLan" Content="扫描局域网" Click="BtnScanLan_Click" Style="{StaticResource GlassButton}" Grid.Column="1" Padding="12,6" FontSize="12" Background="#FF4A90D9" Foreground="#FFFFFFFF" />
                                 </Grid>
                                 <Border Background="#10000000" CornerRadius="6" Padding="6">
-                                    <ListBox x:Name="ListUdpScanResult" Height="100" FontSize="11" Foreground="#FF1A1A1A" Background="Transparent" BorderThickness="0" SelectionChanged="ListUdpScanResult_SelectionChanged">
+                                    <ListBox x:Name="ListUdpScanResult" Height="100" FontSize="11" Foreground="#FF1A1A1A" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Hidden" SelectionChanged="ListUdpScanResult_SelectionChanged">
                                         <ListBox.ItemContainerStyle>
                                             <Style TargetType="ListBoxItem">
                                                 <Setter Property="Padding" Value="6,3" />
@@ -677,7 +677,7 @@
                                     <TextBlock Text="已登录学生" FontSize="13" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
                                     <Button Grid.Column="1" Content="刷新" Click="BtnTeacherSimRefreshList_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="26" FontSize="11" Padding="8,0" />
                                 </Grid>
-                                <ListBox x:Name="ListTeacherSimStudents" Height="120" Background="#FF0A0A0A" Foreground="#FF00FF00" FontSize="11" FontFamily="Consolas" BorderThickness="0" SelectionChanged="ListTeacherSimStudents_SelectionChanged">
+                                <ListBox x:Name="ListTeacherSimStudents" Height="120" Background="#FF0A0A0A" Foreground="#FF00FF00" FontSize="11" FontFamily="Consolas" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Hidden" SelectionChanged="ListTeacherSimStudents_SelectionChanged">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem">
                                             <Setter Property="Padding" Value="6,3" />

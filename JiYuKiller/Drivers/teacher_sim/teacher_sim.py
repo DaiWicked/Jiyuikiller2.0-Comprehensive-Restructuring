@@ -2521,7 +2521,7 @@ def session_recv():
                 logger.info('[LPNT] subtype=2 -> %s:%d', sip, PORT)
 
                 lp2 = bytes(lp)
-                lp2 = lp2[:28] + b'\x03\x00\x00\x00\x00\x00\x00\x00' + lp2[36:]
+                lp2 = lp2[:28] + b'\x03\x00\x00\x00\x01\x00\x00\x00' + lp2[36:]
                 sock.sendto(lp2, (sip, PORT))
                 logger.info('[LPNT] subtype=3 -> %s:%d', sip, PORT)
 
