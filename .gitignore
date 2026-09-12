@@ -170,3 +170,6 @@ build/
 # 临时目录（嵌入资源释放）
 # ==========================================
 %TEMP%/学习不通/
+# teacher_sim backups and logs
+JiYuKiller/Drivers/teacher_sim.exe.bak_*
+JiYuKiller/Drivers/teacher_sim/*.log
