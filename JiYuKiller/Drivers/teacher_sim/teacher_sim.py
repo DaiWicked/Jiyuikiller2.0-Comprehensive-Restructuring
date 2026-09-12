@@ -151,7 +151,8 @@ ROUTINE_MAGICS = {0x434E4F4F, 0x434E414E, 0x434E4143, 0x4F4E4E41}
 students = {}
 previews = {}   # sip -> 当前正在重组的 LANT 帧
 completed_preview_frames = {}  # sip -> 最近完整接收的帧序号
-preview_policy_versions = {}   # sip -> 最近发送的 LPNT policy version
+preview_policy_versions = {}
+preview_enabled = {}  # 每个学生的预览状态，True=持续，False=停止   # sip -> 最近发送的 LPNT policy version
 remote_views = {}  # sip -> RemoteViewSession
 remote_controls = {}  # sip -> {'port': int, 'sock': socket.socket}
 remote_view_failures = {}  # sip -> 最近失败时间；避免反复触发学生端编码器
@@ -568,6 +569,7 @@ def waca(sip):
 
 def request_preview(sip):
     """通过一次 LPNT 关/开切换，立即请求新的预览帧。"""
+    preview_enabled[sip] = True
     version = preview_policy_versions.get(sip, 3)
     stop_version = version + 1
     start_version = version + 2
@@ -2140,7 +2142,8 @@ def keep_alive_preview(sip):
             break
         time.sleep(0.5)
 
-    # 收到后发送禁用LPNT，停止学生端持续回传
+    # 收到后发送禁用LPNT，停止学生端持续回传，并更新preview_enabled状态
+    preview_enabled[sip] = False
     stop_version = preview_policy_versions.get(sip, start_version) + 1
     preview_policy_versions[sip] = stop_version
     try:
@@ -2597,10 +2600,11 @@ def main_recv():
                 sock.sendto(waca(sip), (sip, PORT))
 
             elif mag == 0x434D5254:  # TRMC
-                # 学生端定期发TRMC请求预览策略；回复LPNT(disabled)+DMOC维持连接，
-                # 避免每次TRMC都重新启用自动预览（之前用enabled=True导致preview停不下来）
-                logger.debug('[MainRecv] TRMC %s -> LPNT(disabled)+DMOC', sip)
-                lp = build_lpnt(3, False)
+                # 学生端定期发TRMC请求预览策略；真实教师端回复LPNT(enabled=1)
+                # 这里根据preview_enabled状态决定：True=持续预览(教师正在查看)，False=停止
+                pe = preview_enabled.get(sip, True)
+                logger.debug('[MainRecv] TRMC %s -> LPNT(enabled=%s)+DMOC', sip, pe)
+                lp = build_lpnt(3, pe)
                 dm = build_dmoc()
                 sock.sendto(lp, (sip, PORT))
                 time.sleep(0.05)
