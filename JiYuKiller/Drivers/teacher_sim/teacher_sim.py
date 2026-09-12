@@ -152,7 +152,8 @@ students = {}
 previews = {}   # sip -> 当前正在重组的 LANT 帧
 completed_preview_frames = {}  # sip -> 最近完整接收的帧序号
 preview_policy_versions = {}
-preview_enabled = {}  # 每个学生的预览状态，True=持续，False=停止   # sip -> 最近发送的 LPNT policy version
+preview_enabled = {}  # 每个学生的预览状态，True=持续，False=停止
+preview_saved = {}  # 节流：True=已保存当前轮次的preview，后续丢弃   # sip -> 最近发送的 LPNT policy version
 remote_views = {}  # sip -> RemoteViewSession
 remote_controls = {}  # sip -> {'port': int, 'sock': socket.socket}
 remote_view_failures = {}  # sip -> 最近失败时间；避免反复触发学生端编码器
@@ -569,7 +570,7 @@ def waca(sip):
 
 def request_preview(sip):
     """通过一次 LPNT 关/开切换，立即请求新的预览帧。"""
-    preview_enabled[sip] = True
+    preview_saved[sip] = False  # 重置节流，允许保存下一张
     version = preview_policy_versions.get(sip, 3)
     stop_version = version + 1
     start_version = version + 2
@@ -2142,19 +2143,18 @@ def keep_alive_preview(sip):
             break
         time.sleep(0.5)
 
-    # 收到后发送禁用LPNT，停止学生端持续回传，并更新preview_enabled状态
-    preview_enabled[sip] = False
-    stop_version = preview_policy_versions.get(sip, start_version) + 1
-    preview_policy_versions[sip] = stop_version
-    try:
-        sock.sendto(build_lpnt(stop_version, False), (sip, PORT))
-        logger.info('[KeepAlive] %s 已停止自动预览', sip)
-    except Exception as e:
-        logger.error('[KeepAlive] 停止失败 %s：%s', sip, e, exc_info=True)
+    # 收到后设置节流标记，后续preview直接丢弃不保存（不发LPNT disable，因为TRMC会回复enabled覆盖）
+    preview_saved[sip] = True
+    logger.info('[KeepAlive] %s 已保存单张预览，后续帧将丢弃', sip)
 
 
 def handle_tnal(d, sip):
     """接收 LANT 预览缩略图片段并拼成 JPEG。"""
+    # 节流：已保存当前轮次的preview后，后续帧直接丢弃
+    if preview_saved.get(sip, False):
+        logger.debug('[LANT] %s 节流丢弃帧', sip)
+        return
+
     logger.debug('[LANT] RECV from %s, len=%d\n%s', sip, len(d), hexdump(d[:256]))
 
     if len(d) < 48:
@@ -2600,11 +2600,14 @@ def main_recv():
                 sock.sendto(waca(sip), (sip, PORT))
 
             elif mag == 0x434D5254:  # TRMC
-                # 学生端定期发TRMC心跳；只回复DMOC维持连接，不发LPNT
-                # （真实教师端TRMC后的LPNT是主动发送的，不是对TRMC的必须回复）
-                # 如果TRMC回复LPNT(enabled)会覆盖keep_alive的disable，导致preview停不下来
-                logger.debug('[MainRecv] TRMC %s -> DMOC only', sip)
+                # 学生端定期发TRMC；真实教师端回复LPNT(enabled=1)+DMOC
+                # 这是学生端开始/维持preview传输的触发条件，必须回复LPNT
+                # 节流在应用层做：收到一张后后续preview直接丢弃不保存
+                logger.debug('[MainRecv] TRMC %s -> LPNT(enabled)+DMOC', sip)
+                lp = build_lpnt(3, True)
                 dm = build_dmoc()
+                sock.sendto(lp, (sip, PORT))
+                time.sleep(0.05)
                 sock.sendto(dm, (sip, PORT))
 
             elif mag == 0x544E5254:  # TRNT
