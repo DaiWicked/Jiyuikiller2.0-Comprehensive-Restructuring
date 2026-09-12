@@ -1837,9 +1837,9 @@ def save_student_profile(sip):
                 'CPU型号': info.get('cpu_model', ''),
                 '内存': info.get('mem', ''),
             },
-            '设备进程列表': [{'PID': pid, '进程名': name} for pid, name in procs],
             '当前窗口名称': current_window,
             '窗口列表': [{'句柄': hwnd, '标题': title} for hwnd, title in wins],
+            '设备进程列表': [{'PID': pid, '进程名': name} for pid, name in procs],
         }
         profile_path = os.path.join(student_dir, 'info.json')
         with open(profile_path, 'w', encoding='utf-8') as f:
@@ -2597,8 +2597,10 @@ def main_recv():
                 sock.sendto(waca(sip), (sip, PORT))
 
             elif mag == 0x434D5254:  # TRMC
-                logger.debug('[MainRecv] TRMC %s -> LPNT+DMOC', sip)
-                lp = build_lpnt(3, True)
+                # 学生端定期发TRMC请求预览策略；回复LPNT(disabled)+DMOC维持连接，
+                # 避免每次TRMC都重新启用自动预览（之前用enabled=True导致preview停不下来）
+                logger.debug('[MainRecv] TRMC %s -> LPNT(disabled)+DMOC', sip)
+                lp = build_lpnt(3, False)
                 dm = build_dmoc()
                 sock.sendto(lp, (sip, PORT))
                 time.sleep(0.05)
