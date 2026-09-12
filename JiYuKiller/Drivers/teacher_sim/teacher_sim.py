@@ -5,7 +5,7 @@
 - 主窗口：显示命令提示符 teacher>，用于输入操作命令。
 - 日志窗口：PowerShell 实时 tail teacher_sim.log。
 """
-import socket, struct, threading, time, random, sys, os, uuid, colorsys, ipaddress
+import socket, struct, threading, time, random, sys, os, uuid, colorsys, ipaddress, json
 import logging, logging.handlers
 from PIL import Image, ImageOps
 import io
@@ -18,7 +18,13 @@ try:
 except Exception:
     pass
 
-LOG_DIR = os.path.join(os.path.expanduser('~'), 'Desktop')
+# 基础目录：PyInstaller打包后取exe所在目录，开发模式取脚本目录
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_DIR = os.path.join(BASE_DIR, 'teacher_sim')
+os.makedirs(LOG_DIR, exist_ok=True)
 LOG_PATH = os.path.join(LOG_DIR, 'teacher_sim.log')
 
 # 默认文件日志级别：INFO 已足够，DEBUG 太占空间。
@@ -1796,7 +1802,30 @@ def _parse_student_info(payload, sip):
     }
     if sip in students:
         students[sip]['info'] = info
+    save_student_profile(sip)
     return info
+
+
+def save_student_profile(sip):
+    """将学生信息/进程/窗口列表写入 students/<IP>/info.json。"""
+    if sip not in students:
+        return
+    try:
+        student_dir = os.path.join(LOG_DIR, 'students', sip.replace('.', '_'))
+        os.makedirs(student_dir, exist_ok=True)
+        profile = {
+            'ip': sip,
+            'last_seen': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'info': students[sip].get('info', {}),
+            'processes': students[sip].get('processes', []),
+            'windows': students[sip].get('windows', []),
+        }
+        profile_path = os.path.join(student_dir, 'info.json')
+        with open(profile_path, 'w', encoding='utf-8') as f:
+            json.dump(profile, f, ensure_ascii=False, indent=2)
+        logger.debug('[Profile] 已保存 %s', profile_path)
+    except Exception as e:
+        logger.error('[Profile] 保存失败 %s：%s', sip, e, exc_info=True)
 
 
 def build_comd_command(cmd_code, payload):
@@ -2041,7 +2070,7 @@ def build_dmoc():
     return struct.pack('<II', 0x434F4D44, 0x10000) + struct.pack('<I', len(dd)) + cg + dd
 
 
-def build_lpnt(policy_version=3, enabled=True, width=80, height=60, refresh_seconds=5):
+def build_lpnt(policy_version=3, enabled=True, width=640, height=480, refresh_seconds=5):
     """构造缩略图策略包：版本、启用标志、宽、高、刷新秒数。"""
     lg = bytes.fromhex('aa3a8dbe2b906645908ea29526218540')
     policy = struct.pack('<IIIII', policy_version, int(enabled),
@@ -2065,27 +2094,35 @@ def build_srnt(frame_seq, complete=True, missing_parts=()):
 
 
 def keep_alive_preview(sip):
-    """学生登录后周期性发送启用的 LPNT + DMOC，直到开始收到预览。"""
-    lp = build_lpnt(3, True)
+    """学生登录后发送一次LPNT+DMOC请求缩略图，收到一张后发送禁用LPNT停止自动刷新。"""
+    start_version = preview_policy_versions.get(sip, 3) + 1
+    preview_policy_versions[sip] = start_version
+    lp = build_lpnt(start_version, True)
     dm = build_dmoc()
-    logger.info('[KeepAlive] 启动 %s', sip)
-    while running and sip in students:
-        if sip in previews:
-            logger.info('[KeepAlive] %s previews 已存在，停止', sip)
-            break
-        try:
-            sock.sendto(lp, (sip, PORT))
-            logger.debug('[KeepAlive] LPNT -> %s', sip)
-        except Exception as e:
-            logger.error('[KeepAlive] LPNT -> %s 失败：%s', sip, e, exc_info=True)
+    logger.info('[KeepAlive] 启动 %s, 请求单张预览', sip)
+    try:
+        sock.sendto(lp, (sip, PORT))
+        logger.debug('[KeepAlive] LPNT(enable) -> %s', sip)
         time.sleep(0.05)
-        try:
-            sock.sendto(dm, (sip, PORT))
-            logger.debug('[KeepAlive] DMOC -> %s', sip)
-        except Exception as e:
-            logger.error('[KeepAlive] DMOC -> %s 失败：%s', sip, e, exc_info=True)
+        sock.sendto(dm, (sip, PORT))
+        logger.debug('[KeepAlive] DMOC -> %s', sip)
+    except Exception as e:
+        logger.error('[KeepAlive] 发送失败 %s：%s', sip, e, exc_info=True)
+
+    # 等待preview收到，最多15秒
+    for _ in range(30):
+        if sip in completed_preview_frames:
+            break
         time.sleep(0.5)
-    logger.info('[KeepAlive] %s 退出', sip)
+
+    # 收到后发送禁用LPNT，停止学生端持续回传
+    stop_version = preview_policy_versions.get(sip, start_version) + 1
+    preview_policy_versions[sip] = stop_version
+    try:
+        sock.sendto(build_lpnt(stop_version, False), (sip, PORT))
+        logger.info('[KeepAlive] %s 已停止自动预览', sip)
+    except Exception as e:
+        logger.error('[KeepAlive] 停止失败 %s：%s', sip, e, exc_info=True)
 
 
 def handle_tnal(d, sip):
@@ -2140,12 +2177,11 @@ def handle_tnal(d, sip):
                  sip, frame_seq, state['got'], total, max(0, written - previous))
 
     if state['got'] >= total:
-        idx = 0
-        while True:
-            fn = os.path.join(LOG_DIR, f'preview_{sip.replace(".", "_")}_{idx}.jpg')
-            if not os.path.exists(fn):
-                break
-            idx += 1
+        student_dir = os.path.join(LOG_DIR, 'students', sip.replace('.', '_'))
+        screenshot_dir = os.path.join(student_dir, 'screenshots')
+        os.makedirs(screenshot_dir, exist_ok=True)
+        timestamp = time.strftime('%Y%m%d_%H%M%S')
+        fn = os.path.join(screenshot_dir, f'screenshot_{timestamp}.jpg')
         try:
             with open(fn, 'wb') as f:
                 f.write(state['buf'])
@@ -2261,6 +2297,7 @@ def handle_mess(d, sip, sp, via='unknown'):
                 msg_kind = 'status'
                 logger.debug('[MESS] %s列表完整分片: %s', kind,
                              '，'.join(f'{p}:{n}' for p, n in entries))
+                save_student_profile(sip)
             else:
                 logger.debug('[MESS] 未知信息上报子类型 %d', subtype)
         else:
@@ -2454,7 +2491,7 @@ def session_recv():
                     continue
 
                 lg = bytes.fromhex('aa3a8dbe2b906645908ea29526218540')
-                lp = struct.pack('<II', 0x544E504C, 0x10000) + struct.pack('<I', 20) + lg + b'\x02\x00\x00\x00\x00\x00\x00\x00\x50\x00\x00\x00\x3c\x00\x00\x00\x05\x00\x00\x00'
+                lp = struct.pack('<II', 0x544E504C, 0x10000) + struct.pack('<I', 20) + lg + b'\x02\x00\x00\x00\x00\x00\x00\x00\x80\x02\x00\x00\xe0\x01\x00\x00\x05\x00\x00\x00'
                 sock.sendto(lp, (sip, PORT))
                 logger.info('[LPNT] subtype=2 -> %s:%d', sip, PORT)
 
@@ -3120,7 +3157,7 @@ def command_loop():
 
 # -------------------- 启动 --------------------
 
-spawn_log_window()
+# spawn_log_window()  # 已禁用：日志由主程序UI显示，不弹PowerShell窗口
 logger.info('启动 4 个后台线程')
 threading.Thread(target=broadcast, name='broadcast', daemon=True).start()
 threading.Thread(target=session_anno, name='session_anno', daemon=True).start()

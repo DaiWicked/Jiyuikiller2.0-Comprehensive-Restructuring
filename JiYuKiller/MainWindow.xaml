@@ -666,11 +666,39 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- 模拟控制台 -->
-                        <Border Background="#FF0A0A0A" CornerRadius="10" Padding="8" Margin="0,0,0,10">
+                        <!-- 已登录学生列表 -->
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="已登录学生" FontSize="13" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
+                                    <Button Grid.Column="1" Content="刷新" Click="BtnTeacherSimRefreshList_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="26" FontSize="11" Padding="8,0" />
+                                </Grid>
+                                <ListBox x:Name="ListTeacherSimStudents" Height="120" Background="#FF0A0A0A" Foreground="#FF00FF00" FontSize="11" FontFamily="Consolas" BorderThickness="0" SelectionChanged="ListTeacherSimStudents_SelectionChanged">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="6,3" />
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 模拟控制台 + 日志输出（上下布局） -->
+                        <Border Background="#FF0A0A0A" CornerRadius="10" Padding="8" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="120" />
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0">
                                 <TextBlock Text="模拟控制台" FontSize="12" FontWeight="Bold" Foreground="#FF00FF00" Margin="0,0,0,4" />
-                                <TextBox x:Name="TextTeacherSimConsole" Background="#FF000000" Foreground="#FF00FF00" FontSize="11" FontFamily="Consolas" Height="200" TextWrapping="Wrap" VerticalScrollBarVisibility="Hidden" IsReadOnly="True" Padding="4" BorderThickness="0" />
+                                <TextBox x:Name="TextTeacherSimConsole" Background="#FF000000" Foreground="#FF00FF00" FontSize="11" FontFamily="Consolas" Height="160" TextWrapping="Wrap" VerticalScrollBarVisibility="Hidden" IsReadOnly="True" Padding="4" BorderThickness="0" />
                                 <Grid Margin="0,6,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -679,7 +707,20 @@
                                     <TextBox x:Name="TextTeacherSimCommand" Background="#FF1A1A1A" Foreground="#FF00FF00" FontSize="12" FontFamily="Consolas" Padding="6,4" Height="30" BorderThickness="0" KeyDown="TextTeacherSimCommand_KeyDown" />
                                     <Button Grid.Column="1" Content="发送" Click="BtnTeacherSimSend_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Width="60" Height="30" Margin="6,0,0,0" FontSize="12" />
                                 </Grid>
-                            </StackPanel>
+                                </StackPanel>
+                                <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" Background="#FF333333" ResizeBehavior="PreviousAndNext" />
+                                <StackPanel Grid.Row="2">
+                                    <Grid Margin="0,4,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="日志输出" FontSize="11" FontWeight="Bold" Foreground="#FFAAAAAA" VerticalAlignment="Center" />
+                                        <Button Grid.Column="1" Content="清空日志" Click="BtnTeacherSimClearLog_Click" Style="{StaticResource GlassButton}" Background="#FF444444" Foreground="#FFCCCCCC" Height="22" FontSize="10" Padding="6,0" />
+                                    </Grid>
+                                    <TextBox x:Name="TextTeacherSimLog" Background="#FF050505" Foreground="#FF888888" FontSize="10" FontFamily="Consolas" Height="86" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" Padding="4" BorderThickness="0" />
+                                </StackPanel>
+                            </Grid>
                         </Border>
 
                         <!-- 快捷命令 -->

@@ -18,8 +18,11 @@ namespace JiYuKiller.Services
         private long _lastLogPosition = 0;
         private readonly object _lock = new object();
 
-        /// <summary>日志输出事件</summary>
+        /// <summary>stdout输出事件（控制台交互）</summary>
         public event Action<string> OnLogOutput;
+
+        /// <summary>日志文件输出事件（日志区显示）</summary>
+        public event Action<string> OnLogFileOutput;
 
         /// <summary>状态变化事件</summary>
         public event Action<bool> OnStateChanged;
@@ -297,7 +300,7 @@ namespace JiYuKiller.Services
                                         string[] lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                                         foreach (string line in lines)
                                         {
-                                            OnLogOutput?.Invoke(line);
+                                            OnLogFileOutput?.Invoke(line);
                                         }
                                     }
                                 }

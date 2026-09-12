@@ -111,6 +111,7 @@ namespace JiYuKiller
             _teacherSimService.ExePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "teacher_sim.exe");
             _teacherSimService.WorkDir = AppDomain.CurrentDomain.BaseDirectory;
             _teacherSimService.OnLogOutput += TeacherSim_OnLogOutput;
+            _teacherSimService.OnLogFileOutput += TeacherSim_OnLogFileOutput;
             _teacherSimService.OnStateChanged += TeacherSim_OnStateChanged;
 
             // 注册全局快捷键
@@ -1891,14 +1892,76 @@ namespace JiYuKiller
             }
         }
 
+        private bool _parsingStudentList = false;
+
         private void TeacherSim_OnLogOutput(string message)
         {
             Dispatcher.Invoke(() =>
             {
                 TextTeacherSimConsole.AppendText(message + Environment.NewLine);
                 TextTeacherSimConsole.ScrollToEnd();
+
+                // 解析list命令输出，填充学生列表
+                if (message.Contains("[命令] 已登录学生"))
+                {
+                    _parsingStudentList = true;
+                    ListTeacherSimStudents.Items.Clear();
+                }
+                else if (_parsingStudentList)
+                {
+                    // 格式: "  1. 192.168.3.150  DESKTOP-xxx  用户:xxx  MAC:xx-xx-xx-xx-xx-xx"
+                    var match = System.Text.RegularExpressions.Regex.Match(message,
+                        @"^\s+\d+\.\s+(\d+\.\d+\.\d+\.\d+)\s+.*MAC:([0-9A-Fa-f\-]+)");
+                    if (match.Success)
+                    {
+                        string ip = match.Groups[1].Value;
+                        string mac = match.Groups[2].Value;
+                        ListTeacherSimStudents.Items.Add(ip + "  " + mac);
+                    }
+                    else if (message.StartsWith("teacher>") || message.Contains("[命令]") || string.IsNullOrWhiteSpace(message))
+                    {
+                        _parsingStudentList = false;
+                    }
+                }
             });
         }
+        private void TeacherSim_OnLogFileOutput(string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                TextTeacherSimLog.AppendText(message + Environment.NewLine);
+                TextTeacherSimLog.ScrollToEnd();
+            });
+        }
+
+        private void BtnTeacherSimClearLog_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("清空日志", "BtnTeacherSimClearLog");
+            TextTeacherSimLog.Clear();
+        }
+
+        private void BtnTeacherSimRefreshList_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("刷新学生列表", "BtnTeacherSimRefreshList");
+            if (_teacherSimService != null && _teacherSimService.IsRunning)
+            {
+                _teacherSimService.SendCommand("list");
+            }
+        }
+
+        private void ListTeacherSimStudents_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ListTeacherSimStudents.SelectedItem != null)
+            {
+                string item = ListTeacherSimStudents.SelectedItem.ToString();
+                string[] parts = item.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 1)
+                {
+                    TextTeacherSimTargetIP.Text = parts[0];
+                }
+            }
+        }
+
 
         private void TeacherSim_OnStateChanged(bool isRunning)
         {

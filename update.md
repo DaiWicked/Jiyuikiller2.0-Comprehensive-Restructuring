@@ -1,5 +1,29 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-13) - teacher_sim学生登录修复 + 功能增强
+
+### teacher_sim学生登录修复（重大）
+- **根因**: waca()函数中WACA回复包的IP字段错误地使用了教师IP，真实教师端用的是学生IP
+- **修复**: socket.inet_aton(ip) → socket.inet_aton(sip)
+- **默认教师名**: 从'1'改为'admin'
+- **验证**: 6.0学生端可正常登录，能收到学生信息、进程列表、窗口列表、LANT缩略图
+- **抓包分析**: 使用Wireshark抓取真实教师端↔6.0学生端完整握手流程，确认CANC动态哈希和4809端口NIPQ非必须
+
+### teacher_sim功能增强
+- **日志路径统一**: 从硬编码桌面改为exe目录/teacher_sim/（BASE_DIR自动检测PyInstaller/开发模式）
+- **禁用PowerShell日志窗口**: spawn_log_window()已注释，日志全部通过主程序UI显示
+- **preview清晰度**: 从80x60提升到640x480
+- **preview保存路径**: 从桌面改为teacher_sim/students/<IP>/screenshots/screenshot_<时间戳>.jpg
+- **preview策略**: 登录时抓一张，收到后发送LPNT(disable)停止自动刷新，后续手动抓取
+- **学生建档**: 新增save_student_profile()，登录后自动写入teacher_sim/students/<IP>/info.json（含IP/设备信息/进程列表/窗口列表）
+
+### C# UI增强
+- **已登录学生列表**: 新增ListBox（IP+MAC显示），可滚动，选中后自动填充目标IP，刷新按钮发list命令
+- **控制台上下布局**: 上stdout交互控制台，下日志输出区，中间GridSplitter可拖拽调整
+- **日志输出区**: 独立TextBox显示teacher_sim.log内容，清空日志按钮
+- **OnLogFileOutput事件**: TeacherSimService新增，日志文件内容与stdout分离输出
+# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
+
 ## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-12) - 窗口控制模块修复 + teacher_sim集成
 
 ### 窗口控制模块修复（对照JiYuTrainer_Next-master）
