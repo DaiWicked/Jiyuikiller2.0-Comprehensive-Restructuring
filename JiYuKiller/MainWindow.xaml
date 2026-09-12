@@ -693,7 +693,6 @@
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
                                     <RowDefinition Height="120" />
                                 </Grid.RowDefinitions>
                                 <StackPanel Grid.Row="0">
@@ -708,8 +707,7 @@
                                     <Button Grid.Column="1" Content="发送" Click="BtnTeacherSimSend_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Width="60" Height="30" Margin="6,0,0,0" FontSize="12" />
                                 </Grid>
                                 </StackPanel>
-                                <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" Background="#FF333333" ResizeBehavior="PreviousAndNext" />
-                                <StackPanel Grid.Row="2">
+                                <StackPanel Grid.Row="1" Margin="0,8,0,0">
                                     <Grid Margin="0,4,0,4">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />

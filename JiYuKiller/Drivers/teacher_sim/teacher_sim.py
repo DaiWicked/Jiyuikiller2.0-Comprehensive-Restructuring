@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """极域V6.0教师端 - 逐字节匹配真实抓包，带调试日志。
 
 运行后会弹出两个窗口：
@@ -1807,18 +1807,39 @@ def _parse_student_info(payload, sip):
 
 
 def save_student_profile(sip):
-    """将学生信息/进程/窗口列表写入 students/<IP>/info.json。"""
+    """将学生信息/进程/窗口列表写入 students/<IP>/info.json（按设备档案格式排版）。"""
     if sip not in students:
         return
     try:
         student_dir = os.path.join(LOG_DIR, 'students', sip.replace('.', '_'))
         os.makedirs(student_dir, exist_ok=True)
+        info = students[sip].get('info', {}) or {}
+        procs = students[sip].get('processes', []) or []
+        wins = students[sip].get('windows', []) or []
+
+        # 当前窗口名称（取第一个非空窗口标题）
+        current_window = ''
+        for _, title in wins:
+            if title and title.strip():
+                current_window = title
+                break
+
         profile = {
-            'ip': sip,
-            'last_seen': time.strftime('%Y-%m-%d %H:%M:%S'),
-            'info': students[sip].get('info', {}),
-            'processes': students[sip].get('processes', []),
-            'windows': students[sip].get('windows', []),
+            '设备IP': sip,
+            'MAC': info.get('mac', ''),
+            '系统': f"{info.get('os', '')} {info.get('osver', '')}".strip(),
+            '最后在线': time.strftime('%Y-%m-%d %H:%M:%S'),
+            '设备信息': {
+                '计算机名': info.get('name', ''),
+                '登录用户': info.get('user', ''),
+                '学生ID': info.get('stu_id', ''),
+                'CPU厂商': info.get('cpu_vendor', ''),
+                'CPU型号': info.get('cpu_model', ''),
+                '内存': info.get('mem', ''),
+            },
+            '设备进程列表': [{'PID': pid, '进程名': name} for pid, name in procs],
+            '当前窗口名称': current_window,
+            '窗口列表': [{'句柄': hwnd, '标题': title} for hwnd, title in wins],
         }
         profile_path = os.path.join(student_dir, 'info.json')
         with open(profile_path, 'w', encoding='utf-8') as f:
@@ -1992,7 +2013,7 @@ def _auto_unlock(sip):
 
 
 def _do_unlock(sip):
-    """通过 MESS 停止标志关闭黑屏并解除键鼠锁。"""
+    """通过 MESS 停止标志关闭黑屏并解除键鼠锁（组播+单播双发，提高可靠性）。"""
     try:
         # MESS 解锁 → 组播（flags=0x90000000，清除 bit 0x20）
         payload = (struct.pack('<I', 0x0D)
@@ -2004,7 +2025,10 @@ def _do_unlock(sip):
                 + socket.inet_aton(sip)
                 + payload)
         sock2.sendto(mess, (SMCAST, SPORT))
-        logger.info('[解锁] MESS -> %s:%d 目标=%s', SMCAST, SPORT, sip)
+        logger.info('[解锁] MESS(组播) -> %s:%d 目标=%s', SMCAST, SPORT, sip)
+        # 单播补发一份，防止组播包丢失（VM网络环境下组播不稳定）
+        sock2.sendto(mess, (sip, SPORT))
+        logger.info('[解锁] MESS(单播) -> %s:%d', sip, SPORT)
     except Exception as e:
         logger.error('[解锁] 发送失败：%s', e, exc_info=True)
 
@@ -2070,7 +2094,7 @@ def build_dmoc():
     return struct.pack('<II', 0x434F4D44, 0x10000) + struct.pack('<I', len(dd)) + cg + dd
 
 
-def build_lpnt(policy_version=3, enabled=True, width=640, height=480, refresh_seconds=5):
+def build_lpnt(policy_version=3, enabled=True, width=320, height=240, refresh_seconds=5):
     """构造缩略图策略包：版本、启用标志、宽、高、刷新秒数。"""
     lg = bytes.fromhex('aa3a8dbe2b906645908ea29526218540')
     policy = struct.pack('<IIIII', policy_version, int(enabled),
@@ -2491,7 +2515,7 @@ def session_recv():
                     continue
 
                 lg = bytes.fromhex('aa3a8dbe2b906645908ea29526218540')
-                lp = struct.pack('<II', 0x544E504C, 0x10000) + struct.pack('<I', 20) + lg + b'\x02\x00\x00\x00\x00\x00\x00\x00\x80\x02\x00\x00\xe0\x01\x00\x00\x05\x00\x00\x00'
+                lp = struct.pack('<II', 0x544E504C, 0x10000) + struct.pack('<I', 20) + lg + b'\x02\x00\x00\x00\x00\x00\x00\x00\x40\x01\x00\x00\xf0\x00\x00\x00\x05\x00\x00\x00'
                 sock.sendto(lp, (sip, PORT))
                 logger.info('[LPNT] subtype=2 -> %s:%d', sip, PORT)
 
