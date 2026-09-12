@@ -31,7 +31,8 @@ namespace JiYuKiller.Services
         private IntPtr _currentBroadcastWnd = IntPtr.Zero;
         private IntPtr _currentBlackScreenWnd = IntPtr.Zero;
         private int _screenWidth, _screenHeight;
-        private bool _gbFullManual = false;  // 对应参考实现 gbFullManual（DLL菜单全屏）
+        private bool _gbFullManual = false;
+        private bool _gbTopManual = false;  // 对应参考实现 gbFullManual（DLL菜单全屏）
         private IntPtr _mainWindowHandle = IntPtr.Zero;  // UI层登记的主窗口句柄
 
         // 极域进程名
@@ -512,11 +513,13 @@ namespace JiYuKiller.Services
                 }
                 else if (message.StartsWith("hkb:gbuntop"))
                 {
+                    _gbTopManual = false;
                     Logger.Instance.Info("[DLL回调] 广播窗口取消置顶 → 执行");
                     ManualTop(false);
                 }
                 else if (message.StartsWith("hkb:gbtop"))
                 {
+                    _gbTopManual = true;
                     Logger.Instance.Info("[DLL回调] 广播窗口置顶 → 执行");
                     ManualTop(true);
                 }
@@ -681,8 +684,8 @@ namespace JiYuKiller.Services
             int ex = GetWindowLong(hWnd, GWL_EXSTYLE);
 
             // AllowGbTop是"别动TOPMOST"（被动），不是"强制置顶"（主动）
-            // 参考实现：if (!setAllowGbTop && topmost) 去掉
-            if (!_settings.AllowGbTop && (ex & (int)WS_EX_TOPMOST) == (int)WS_EX_TOPMOST)
+            // 用户手动置顶(_gbTopManual=true)时不去掉，和_gbFullManual逻辑一致
+            if (!_settings.AllowGbTop && !_gbTopManual && (ex & (int)WS_EX_TOPMOST) == (int)WS_EX_TOPMOST)
             {
                 SetWindowLong(hWnd, GWL_EXSTYLE, ex & ~(int)WS_EX_TOPMOST);
                 SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0,
