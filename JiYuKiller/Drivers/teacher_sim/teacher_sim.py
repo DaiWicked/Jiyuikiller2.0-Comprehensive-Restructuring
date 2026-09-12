@@ -2237,6 +2237,8 @@ def handle_tnal(d, sip):
 
         logger.info('[Preview] %s 接收完成', sip)
         completed_preview_frames[sip] = frame_seq
+        preview_saved[sip] = True  # 节流：保存一张后丢弃后续帧
+        logger.info('[Preview] %s 已设置节流，后续帧将丢弃', sip)
         del previews[sip]
 
 
