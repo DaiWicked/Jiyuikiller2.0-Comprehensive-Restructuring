@@ -786,6 +786,21 @@
                 </ScrollViewer>
 
 
+                <!-- 小游戏页面 -->
+                <ScrollViewer x:Name="PageGame" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
+                    <StackPanel Margin="16,12">
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="←" Click="BtnGameBack_Click" Style="{StaticResource GlassButton}" Width="36" Height="32" FontSize="14" Padding="0" />
+                            <TextBlock Grid.Column="1" Text="小游戏" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#FF1a1a2e" />
+                        </Grid>
+                        <ContentControl x:Name="GameContent" />
+                    </StackPanel>
+                </ScrollViewer>
+
                 <!-- 帮助文档页面 -->
                 <Grid x:Name="PageHelp" Visibility="Collapsed">
                     <Grid.RowDefinitions>
@@ -1148,6 +1163,7 @@
                                         <Button x:Name="NavChat" Content="小小私聊" Click="NavChat_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavScreenshot" Content="截图替换" Click="NavScreenshot_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavTeacherSim" Content="教师模拟" Click="NavTeacherSim_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
+                                        <Button x:Name="NavGame" Content="小游戏" Click="NavGame_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
                                         <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
                                         <Button x:Name="NavDebug" Content="调试" Click="NavDebug_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />
                                         <Button x:Name="NavAbout" Content="关于" Click="NavAbout_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="52" Height="44" />

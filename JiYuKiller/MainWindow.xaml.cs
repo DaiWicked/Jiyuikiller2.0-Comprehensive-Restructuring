@@ -736,6 +736,7 @@ namespace JiYuKiller
             PageChat.Visibility = Visibility.Collapsed;
             PageScreenshot.Visibility = Visibility.Collapsed;
                     PageTeacherSim.Visibility = Visibility.Collapsed;
+            PageGame.Visibility = Visibility.Collapsed;
 
             // 重置导航按钮样式
             NavQuick.FontWeight = FontWeights.Normal;
@@ -748,6 +749,7 @@ namespace JiYuKiller
             NavChat.FontWeight = FontWeights.Normal;
             NavScreenshot.FontWeight = FontWeights.Normal;
                     NavTeacherSim.FontWeight = FontWeights.Normal;
+            NavGame.FontWeight = FontWeights.Normal;
 
             switch (pageName)
             {
@@ -801,6 +803,11 @@ namespace JiYuKiller
                     PageTeacherSim.Visibility = Visibility.Visible;
                     NavTeacherSim.FontWeight = FontWeights.Bold;
                     InitTeacherSim();
+                    break;
+                case "game":
+                    PageGame.Visibility = Visibility.Visible;
+                    NavGame.FontWeight = FontWeights.Bold;
+                    if (GameContent.Content == null) GameContent.Content = new Games.GameMenu();
                     break;
             }
 
@@ -1858,6 +1865,17 @@ namespace JiYuKiller
         {
             Services.Logger.Instance.ButtonClick("教师模拟", "NavTeacherSim");
             ShowPage("teachersim");
+        }
+
+        private void NavGame_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("小游戏", "NavGame");
+            ShowPage("game");
+        }
+
+        private void BtnGameBack_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPage("quick");
         }
 
         private void InitTeacherSim()
