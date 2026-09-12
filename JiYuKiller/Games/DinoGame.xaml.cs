@@ -23,8 +23,8 @@ namespace JiYuKiller.Games
         private const double DinoLeft = 26;
         private const double DinoWidth = 46;
         private const double DinoHeight = 50;
-        private const double Gravity = 0.62;
-        private const double JumpVelocity = -8.6;   // 起跳初速度
+        private const double Gravity = 0.58;
+        private const double JumpVelocity = -10;   // 起跳初速度
         private const double BaseSpeed = 3.4;       // 初始移动速度(px/tick)
         private const double MaxSpeed = 9.0;
         private const double SpeedStep = 0.55;      // 每 100 分增加的速度
