@@ -2600,14 +2600,11 @@ def main_recv():
                 sock.sendto(waca(sip), (sip, PORT))
 
             elif mag == 0x434D5254:  # TRMC
-                # 学生端定期发TRMC请求预览策略；真实教师端回复LPNT(enabled=1)
-                # 这里根据preview_enabled状态决定：True=持续预览(教师正在查看)，False=停止
-                pe = preview_enabled.get(sip, True)
-                logger.debug('[MainRecv] TRMC %s -> LPNT(enabled=%s)+DMOC', sip, pe)
-                lp = build_lpnt(3, pe)
+                # 学生端定期发TRMC心跳；只回复DMOC维持连接，不发LPNT
+                # （真实教师端TRMC后的LPNT是主动发送的，不是对TRMC的必须回复）
+                # 如果TRMC回复LPNT(enabled)会覆盖keep_alive的disable，导致preview停不下来
+                logger.debug('[MainRecv] TRMC %s -> DMOC only', sip)
                 dm = build_dmoc()
-                sock.sendto(lp, (sip, PORT))
-                time.sleep(0.05)
                 sock.sendto(dm, (sip, PORT))
 
             elif mag == 0x544E5254:  # TRNT
