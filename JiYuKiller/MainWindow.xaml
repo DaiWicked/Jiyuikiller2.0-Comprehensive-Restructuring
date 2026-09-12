@@ -593,10 +593,10 @@
                         <!-- 功能稳定性警告 -->
                         <Border Background="#33FFF3CD" BorderBrush="#FF856404" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="⚠ 功能不稳定警告" FontSize="14" FontWeight="Bold" Foreground="#FF856404" Margin="0,0,0,6" />
-                                <TextBlock Text="1. 截图替换依赖「允许教师监视电脑」关闭，关闭后教师端查看屏幕时可能导致极域学生端崩溃（原作者已知问题，32位Win10尤甚）" FontSize="11" Foreground="#FF856404" TextWrapping="Wrap" Margin="0,0,0,3" />
-                                <TextBlock Text="2. 该功能通过DLL注入实现，修改DLL源码曾导致32位虚拟机死机，当前使用原始稳定版DLL" FontSize="11" Foreground="#FF856404" TextWrapping="Wrap" Margin="0,0,0,3" />
-                                <TextBlock Text="3. 建议在实机测试前先在虚拟机验证，并给虚拟机打快照以便回滚" FontSize="11" Foreground="#FF856404" TextWrapping="Wrap" />
+                                <TextBlock Text="⚠ 功能暂时禁用" FontSize="14" FontWeight="Bold" Foreground="#FF856404" Margin="0,0,0,6" />
+                                <TextBlock Text="截图替换依赖「允许教师监视电脑」关闭，关闭后教师端查看屏幕时可能导致极域学生端崩溃（原作者已知问题，32位Win10尤甚）" FontSize="11" Foreground="#FF856404" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                <TextBlock Text="该功能通过DLL注入实现，测试后并不理想，而且有很多不稳定性" FontSize="11" Foreground="#FF856404" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                <TextBlock Text="为保证程序的正常运行，该功能暂时禁用" FontSize="11" Foreground="#FF856404" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
 
@@ -628,7 +628,7 @@
 
                         <!-- 操作按钮 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
-                            <StackPanel>
+                            <StackPanel IsEnabled="False">
                                 <Button x:Name="BtnScreenshotChoose" Content="选择图片" Click="BtnScreenshotChoose_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="36" Margin="0,0,0,6" />
                                 <Button x:Name="BtnScreenshotApply" Content="应用替换" Click="BtnScreenshotApply_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="36" Margin="0,0,0,6" />
                                 <Button x:Name="BtnScreenshotCancelReplace" Content="取消替换" Click="BtnScreenshotCancelReplace_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" Margin="0,0,0,6" />
