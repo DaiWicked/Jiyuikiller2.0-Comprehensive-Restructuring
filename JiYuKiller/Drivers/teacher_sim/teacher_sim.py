@@ -1677,6 +1677,20 @@ def request_info(sip, rtype=0):
         print(f'[命令] 发送失败：{e}')
 
 
+def request_info_with_retry(sip, rtype=0, retries=2, delay=5):
+    """请求学生信息，带重试机制。发送后delay秒检查是否收到info，未收到则重发。"""
+    def _retry_worker():
+        for attempt in range(retries):
+            request_info(sip, rtype)
+            time.sleep(delay)
+            if sip in students and students[sip].get('info'):
+                logger.info('[Info] %s 信息获取成功（第%d次尝试）', sip, attempt + 1)
+                return
+            logger.warning('[Info] %s 信息未收到，第%d次重试', sip, attempt + 1)
+        logger.warning('[Info] %s 信息获取失败（已重试%d次）', sip, retries)
+    threading.Thread(target=_retry_worker, daemon=True).start()
+
+
 def send_kill(sip, pid=None, hwnd=None, force=1):
     """结束进程 / 结束应用程序（MESS，0x100000 通道，学生端 sub_445670 type 4/3）。
 
@@ -2539,7 +2553,11 @@ def session_recv():
 
                 # 登录后自动请求学生信息（计算机名/MAC/用户/OS/CPU/内存）
                 time.sleep(0.2)
-                request_info(sip)
+                # 延迟1秒后请求info（学生端刚登录需准备时间），带重试机制
+                def _delayed_info():
+                    time.sleep(1.0)
+                    request_info_with_retry(sip, retries=2, delay=5)
+                threading.Thread(target=_delayed_info, daemon=True).start()
 
                 threading.Thread(target=keep_alive_preview, args=(sip,), daemon=True).start()
 
