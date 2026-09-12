@@ -422,3 +422,38 @@
 ### QD_V1.0_WPF-Rebuild (2026-09-07)
 - 从C++/Sciter迁移至C# .NET 4.7.2 + WPF
 - 统一日志系统、设置持久化、进程监控、禁止运行、广播置顶控制
+
+## 2026-09-13
+
+### teacher_sim preview功能修复（多次迭代）
+
+**问题**：学生端登录后preview要么一直持续抓取，要么完全收不到。
+
+**根因分析**（通过真实抓包v6_login.pcapng对比）：
+1. LPNT包第一个字段学生端当作subtype处理，只识别2和3，递增的policy_version被忽略
+2. 学生端定期发TRMC心跳，教师端必须回复LPNT(enabled=1)+DMOC，否则学生端不发preview
+3. TRMC回复的LPNT(enabled)会覆盖keep_alive的LPNT(disable)，协议层无法停止preview
+4. request_preview触发的预览没有节流逻辑
+
+**最终方案：应用层节流**
+- TRMC恢复回复LPNT(enabled=1)+DMOC（和真实教师端一致）
+- handle_tnal开头检查preview_saved[sip]，为True时丢弃帧
+- 保存一张preview后自动设置preview_saved[sip]=True
+- request_preview时重置preview_saved[sip]=False，允许保存下一张
+- 学生端持续发小帧（320x240，约10KB，带宽可忽略），应用层只保存需要的图片
+
+### 其他修复
+- info.json顺序调整：设备IP → MAC → 系统 → 最后在线 → 设备信息 → 当前窗口名称 → 窗口列表 → 设备进程列表
+- 主程序所有滚动条隐藏（ScrollViewer/ListBox/TextBox）
+- 教师模拟页面TextTeacherSimLog滚动条隐藏
+- LPNT包subtype固定为3（学生端只认subtype=2/3）
+- 登录时lp2 enabled=1（学生端开始发preview）
+- preview清晰度320x240
+- 解锁时单播补发MESS防止组播丢失
+- teacher_sim日志路径统一到exe目录/teacher_sim/
+- preview图片保存到students/<IP>/screenshots/按时间戳命名
+- 学生建档info.json（设备信息/进程列表/窗口列表）
+- 主程序教师模拟页面：学生列表（IP+MAC，可滚动）、控制台上下布局（stdout+日志区）
+- 黑屏窗口改回原项目行为（SW_HIDE隐藏）
+- 窗口控制模块修复（HandleDllCallback薄转发、ManualTop/ManualFull、AllowGbTop被动模式）
+- 广播窗口修复（移除每3.1秒缩放逻辑、补发hw:消息）
