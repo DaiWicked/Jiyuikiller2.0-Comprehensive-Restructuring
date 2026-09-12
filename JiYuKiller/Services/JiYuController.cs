@@ -31,6 +31,8 @@ namespace JiYuKiller.Services
         private IntPtr _currentBroadcastWnd = IntPtr.Zero;
         private IntPtr _currentBlackScreenWnd = IntPtr.Zero;
         private int _screenWidth, _screenHeight;
+        private bool _gbFullManual = false;  // 对应参考实现 gbFullManual（DLL菜单全屏）
+        private IntPtr _mainWindowHandle = IntPtr.Zero;  // UI层登记的主窗口句柄
 
         // 极域进程名
         private static readonly string[] JiYuProcessNames = new[] { "StudentMain" };
@@ -45,6 +47,7 @@ namespace JiYuKiller.Services
 
         // 事件
         public event Action OnStatusChanged;
+        public event Action OnAllowGbTopRequested;  // DLL请求允许广播置顶
 
         // Windows API
         [DllImport("user32.dll")]
@@ -72,10 +75,19 @@ namespace JiYuKiller.Services
         private static extern bool IsWindowVisible(IntPtr hWnd);
 
         [DllImport("user32.dll")]
-        private static extern bool SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll")]
         private static extern int GetSystemMetrics(int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT { public int Left, Top, Right, Bottom; }
 
         [DllImport("ntdll.dll")]
         private static extern int NtTerminateProcess(IntPtr hProcess, int exitCode);
@@ -104,7 +116,14 @@ namespace JiYuKiller.Services
         private const uint SWP_NOSIZE = 0x0001;
         private const uint SWP_NOZORDER = 0x0004;
         private const uint SWP_SHOWWINDOW = 0x0040;
+        private const uint SWP_DRAWFRAME = 0x0020;
+        private const uint SWP_NOACTIVATE = 0x0010;
+        private const uint WS_EX_APPWINDOW = 0x00040000;
+        private const uint WS_EX_NOACTIVATE = 0x08000000;
+        private const int SW_HIDE = 0;
+        private const int SW_MINIMIZE = 6;
         private const uint WM_SIZE = 0x0005;
+        private const uint WS_SYSMENU = 0x00080000;
         private const int SM_CXSCREEN = 0;
         private const int SM_CYSCREEN = 1;
 
@@ -355,6 +374,7 @@ namespace JiYuKiller.Services
 
                 // 发送设置
                 SendSettingsToVirus();
+                SendVirusMessage("hk:ckstat");  // 对应参考实现 _NextLoopGetCkStat，DLL做版本探测+键盘解锁
                 OnStatusChanged?.Invoke();
             }
             else
@@ -380,6 +400,9 @@ namespace JiYuKiller.Services
                 Logger.Instance.Info("[JiYuController] 设置已写入INI: " + iniPath);
                 SendVirusMessage("hk:inipath:" + iniPath);
                 Logger.Instance.Info("[JiYuController] 已通知DLL重新读取设置");
+                _fakeFull = true;
+                SendVirusMessage("hk:fkfull:true");
+                Logger.Instance.Info("[JiYuController] 已设置fakeFull=true（允许广播窗口全屏）");
             }
             catch (Exception ex)
             {
@@ -419,6 +442,111 @@ namespace JiYuKiller.Services
         /// <summary>
         /// 窗口处理（广播窗口化、黑屏窗口处理）
         /// </summary>
+        /// <summary>
+        /// 与参考实现 CheckWindowTextIsGb 完全一致：广播/演示/共享 或 =="屏幕演播室窗口"
+        /// </summary>
+        private static bool IsBroadcastWindow(string title)
+        {
+            return title.Contains("广播") || title.Contains("演示") || title.Contains("共享")
+                || title == "屏幕演播室窗口";
+        }
+
+        /// <summary>
+        /// 与参考实现一致：精确匹配 "BlackScreen Window"
+        /// </summary>
+        private static bool IsBlackScreenWindow(string title) { return title == "BlackScreen Window"; }
+
+        /// <summary>
+        /// 对应参考实现 MsgCenter.cpp:31-46 的 MsgCenteAppendHWND：
+        /// 把极域窗口句柄以十进制发给DLL，DLL会调用 VFixGuangBoWindow 接管其窗口过程。
+        /// 注意：必须是十进制（DLL用 _wtol 解析），不要发十六进制、不要带 0x。
+        /// </summary>
+        private void AppendHwndToMsgCenter(IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero) return;
+            SendVirusMessage("hw:" + hWnd.ToInt32());
+        }
+
+        /// <summary>
+        /// 窗口处理（广播窗口化、黑屏窗口处理）
+        /// </summary>
+
+        /// <summary>
+        /// 处理来自注入DLL的回调（对应参考实现 TrainerWorker.cpp:125-184 HandleMessageFromVirus）。
+        /// DLL的广播窗口菜单只回发消息不改窗口，真正的窗口操作必须在这里执行。
+        /// </summary>
+        public void HandleVirusCallback(string message)
+        {
+            if (string.IsNullOrEmpty(message)) return;
+            try
+            {
+                if (message.StartsWith("hkb:succ"))
+                {
+                    _studentControlled = true;
+                    Logger.Instance.Info("[DLL回调] DLL注入成功确认");
+                    // 回发自身窗口句柄给DLL
+                    IntPtr hMain = _mainWindowHandle != IntPtr.Zero ? _mainWindowHandle : Process.GetCurrentProcess().MainWindowHandle;
+                    if (hMain != IntPtr.Zero) SendVirusMessage("hs:" + hMain.ToInt32());
+                }
+                else if (message.StartsWith("hkb:jyk:"))
+                {
+                    Logger.Instance.Info("[DLL回调] 键盘锁定状态: " + message.Substring(7));
+                }
+                else if (message.StartsWith("hkb:wtf:"))
+                {
+                    Logger.Instance.Warn("[DLL回调] 检测到非极域进程注入, PID=" + message.Substring(8));
+                }
+                else if (message.StartsWith("hkb:immck"))
+                {
+                    Logger.Instance.Info("[DLL回调] 输入法检查完成，立即刷新窗口");
+                    ResolveWindows();
+                }
+                else if (message.StartsWith("hkb:showhelp"))
+                {
+                    Logger.Instance.Info("[DLL回调] 请求显示帮助");
+                }
+                else if (message.StartsWith("hkb:algbtop"))
+                {
+                    Logger.Instance.Info("[DLL回调] 请求允许广播窗口置顶 → 自动打开该设置");
+                    OnAllowGbTopRequested?.Invoke();
+                }
+                else if (message.StartsWith("hkb:gbuntop"))
+                {
+                    Logger.Instance.Info("[DLL回调] 广播窗口取消置顶 → 执行");
+                    ManualTop(false);
+                }
+                else if (message.StartsWith("hkb:gbtop"))
+                {
+                    Logger.Instance.Info("[DLL回调] 广播窗口置顶 → 执行");
+                    ManualTop(true);
+                }
+                else if (message.StartsWith("hkb:gbmfull"))
+                {
+                    Logger.Instance.Info("[DLL回调] 广播窗口全屏 → 执行");
+                    _gbFullManual = true;
+                    ManualFull(true);
+                }
+                else if (message.StartsWith("hkb:gbmnofull"))
+                {
+                    Logger.Instance.Info("[DLL回调] 广播窗口退出全屏 → 执行");
+                    if (_fakeBroadcastFull) { _fakeBroadcastFull = false; }
+                    ManualFull(false);
+                }
+                else if (message.StartsWith("wcd:"))
+                {
+                    Logger.Instance.Debug("[DLL回调] 看门狗心跳: " + message);
+                }
+                else
+                {
+                    Logger.Instance.Debug("[DLL回调] 未知消息: " + message);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("[DLL回调] HandleVirusCallback异常", ex);
+            }
+        }
+
         private void ResolveWindows()
         {
             _currentBroadcastWnd = IntPtr.Zero;
@@ -434,74 +562,155 @@ namespace JiYuKiller.Services
                 GetWindowText(hWnd, title, 256);
                 string windowTitle = title.ToString();
 
-                // 检测广播窗口
-                if (windowTitle.Contains("屏幕广播") || windowTitle.Contains("广播") || windowTitle.Contains("Screen"))
-                {
-                    _currentBroadcastWnd = hWnd;
-                    FixBroadcastWindow(hWnd);
-                }
+                // 跳过注入DLL自己的状态窗口（参考实现 EnumWindowsProc:1088）
+                if (windowTitle == "JiYu Trainer Virus Window") return true;
 
                 // 检测黑屏窗口
-                if (windowTitle.Contains("黑屏") || windowTitle.Contains("安静") || windowTitle.Contains("Black"))
+                if (IsBlackScreenWindow(windowTitle))
                 {
                     _currentBlackScreenWnd = hWnd;
-                    FixBlackScreenWindow(hWnd);
+                    AppendHwndToMsgCenter(hWnd);
+                    if (!_fakeBlackScreenFull) FixBlackScreenWindow(hWnd);
+                    return true;
+                }
+
+                // 检测广播窗口
+                if (IsBroadcastWindow(windowTitle))
+                {
+                    _currentBroadcastWnd = hWnd;
+                    AppendHwndToMsgCenter(hWnd);
+                    if (!_fakeBroadcastFull) FixBroadcastWindow(hWnd);
+                    return true;
+                }
+
+                // 严格窗口控制模式：其他极域全屏窗口也处理（参考实现 EnumWindowsProc:1097）
+                if (_settings.AutoIncludeFullWindow)
+                {
+                    RECT rc;
+                    if (GetWindowRect(hWnd, out rc) &&
+                        rc.Left == 0 && rc.Top == 0 &&
+                        rc.Right == _screenWidth && rc.Bottom == _screenHeight)
+                    {
+                        AppendHwndToMsgCenter(hWnd);
+                        FixFullScreenJiYuWindow(hWnd);
+                    }
                 }
 
                 return true;
             }, IntPtr.Zero);
         }
 
-        /// <summary>
-        /// 修复广播窗口（窗口化）
-        /// </summary>
-        private void FixBroadcastWindow(IntPtr hWnd)
+        /// <summary>对应参考实现 FixWindow 的 setAutoIncludeFullWindow 分支（TrainerWorker.cpp:1061-1072）</summary>
+        private void FixFullScreenJiYuWindow(IntPtr hWnd)
         {
-            if (_settings.AllowGbTop)
+            int ex = GetWindowLong(hWnd, GWL_EXSTYLE);
+            if ((ex & (int)WS_EX_TOPMOST) == (int)WS_EX_TOPMOST)
             {
-                // 允许置顶
-                SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-                return;
+                SetWindowLong(hWnd, GWL_EXSTYLE, ex & ~(int)WS_EX_TOPMOST);
+                SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
             }
-
-            // 不允许置顶：移除TOPMOST，窗口化
-            int exStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
-            if ((exStyle & WS_EX_TOPMOST) == WS_EX_TOPMOST)
-            {
-                SetWindowLong(hWnd, GWL_EXSTYLE, exStyle & ~(int)WS_EX_TOPMOST);
-            }
-
-            // 移除全屏样式
             int style = GetWindowLong(hWnd, GWL_STYLE);
-            if ((style & WS_BORDER) == 0 || (style & WS_OVERLAPPEDWINDOW) == 0)
+            int newStyle = style | (int)WS_BORDER | (int)WS_OVERLAPPEDWINDOW;
+            if (newStyle != style) SetWindowLong(hWnd, GWL_STYLE, newStyle);
+            SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0,
+                SWP_NOZORDER | SWP_NOSIZE | SWP_NOMOVE | SWP_DRAWFRAME | SWP_NOACTIVATE);
+            Logger.Instance.Debug("[JiYuController] 严格窗口控制: 已处理全屏窗口 HWND=" + hWnd);
+        }
+        public void SetMainWindowHandle(IntPtr hWnd) { _mainWindowHandle = hWnd; }
+
+        /// <summary>对应参考实现 ManualTop（TrainerWorker.cpp:989-1003）</summary>
+        public void ManualTop(bool top)
+        {
+            if (_currentBroadcastWnd == IntPtr.Zero) return;
+            IntPtr hWnd = _currentBroadcastWnd;
+            int ex = GetWindowLong(hWnd, GWL_EXSTYLE);
+            if (top)
             {
-                SetWindowLong(hWnd, GWL_STYLE, style | (int)WS_BORDER | (int)WS_OVERLAPPEDWINDOW);
+                if ((ex & (int)WS_EX_TOPMOST) == 0)
+                    SetWindowLong(hWnd, GWL_EXSTYLE, ex | (int)WS_EX_TOPMOST);
+                SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0,
+                    SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
             }
+            else
+            {
+                if ((ex & (int)WS_EX_TOPMOST) == (int)WS_EX_TOPMOST)
+                    SetWindowLong(hWnd, GWL_EXSTYLE, ex & ~(int)WS_EX_TOPMOST);
+                SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0,
+                    SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
+            Logger.Instance.Info("[JiYuController] ManualTop(" + top + ") HWND=" + hWnd);
+        }
 
-            // 调整为窗口大小（屏幕的 3/4 x 4/5）
-            int w = (int)(_screenWidth * 0.75);
-            int h = (int)(_screenHeight * 0.8);
-            int x = (_screenWidth - w) / 2;
-            int y = (_screenHeight - h) / 2;
-            SetWindowPos(hWnd, HWND_NOTOPMOST, x, y, w, h, SWP_SHOWWINDOW);
-            SendMessage(hWnd, WM_SIZE, IntPtr.Zero, (IntPtr)((h << 16) | w));
-
-            Logger.Instance.Debug("[JiYuController] 广播窗口已窗口化: HWND=" + hWnd);
+        /// <summary>对应参考实现 ManualFull（TrainerWorker.cpp:971-988）</summary>
+        public void ManualFull(bool full)
+        {
+            if (_currentBroadcastWnd == IntPtr.Zero) return;
+            IntPtr hWnd = _currentBroadcastWnd;
+            if (full)
+            {
+                int ex = GetWindowLong(hWnd, GWL_EXSTYLE);
+                SetWindowLong(hWnd, GWL_EXSTYLE, ex | (int)WS_EX_TOPMOST);
+                int style = GetWindowLong(hWnd, GWL_STYLE);
+                style = (style ^ ((int)WS_BORDER | (int)WS_OVERLAPPEDWINDOW)) | (int)WS_SYSMENU;
+                SetWindowLong(hWnd, GWL_STYLE, style);
+                SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, _screenWidth, _screenHeight, SWP_SHOWWINDOW);
+                SendMessage(hWnd, WM_SIZE, IntPtr.Zero, (IntPtr)((_screenHeight << 16) | _screenWidth));
+                Logger.Instance.Info("[JiYuController] ManualFull(true) HWND=" + hWnd);
+            }
+            else
+            {
+                _gbFullManual = false;
+                FixBroadcastWindow(hWnd);
+                int w = (int)(_screenWidth * 3.0 / 4.0);
+                int h = (int)(_screenHeight * 4.0 / 5.0);
+                SetWindowPos(hWnd, IntPtr.Zero, (_screenWidth - w) / 2, (_screenHeight - h) / 2, w, h,
+                    SWP_NOZORDER | SWP_SHOWWINDOW);
+                Logger.Instance.Info("[JiYuController] ManualFull(false) HWND=" + hWnd);
+            }
         }
 
         /// <summary>
-        /// 修复黑屏窗口（关闭黑屏）
+        /// 广播窗口窗口化（对应参考实现 TrainerWorker.cpp:1032-1075 的常规路径）。
+        /// 关键：只翻样式位，绝不移动/缩放窗口。
+        /// 极域的广播画面画在子窗口 TDDesk Render Window 上，该子窗口按创建时的全屏尺寸输出；
+        /// 父窗口被改尺寸后不会重建，结果是画面黑屏/错位。
         /// </summary>
+        private void FixBroadcastWindow(IntPtr hWnd)
+        {
+            int ex = GetWindowLong(hWnd, GWL_EXSTYLE);
+
+            // AllowGbTop是"别动TOPMOST"（被动），不是"强制置顶"（主动）
+            // 参考实现：if (!setAllowGbTop && topmost) 去掉
+            if (!_settings.AllowGbTop && (ex & (int)WS_EX_TOPMOST) == (int)WS_EX_TOPMOST)
+            {
+                SetWindowLong(hWnd, GWL_EXSTYLE, ex & ~(int)WS_EX_TOPMOST);
+                SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
+
+            // 用户在DLL菜单选择过"广播窗口全屏"时，不要改回窗口化
+            if (!_gbFullManual)
+            {
+                int style = GetWindowLong(hWnd, GWL_STYLE);
+                int newStyle = style | (int)WS_BORDER | (int)WS_OVERLAPPEDWINDOW;
+                if (newStyle != style) SetWindowLong(hWnd, GWL_STYLE, newStyle);
+            }
+
+            SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0,
+                SWP_NOZORDER | SWP_NOSIZE | SWP_NOMOVE | SWP_DRAWFRAME | SWP_NOACTIVATE);
+
+            Logger.Instance.Debug("[JiYuController] 广播窗口已窗口化(仅样式): HWND=" + hWnd);
+        }
         private void FixBlackScreenWindow(IntPtr hWnd)
         {
-            // 黑屏安静模式：移除TOPMOST并隐藏
-            int exStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
-            if ((exStyle & WS_EX_TOPMOST) == WS_EX_TOPMOST)
-            {
-                SetWindowLong(hWnd, GWL_EXSTYLE, exStyle & ~(int)WS_EX_TOPMOST);
-            }
-            SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-            Logger.Instance.Debug("[JiYuController] 黑屏窗口已处理: HWND=" + hWnd);
+            int ex = GetWindowLong(hWnd, GWL_EXSTYLE);
+            // 切换APPWINDOW并加上NOACTIVATE
+            SetWindowLong(hWnd, GWL_EXSTYLE, (ex ^ (int)WS_EX_APPWINDOW) | (int)WS_EX_NOACTIVATE);
+            SetWindowPos(hWnd, IntPtr.Zero, 20, 20, 90, 150,
+                SWP_NOZORDER | SWP_DRAWFRAME | SWP_NOACTIVATE);
+            ShowWindow(hWnd, SW_HIDE);
+            Logger.Instance.Debug("[JiYuController] 黑屏窗口已处理并隐藏: HWND=" + hWnd);
         }
 
         /// <summary>
@@ -797,6 +1006,9 @@ namespace JiYuKiller.Services
 
         private bool _fakeFull = false;
         public bool IsFakeFull => _fakeFull;
+        private bool _fakeBroadcastFull = false;
+        private bool _fakeBlackScreenFull = false;
+        private IntPtr _resizedBroadcastWnd = IntPtr.Zero;
 
         /// <summary>
         /// 切换紧急全屏（伪全屏）
@@ -806,41 +1018,41 @@ namespace JiYuKiller.Services
         {
             Logger.Instance.FunctionCall("SwitchFakeFull");
 
-            if (!IsJiYuRunning)
+            if (!IsJiYuRunning || _currentBroadcastWnd == IntPtr.Zero)
             {
-                Logger.Instance.Warn("[JiYuController] 极域未运行，无法切换伪全屏");
-                return false;
+                Logger.Instance.Warn("[JiYuController] 未找到广播窗口，仅发送DLL消息");
+                SendVirusMessage("hk:fkfull:" + (_fakeFull ? "false" : "true"));
+                return _fakeFull;
             }
 
             _fakeFull = !_fakeFull;
-
-            // 发送DLL消息
             SendVirusMessage("hk:fkfull:" + (_fakeFull ? "true" : "false"));
 
-            // 调整广播窗口
-            if (_currentBroadcastWnd != IntPtr.Zero)
+            if (_fakeFull)
             {
-                if (_fakeFull)
-                {
-                    // 伪全屏: 移除边框，全屏置顶
-                    int exStyle = GetWindowLong(_currentBroadcastWnd, GWL_EXSTYLE);
-                    SetWindowLong(_currentBroadcastWnd, GWL_EXSTYLE, exStyle | (int)WS_EX_TOPMOST);
-                    int style = GetWindowLong(_currentBroadcastWnd, GWL_STYLE);
-                    SetWindowLong(_currentBroadcastWnd, GWL_STYLE, style ^ (int)WS_BORDER ^ (int)WS_OVERLAPPEDWINDOW);
-                    SetWindowPos(_currentBroadcastWnd, HWND_TOPMOST, 0, 0, _screenWidth, _screenHeight, SWP_SHOWWINDOW);
-                    SendMessage(_currentBroadcastWnd, WM_SIZE, IntPtr.Zero, (IntPtr)((_screenHeight << 16) | _screenWidth));
-                    Logger.Instance.Info("[JiYuController] 广播窗口已伪全屏");
-                }
-                else
-                {
-                    // 恢复窗口化
-                    FixBroadcastWindow(_currentBroadcastWnd);
-                    Logger.Instance.Info("[JiYuController] 广播窗口已恢复窗口化");
-                }
+                // 进入假装全屏（对应参考实现 FakeFull(true)）
+                int ex = GetWindowLong(_currentBroadcastWnd, GWL_EXSTYLE);
+                SetWindowLong(_currentBroadcastWnd, GWL_EXSTYLE, ex | (int)WS_EX_TOPMOST);
+                int style = GetWindowLong(_currentBroadcastWnd, GWL_STYLE);
+                SetWindowLong(_currentBroadcastWnd, GWL_STYLE,
+                    style ^ ((int)WS_BORDER | (int)WS_OVERLAPPEDWINDOW));
+                SetWindowPos(_currentBroadcastWnd, HWND_TOPMOST, 0, 0, _screenWidth, _screenHeight, SWP_SHOWWINDOW);
+                SendMessage(_currentBroadcastWnd, WM_SIZE, IntPtr.Zero,
+                    (IntPtr)((_screenHeight << 16) | _screenWidth));
+                _fakeBroadcastFull = true;  // 守卫：轮询期间不再去改它
+                Logger.Instance.Info("[JiYuController] 广播窗口已伪全屏");
             }
             else
             {
-                Logger.Instance.Warn("[JiYuController] 未找到广播窗口，仅发送DLL消息");
+                _fakeBroadcastFull = false;
+                // 退出假装全屏：先恢复样式，再做一次窗口化尺寸
+                FixBroadcastWindow(_currentBroadcastWnd);
+                int w = (int)(_screenWidth * 3.0 / 4.0);
+                int h = (int)(_screenHeight * 4.0 / 5.0);
+                SetWindowPos(_currentBroadcastWnd, IntPtr.Zero,
+                    (_screenWidth - w) / 2, (_screenHeight - h) / 2, w, h,
+                    SWP_NOZORDER | SWP_SHOWWINDOW);
+                Logger.Instance.Info("[JiYuController] 广播窗口已恢复窗口化");
             }
 
             OnStatusChanged?.Invoke();

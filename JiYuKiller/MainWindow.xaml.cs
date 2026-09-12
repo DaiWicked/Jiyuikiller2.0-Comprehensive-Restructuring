@@ -98,6 +98,7 @@ namespace JiYuKiller
                 if (_hwndSource != null)
                 {
                     _hwndSource.AddHook(HwndHook);
+                    _controller.SetMainWindowHandle(new System.Windows.Interop.WindowInteropHelper(this).Handle);
                     Services.Logger.Instance.Info("[HwndHook] 已提前添加消息钩子");
                 }
             };
@@ -1497,61 +1498,15 @@ namespace JiYuKiller
         /// <summary>
         /// 处理DLL回调消息 (对应原项目hkb:系列消息)
         /// </summary>
+        /// <summary>
+        /// 处理DLL回调消息 - 薄转发到JiYuController.HandleVirusCallback
+        /// 真正的窗口操作在Controller中执行（对应参考实现 HandleMessageFromVirus）
+        /// </summary>
         private void HandleDllCallback(string message)
         {
             try
             {
-                if (message.StartsWith("hkb:succ"))
-                {
-                    Services.Logger.Instance.Info("[DLL回调] DLL注入成功确认");
-                }
-                else if (message.StartsWith("hkb:jyk:"))
-                {
-                    string locked = message.Substring(7);
-                    Services.Logger.Instance.Info("[DLL回调] 键盘锁定状态: " + locked);
-                }
-                else if (message.StartsWith("hkb:wtf:"))
-                {
-                    string pid = message.Substring(8);
-                    Services.Logger.Instance.Warn("[DLL回调] 检测到非极域进程注入, PID=" + pid);
-                }
-                else if (message.StartsWith("hkb:immck"))
-                {
-                    Services.Logger.Instance.Info("[DLL回调] 输入法检查完成");
-                }
-                else if (message.StartsWith("hkb:showhelp"))
-                {
-                    Services.Logger.Instance.Info("[DLL回调] 请求显示帮助");
-                }
-                else if (message.StartsWith("hkb:gbuntop"))
-                {
-                    Services.Logger.Instance.Info("[DLL回调] 广播窗口取消置顶");
-                }
-                else if (message.StartsWith("hkb:algbtop"))
-                {
-                    Services.Logger.Instance.Info("[DLL回调] 请求允许广播窗口置顶");
-                }
-                else if (message.StartsWith("hkb:gbtop"))
-                {
-                    Services.Logger.Instance.Info("[DLL回调] 广播窗口已置顶");
-                }
-                else if (message.StartsWith("hkb:gbmfull"))
-                {
-                    Services.Logger.Instance.Info("[DLL回调] 广播窗口全屏");
-                }
-                else if (message.StartsWith("hkb:gbmnofull"))
-                {
-                    Services.Logger.Instance.Info("[DLL回调] 广播窗口退出全屏");
-                }
-                else if (message.StartsWith("wcd:"))
-                {
-                    // DLL看门狗心跳消息 (每6秒一次, wdCount递增)
-                    Services.Logger.Instance.Debug("[DLL回调] 看门狗心跳: " + message);
-                }
-                else
-                {
-                    Services.Logger.Instance.Debug("[DLL回调] 未知消息: " + message);
-                }
+                _controller.HandleVirusCallback(message);
             }
             catch (Exception ex)
             {

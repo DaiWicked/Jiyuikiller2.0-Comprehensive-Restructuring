@@ -1,5 +1,32 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-12) - 窗口控制模块修复 + teacher_sim集成
+
+### 窗口控制模块修复（对照JiYuTrainer_Next-master）
+- **根因修复**: DLL的hkb:*回调之前只打日志不执行动作，现在全部接线到实际窗口操作
+- **HandleDllCallback改为薄转发**: 统一交给JiYuController.HandleVirusCallback处理
+- **新增ManualTop/ManualFull方法**: 对应参考实现，执行真正的SetWindowLong/SetWindowPos
+- **AllowGbTop改被动**: true=不干预TOPMOST，false=去掉TOPMOST（不再强制置顶）
+- **新增gbFullManual状态**: 用户从DLL菜单进全屏后，轮询不再把边框加回去
+- **严格窗口控制模式**: setAutoIncludeFullWindow已实现，其他极域全屏窗口也处理
+- **跳过Virus Window**: 枚举窗口时跳过"JiYu Trainer Virus Window"
+- **hk:ckstat握手**: 注入成功后补发，DLL做版本探测+键盘解锁
+- **hs:回发**: hkb:succ时回发主窗口句柄给DLL
+- **hkb:immck**: 立即刷新窗口枚举
+- **去掉自动打开AllowGbTop**: 用户手动置顶不再自动打开设置开关
+
+### teacher_sim集成
+- 修复日志路径: 从桌面改为exe目录/teacher_sim/teacher_sim.log（与teacher_sim.py一致）
+- 修复日志等待误报: 等待时间从10秒增加到30秒，进程仍在运行时不报警告
+- 保留32位teacher_sim.exe（15400270 bytes）
+- 已知限制: teacher_sim是极域V6.0协议，与v4.0 2016豪华版不兼容，学生无法登录
+
+### 广播窗口修复
+- 去掉周期性75%×80%缩放（原项目FixWindow从不调整尺寸）
+- FixBroadcastWindow只改样式位，不移动/缩放窗口
+- 补发hw:消息通知DLL接管窗口过程
+# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
+
 ## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-10) - 用户协议窗口 + 玻璃效果统一
 
 ### 用户许可协议窗口 (AgreementWindow)

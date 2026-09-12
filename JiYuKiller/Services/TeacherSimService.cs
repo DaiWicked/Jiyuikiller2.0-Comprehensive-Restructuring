@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -235,9 +235,11 @@ namespace JiYuKiller.Services
         /// </summary>
         public string GetLogPath()
         {
-            // teacher_sim.py中 LOG_DIR = os.path.join(os.path.expanduser('~'), 'Desktop')
-            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            return Path.Combine(desktop, "teacher_sim.log");
+            // teacher_sim.py中 LOG_DIR = os.path.join(_base_dir, 'teacher_sim')
+            string exeDir = Path.GetDirectoryName(ExePath);
+            string logDir = Path.Combine(exeDir, "teacher_sim");
+            Directory.CreateDirectory(logDir);
+            return Path.Combine(logDir, "teacher_sim.log");
         }
 
         /// <summary>
@@ -249,9 +251,9 @@ namespace JiYuKiller.Services
             Logger.Instance.Info($"[TeacherSim] 日志监控线程启动，监控: {logPath}");
             OnLogOutput?.Invoke($"[系统] 日志文件: {logPath}");
 
-            // 等待日志文件创建
+            // 等待日志文件创建（PyInstaller解压需要时间，最多等30秒）
             int waitCount = 0;
-            while (_isRunning && !File.Exists(logPath) && waitCount < 20)
+            while (_isRunning && !File.Exists(logPath) && waitCount < 60)
             {
                 Thread.Sleep(500);
                 waitCount++;
@@ -259,8 +261,18 @@ namespace JiYuKiller.Services
 
             if (!File.Exists(logPath))
             {
-                Logger.Instance.Warn("[TeacherSim] 日志文件未创建，可能teacher_sim.exe启动失败");
-                OnLogOutput?.Invoke("[警告] 日志文件未创建，请检查teacher_sim.exe是否正常启动");
+                // 进程还在运行说明只是启动慢，不报警告；进程退出才说明启动失败
+                bool procRunning = false;
+                try { procRunning = _process != null && !_process.HasExited; } catch { }
+                if (procRunning)
+                {
+                    Logger.Instance.Info("[TeacherSim] 日志文件尚未创建，进程仍在运行，继续等待");
+                }
+                else
+                {
+                    Logger.Instance.Warn("[TeacherSim] 日志文件未创建，teacher_sim.exe可能已退出");
+                    OnLogOutput?.Invoke("[警告] 日志文件未创建，teacher_sim.exe可能已退出");
+                }
             }
 
             while (_isRunning)
