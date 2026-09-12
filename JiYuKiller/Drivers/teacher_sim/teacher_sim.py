@@ -2557,7 +2557,8 @@ def session_recv():
                 # 登录后自动请求学生信息（计算机名/MAC/用户/OS/CPU/内存）
                 time.sleep(0.2)
                 # 延迟1秒后请求info（学生端刚登录需准备时间），带重试机制
-                def _delayed_info():
+                # 注意：用默认参数sip=sip捕获当前值，避免Python闭包变量被后续登录覆盖
+                def _delayed_info(sip=sip):
                     time.sleep(1.0)
                     request_info_with_retry(sip, retries=2, delay=5)
                 threading.Thread(target=_delayed_info, daemon=True).start()
