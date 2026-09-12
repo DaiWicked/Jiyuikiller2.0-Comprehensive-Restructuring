@@ -26,8 +26,8 @@ namespace JiYuKiller.Games
         private const double Gravity = 0.58;
         private const double JumpVelocity = -10;   // 起跳初速度
         private const double BaseSpeed = 3.4;       // 初始移动速度(px/tick)
-        private const double MaxSpeed = 9.0;
-        private const double SpeedStep = 0.55;      // 每 100 分增加的速度
+        private const double MaxSpeed = 7.5;
+        private const double SpeedStep = 0.3;      // 每 100 分增加的速度
 
         private static readonly Brush DinoBrush = new SolidColorBrush(Color.FromRgb(0x53, 0x53, 0x53));
         private static readonly Brush CactusBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32));
