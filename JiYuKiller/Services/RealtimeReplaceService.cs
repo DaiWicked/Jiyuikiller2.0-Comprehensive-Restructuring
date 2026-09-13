@@ -169,9 +169,9 @@ namespace JiYuKiller.Services
         }
 
         /// <summary>
-        /// RGB24转YUV420 (I420格式)
-        /// 注意：极域编码器可能需要U/V交换，这里输出标准I420
-        /// DLL端如果颜色不对再调整
+        /// RGB24转YUV420 (YV12格式: Y + V + U)
+        /// 极域编码器使用YV12（V平面在前，U平面在后）
+        /// 标准I420是Y+U+V，直接输出会导致颜色负片
         /// </summary>
         private byte[] ConvertToYUV420(byte[] rgb, int width, int height, int stride)
         {
@@ -194,31 +194,7 @@ namespace JiYuKiller.Services
                 }
             }
 
-            // U平面 (Cb) - 2x2平均
-            for (int y = 0; y < height; y += 2)
-            {
-                for (int x = 0; x < width; x += 2)
-                {
-                    double uSum = 0;
-                    for (int dy = 0; dy < 2; dy++)
-                    {
-                        for (int dx = 0; dx < 2; dx++)
-                        {
-                            int px = Math.Min(x + dx, width - 1);
-                            int py = Math.Min(y + dy, height - 1);
-                            int idx = py * stride + px * 3;
-                            byte b = rgb[idx];
-                            byte g = rgb[idx + 1];
-                            byte r = rgb[idx + 2];
-                            uSum += -0.169 * r - 0.331 * g + 0.5 * b + 128;
-                        }
-                    }
-                    int uVal = (int)(uSum / 4);
-                    yuv[ySize + (y / 2) * (width / 2) + (x / 2)] = (byte)Math.Max(0, Math.Min(255, uVal));
-                }
-            }
-
-            // V平面 (Cr) - 2x2平均
+            // V平面 (Cr) 在前 - YV12格式
             for (int y = 0; y < height; y += 2)
             {
                 for (int x = 0; x < width; x += 2)
@@ -238,7 +214,31 @@ namespace JiYuKiller.Services
                         }
                     }
                     int vVal = (int)(vSum / 4);
-                    yuv[ySize + uvSize + (y / 2) * (width / 2) + (x / 2)] = (byte)Math.Max(0, Math.Min(255, vVal));
+                    yuv[ySize + (y / 2) * (width / 2) + (x / 2)] = (byte)Math.Max(0, Math.Min(255, vVal));
+                }
+            }
+
+            // U平面 (Cb) 在后 - YV12格式
+            for (int y = 0; y < height; y += 2)
+            {
+                for (int x = 0; x < width; x += 2)
+                {
+                    double uSum = 0;
+                    for (int dy = 0; dy < 2; dy++)
+                    {
+                        for (int dx = 0; dx < 2; dx++)
+                        {
+                            int px = Math.Min(x + dx, width - 1);
+                            int py = Math.Min(y + dy, height - 1);
+                            int idx = py * stride + px * 3;
+                            byte b = rgb[idx];
+                            byte g = rgb[idx + 1];
+                            byte r = rgb[idx + 2];
+                            uSum += -0.169 * r - 0.331 * g + 0.5 * b + 128;
+                        }
+                    }
+                    int uVal = (int)(uSum / 4);
+                    yuv[ySize + uvSize + (y / 2) * (width / 2) + (x / 2)] = (byte)Math.Max(0, Math.Min(255, uVal));
                 }
             }
 

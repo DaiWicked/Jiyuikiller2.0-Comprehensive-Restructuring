@@ -1960,11 +1960,33 @@ namespace JiYuKiller
         {
             InitRealtimeReplace();
             Services.Logger.Instance.Info("[Realtime] 点击启用");
-            bool ok = _realtimeService.Apply();
-            UpdateRealtimeState();
-            System.Windows.MessageBox.Show(ok
-                ? "实时替换已启用\n教师端发起实时观看时生效\n注意：需要DLL已注入且编码尺寸为1024x768"
-                : "启用失败，请查看日志", "实时屏幕替换");
+            try
+            {
+                bool ok = _realtimeService.Apply();
+                UpdateRealtimeState();
+                if (ok)
+                {
+                    string iniPath = @"C:\Users\Public\JiYuKiller\realtime_replace.ini";
+                    string yuvPath = @"C:\Users\Public\JiYuKiller\fake_screen.yuv";
+                    System.Windows.MessageBox.Show(
+                        "实时替换已启用\n" +
+                        "教师端发起实时观看时生效\n" +
+                        "配置文件: " + iniPath + "\n" +
+                        "YUV文件: " + yuvPath + "\n" +
+                        "配置存在: " + System.IO.File.Exists(iniPath) + "\n" +
+                        "YUV存在: " + System.IO.File.Exists(yuvPath),
+                        "实时屏幕替换");
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show("启用失败，请查看日志", "实时屏幕替换");
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("[Realtime] 启用异常: " + ex);
+                System.Windows.MessageBox.Show("启用异常: " + ex.Message + "\n\n" + ex.StackTrace, "实时屏幕替换");
+            }
         }
 
         private void BtnRealtimeDisable_Click(object sender, RoutedEventArgs e)
