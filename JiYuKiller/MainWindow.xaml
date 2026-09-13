@@ -649,6 +649,26 @@
                         </Border>
 
                         <TextBlock Text="原理：编码层替换——Hook EncodeToJPEGBuffer，图片自动缩放80x60编码为JPEG后替换输出缓冲区。支持png/jpg/jpeg/bmp格式。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,4" />
+
+                        <!-- 实时屏幕替换（实验性） -->
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,12,0,10">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="实时屏幕替换（实验性）" FontSize="15" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
+                                    <Ellipse x:Name="RealtimeStatusDot" Width="12" Height="12" Fill="#FF999999" VerticalAlignment="Center" />
+                                </Grid>
+                                <TextBlock Text="教师端实时观看时替换整个屏幕画面（非缩略图）。通过Hook H.264编码器输入YUV帧实现。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <TextBlock x:Name="TextRealtimeStatus" Text="未启用" FontSize="12" Foreground="#FF666666" Margin="0,0,0,8" />
+                                <TextBlock x:Name="TextRealtimePath" Text="（未选择图片）" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <Button x:Name="BtnRealtimeChoose" Content="选择替换图片" Click="BtnRealtimeChoose_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="36" Margin="0,0,0,6" />
+                                <Button x:Name="BtnRealtimeApply" Content="启用实时替换" Click="BtnRealtimeApply_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="36" Margin="0,0,0,6" />
+                                <Button x:Name="BtnRealtimeDisable" Content="关闭实时替换" Click="BtnRealtimeDisable_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 

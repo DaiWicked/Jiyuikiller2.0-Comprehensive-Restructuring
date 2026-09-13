@@ -115,6 +115,7 @@
     <Compile Include="Services\WallpaperService.cs" />
     <Compile Include="Services\ChatService.cs" />
     <Compile Include="Services\ScreenshotService.cs" />
+    <Compile Include="Services\RealtimeReplaceService.cs" />
     <Compile Include="Services\ScreenCaptureHelper.cs" />
     <Compile Include="Services\DriverService.cs" />
     <Compile Include="Services\DllInjectService.cs" />

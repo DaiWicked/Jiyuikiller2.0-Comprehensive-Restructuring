@@ -33,6 +33,7 @@ namespace JiYuKiller
         private bool _eggExtracted = false; // 视频是否已释放
         private readonly Services.ChatService _chatService = new Services.ChatService();
         private readonly Services.ScreenshotService _screenshotService = new Services.ScreenshotService();
+        private readonly Services.RealtimeReplaceService _realtimeService = new Services.RealtimeReplaceService();
         private string _chatTargetIP = "";
         private int _chatTargetSeat = 0;
 
@@ -1816,6 +1817,7 @@ namespace JiYuKiller
             }
             _screenshotService.LoadCurrent();
             UpdateScreenshotPreview();
+            InitRealtimeReplace();
         }
 
         private void UpdateScreenshotPreview()
@@ -1898,6 +1900,79 @@ namespace JiYuKiller
         private void BtnScreenshotBack_Click(object sender, RoutedEventArgs e)
         {
             ShowPage("quick");
+        }
+
+        #endregion
+
+        #region 实时屏幕替换
+
+        private bool _realtimeInitialized = false;
+
+        private void InitRealtimeReplace()
+        {
+            if (!_realtimeInitialized)
+            {
+                _realtimeService.OnLog += (msg) => Services.Logger.Instance.Info("[Realtime] " + msg);
+                _realtimeService.OnStatusChanged += (msg) => Dispatcher.Invoke(() => { TextRealtimeStatus.Text = msg; });
+                _realtimeInitialized = true;
+                Services.Logger.Instance.Info("[Realtime] 实时屏幕替换事件注册完成");
+            }
+            _realtimeService.LoadCurrent();
+            UpdateRealtimeState();
+        }
+
+        private void UpdateRealtimeState()
+        {
+            if (_realtimeService.IsEnabled)
+            {
+                TextRealtimeStatus.Text = "已启用 - 教师端观看时生效";
+                TextRealtimeStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
+                RealtimeStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
+            }
+            else
+            {
+                TextRealtimeStatus.Text = "未启用";
+                TextRealtimeStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
+                RealtimeStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
+            }
+            TextRealtimePath.Text = string.IsNullOrEmpty(_realtimeService.CurrentImagePath)
+                ? "（未选择图片）"
+                : _realtimeService.CurrentImagePath;
+        }
+
+        private void BtnRealtimeChoose_Click(object sender, RoutedEventArgs e)
+        {
+            InitRealtimeReplace();
+            Services.Logger.Instance.Info("[Realtime] 点击选择图片");
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "选择用于实时屏幕替换的图片",
+                Filter = "图片文件(*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|所有文件(*.*)|*.*"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                _realtimeService.ChooseImage(dlg.FileName);
+                UpdateRealtimeState();
+            }
+        }
+
+        private void BtnRealtimeApply_Click(object sender, RoutedEventArgs e)
+        {
+            InitRealtimeReplace();
+            Services.Logger.Instance.Info("[Realtime] 点击启用");
+            bool ok = _realtimeService.Apply();
+            UpdateRealtimeState();
+            System.Windows.MessageBox.Show(ok
+                ? "实时替换已启用\n教师端发起实时观看时生效\n注意：需要DLL已注入且编码尺寸为1024x768"
+                : "启用失败，请查看日志", "实时屏幕替换");
+        }
+
+        private void BtnRealtimeDisable_Click(object sender, RoutedEventArgs e)
+        {
+            InitRealtimeReplace();
+            Services.Logger.Instance.Info("[Realtime] 点击关闭");
+            _realtimeService.Disable();
+            UpdateRealtimeState();
         }
 
         #endregion
