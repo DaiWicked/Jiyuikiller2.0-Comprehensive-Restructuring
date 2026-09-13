@@ -2097,6 +2097,22 @@ namespace JiYuKiller
             _teacherSimService.SendCommand("unlock_all");
         }
 
+        private void BtnTeacherSimQuickShutdownAll_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("确定要关闭所有已登录学生机吗？", "确认全体关机", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                _teacherSimService.SendCommand("sdall");
+            }
+        }
+
+        private void BtnTeacherSimQuickRebootAll_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("确定要重启所有已登录学生机吗？", "确认全体重启", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                _teacherSimService.SendCommand("rball");
+            }
+        }
+
         private void BtnTeacherSimQuickHelp_Click(object sender, RoutedEventArgs e)
         {
             _teacherSimService.SendCommand("help");

@@ -741,6 +741,8 @@
                                     <Button Content="全部预览" Click="BtnTeacherSimQuickAll_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
                                     <Button Content="黑屏全体" Click="BtnTeacherSimQuickBlackAll_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
                                     <Button Content="解锁全体" Click="BtnTeacherSimQuickUnlockAll_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="全体关机" Click="BtnTeacherSimQuickShutdownAll_Click" Style="{StaticResource GlassButton}" Background="#FFC5504B" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="全体重启" Click="BtnTeacherSimQuickRebootAll_Click" Style="{StaticResource GlassButton}" Background="#FFFFC107" Foreground="#FF000000" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
                                     <Button Content="帮助" Click="BtnTeacherSimQuickHelp_Click" Style="{StaticResource GlassButton}" Background="#FF6C757D" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
                                 </WrapPanel>
                             </StackPanel>
