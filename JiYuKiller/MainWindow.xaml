@@ -771,6 +771,7 @@
                                     <TextBlock Text="目标IP:" FontSize="12" Foreground="#FF555566" VerticalAlignment="Center" Margin="0,0,8,0" />
                                     <TextBox Grid.Column="1" x:Name="TextTeacherSimTargetIP" Text="" Style="{StaticResource GlassTextBox}" FontSize="12" Padding="6,4" Height="28" />
                                 </Grid>
+                                <TextBlock Text="提示：黑屏锁定/解锁、关机/重启等功能可能对部分系统（尤其是32位Win10）无效" FontSize="10" Foreground="#FF888888" Margin="0,0,0,6" TextWrapping="Wrap" />
                                 <WrapPanel>
                                     <Button Content="发送消息" Click="BtnTeacherSimQuickMsg_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
                                     <Button Content="群发消息" Click="BtnTeacherSimQuickMsgAll_Click" Style="{StaticResource GlassButton}" Background="#FF6F42C1" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
