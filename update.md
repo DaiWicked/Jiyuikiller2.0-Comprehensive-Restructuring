@@ -1,5 +1,68 @@
 ﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
+## QD_V2.5_JiYuRebuild_IMTeacher (2026-09-13) - 教师模拟完善 + 密码读取 + 全体命令
+
+### 极域查看密码功能（新增）
+- 对照原项目JiYuTrainer_Next-master的ReadTopDomanPassword和UnDecryptJiyuKnock实现
+- 支持两种模式：
+  - **4.0老版本**：读取HKLM\SOFTWARE\TopDomain\e-Learning Class Standard\1.00的UninstallPasswd键，解析Passwd[xxxxxx]格式
+  - **6.0版本**：读取HKLM\SOFTWARE\TopDomain\e-Learning Class\Student的Knock1 REG_BINARY，两轮DWORD异或解密（0x50434C45 → 0x454C4350）
+- C#实现：JiYuController.ReadJiYuPassword方法
+- 64位注册表用RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)
+- UI：设置页面添加"读取极域密码"按钮（青色背景#FF17A2B8）
+- 万能密码：mythware_super_password
+
+### teacher_sim全体关机/重启命令（新增）
+- 新增send_shutdown_all函数，遍历所有已登录学生逐个发送
+- 命令别名：shutdown_all/sdall/全体关机，reboot_all/rball/全体重启
+- 支持可选参数：倒计时秒数 + 提示文字
+- 每台之间间隔0.1秒，避免网络突发拥塞
+- 主程序UI快捷命令区域新增「全体关机」「全体重启」按钮，带确认弹窗
+
+### teacher_sim多学生info.json修复（重大）
+- **根因**：handle_mess中type 5系统信息包要求len(payload)>=0x2E0(736字节)，32位win10学生端的包可能被过滤
+- **修复4处**：
+  1. _parse_student_info添加wstr/rd_u32/rd_bytes边界保护，payload不完整时不崩溃
+  2. handle_mess type 5长度检查从0x2E0放宽到0x100(256字节)，日志级别从debug改为warning
+  3. request_info_with_retry从retries=2/delay=5改为retries=3/delay=8，失败后保存基础档案
+  4. 学生登录成功后立即调用save_student_profile保存基础档案（IP+最后在线时间）
+- 验证：32位win7和32位win10同时连接都能生成info.json
+
+### teacher_sim 6.0协议完善
+- 学生登录修复：waca()函数IP字段错误（教师IP→学生IP）
+- Python闭包变量捕获bug修复：_delayed_info用默认参数sip=sip
+- CANC包结构修正、NIPQ 4809端口无需回复
+- preview功能最终用应用层节流方案修复（TRMC回复LPNT(enabled=1)+DMOC，应用层丢弃多余帧）
+- preview清晰度320x240，登录时抓一张，后续手动抓取
+- info.json顺序：设备IP → MAC → 系统 → 最后在线 → 设备信息 → 当前窗口名称 → 窗口列表 → 设备进程列表
+- 学生列表显示IP+MAC，可滚动，选中后自动填充目标IP
+- 控制台上下布局（上stdout下日志）
+
+### 教师屏幕广播修复（重大）
+- 对照deepseek诊断报告和原项目JiYuTrainer_Next-master分析
+- 窗口控制模块：DLL的hkb:*回调全部接线到实际窗口操作
+- HandleDllCallback改为薄转发，统一交给JiYuController.HandleVirusCallback
+- 新增ManualTop/ManualFull方法，对应参考实现
+- AllowGbTop改被动模式：true=不干预TOPMOST，false=去掉TOPMOST
+- 广播窗口：移除周期性75%×80%缩放，只改样式位
+- 黑屏窗口：改回原项目行为（SW_HIDE隐藏）
+- 验证：教师发起广播后学生端能正常看到教师屏幕
+
+### 小游戏功能（新增）
+- 底栏新增「小游戏」入口
+- 游戏菜单：扫雷 + 恐龙跳两个卡片入口
+- **扫雷**：9×9网格/10雷，左键挖雷右键标旗，首次点击安全，显式栈展开防栈溢出
+- **恐龙跳**：纯C# Canvas实现，空格/点击跳跃，仙人掌随机生成
+  - 跳跃参数：起跳初速-10，重力0.58
+  - 速度曲线：初始3.4px/tick，每100分+0.3，最大7.5
+- 放弃WebBrowser/WebView2方案：主窗口AllowsTransparency分层窗口与原生HWND控件airspace不兼容
+
+### 截图替换功能暂时禁用
+- deepseek分析DLL源码发现上游bug
+- 页面添加黄色警告告示（用户指定文案）
+- 操作按钮IsEnabled=False
+- 已知问题：关闭allowMonitor后教师端查看屏幕可能导致极域崩溃（原作者已知问题，32位Win10尤甚）
+
 ## QD_V2.3_JiYuRebuild_CoUI-Glass (2026-09-13) - 小游戏功能 + 截图替换禁用
 
 ### 小游戏功能（新增）
