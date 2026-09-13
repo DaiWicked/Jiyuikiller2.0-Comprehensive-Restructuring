@@ -428,6 +428,9 @@ def analyze_stream(sip, channel=1, duration=30, do_replace=False, ffmpeg_path=No
         avg_interval = sum(frame_stats['idr_intervals']) / len(frame_stats['idr_intervals'])
         print(f'  平均I帧间隔: {avg_interval:.2f}秒 (约每{avg_interval * 25:.0f}帧一个I帧)')
         print(f'  I帧间隔范围: {min(frame_stats["idr_intervals"]):.2f} ~ {max(frame_stats["idr_intervals"]):.2f}秒')
+    elif frame_stats['idr_frames'] == 1:
+        print(f'  仅在连接开始时检测到1个I帧，{elapsed:.1f}秒内未出现第二个I帧')
+        print(f'  说明：极域编码器可能采用"仅首帧I帧+后续全P帧"策略，或I帧间隔 > {elapsed:.0f}秒')
     else:
         print(f'  未检测到I帧（可能时长太短或编码参数不同）')
 
@@ -448,12 +451,17 @@ def analyze_stream(sip, channel=1, duration=30, do_replace=False, ffmpeg_path=No
     print(f'\n{"="*60}')
     print(f'实时屏幕替换可行性评估')
     print(f'{"="*60}')
-    if frame_stats['idr_frames'] > 0:
-        avg_interval = sum(frame_stats['idr_intervals']) / max(len(frame_stats['idr_intervals']), 1)
-        print(f'✅ 检测到I帧，平均间隔{avg_interval:.2f}秒')
+    if frame_stats['idr_frames'] >= 2:
+        avg_interval = sum(frame_stats['idr_intervals']) / len(frame_stats['idr_intervals'])
+        print(f'✅ 检测到多个I帧，平均间隔{avg_interval:.2f}秒')
         print(f'   网络层I帧替换可行：每{avg_interval:.1f}秒可替换一次画面')
         print(f'   限制：P帧期间画面保持运动，替换后到下一个I帧前会有画面撕裂')
-        print(f'   建议：替换后立即发送强制I帧请求（如果协议支持），或接受{avg_interval:.1f}秒延迟')
+    elif frame_stats['idr_frames'] == 1:
+        print(f'⚠️  仅首帧为I帧，{elapsed:.0f}秒内无第二个I帧')
+        print(f'   极域编码器策略：首帧IDR + 后续全P帧（无周期性I帧）')
+        print(f'   网络层仅替换I帧 = 只能替换首帧，P帧会恢复原始画面')
+        print(f'   结论：纯网络层I帧替换不可行，需替换每帧或触发强制I帧')
+        print(f'   替代方向：学生端编码函数Hook（替换编码前的原始帧）')
     else:
         print(f'⚠️  未检测到I帧，需要更长时间分析或检查编码参数')
     print(f'   H.264 Annex-B格式确认，U/V色度交换需在编码前处理')
