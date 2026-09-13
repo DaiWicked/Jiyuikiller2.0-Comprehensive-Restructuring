@@ -343,13 +343,14 @@
                                 <TextBox x:Name="TextUdpMessage" Text="Hello from 学习不通2.0" Style="{StaticResource GlassTextBox}" FontSize="13" Padding="8,6" Height="60" TextWrapping="Wrap" VerticalScrollBarVisibility="Hidden" />
                                 <TextBlock Text="命令规范：输入 system32 目录下的可执行文件名（如 notepad.exe / calc.exe / cmd.exe / mspaint.exe），将在学生端运行 C:\Windows\system32\&lt;输入内容&gt;" FontSize="10" Foreground="#FF888888" Margin="0,6,0,6" TextWrapping="Wrap" />
                                 <TextBlock Text="快捷指令：" FontSize="11" Foreground="#FF555566" Margin="0,0,0,4" />
+                                <TextBlock Text="快捷指令（可能对部分系统无效）：" FontSize="11" Foreground="#FF555566" Margin="0,0,0,4" />
                                 <WrapPanel>
                                     <Button Content="记事本" Click="BtnUdpQuickCmd_Click" Tag="notepad.exe" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Height="26" Margin="0,0,6,4" FontSize="11" Padding="8,0" />
-                                    <Button Content="计算器" Click="BtnUdpQuickCmd_Click" Tag="calc.exe" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Height="26" Margin="0,0,6,4" FontSize="11" Padding="8,0" />
                                     <Button Content="画图" Click="BtnUdpQuickCmd_Click" Tag="mspaint.exe" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Height="26" Margin="0,0,6,4" FontSize="11" Padding="8,0" />
-                                    <Button Content="命令行" Click="BtnUdpQuickCmd_Click" Tag="cmd.exe" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Height="26" Margin="0,0,6,4" FontSize="11" Padding="8,0" />
-                                    <Button Content="注册表" Click="BtnUdpQuickCmd_Click" Tag="regedit.exe" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Height="26" Margin="0,0,6,4" FontSize="11" Padding="8,0" />
-                                    <Button Content="任务管理器" Click="BtnUdpQuickCmd_Click" Tag="taskmgr.exe" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Height="26" Margin="0,0,6,4" FontSize="11" Padding="8,0" />
+                                    <Button Content="写字板" Click="BtnUdpQuickCmd_Click" Tag="write.exe" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Height="26" Margin="0,0,6,4" FontSize="11" Padding="8,0" />
+                                    <Button Content="字符映射表" Click="BtnUdpQuickCmd_Click" Tag="charmap.exe" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Height="26" Margin="0,0,6,4" FontSize="11" Padding="8,0" />
+                                    <Button Content="屏幕键盘" Click="BtnUdpQuickCmd_Click" Tag="osk.exe" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Height="26" Margin="0,0,6,4" FontSize="11" Padding="8,0" />
+                                    <Button Content="放大镜" Click="BtnUdpQuickCmd_Click" Tag="magnify.exe" Style="{StaticResource GlassButton}" Background="#20000000" Foreground="#FF1A1A1A" BorderBrush="Transparent" Height="26" Margin="0,0,6,4" FontSize="11" Padding="8,0" />
                                 </WrapPanel>
                             </StackPanel>
                         </Border>
