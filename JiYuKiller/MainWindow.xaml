@@ -596,6 +596,7 @@
                             <StackPanel>
                                 <TextBlock Text="⚠ 功能暂时禁用" FontSize="14" FontWeight="Bold" Foreground="#FF856404" Margin="0,0,0,6" />
                                 <TextBlock Text="编码层替换方案：Hook EncodeToJPEGBuffer，在JPEG编码完成后替换输出数据" FontSize="11" Foreground="#FF2E7D32" TextWrapping="Wrap" Margin="0,0,0,3" />
+                            <TextBlock Text="注意：应用后将自动重启极域学生端以使设置生效" FontSize="11" Foreground="#FFE65100" TextWrapping="Wrap" Margin="0,0,0,6" />
                     <TextBlock Text="不依赖关闭「允许教师监视」，不触碰GDI/驱动，仅替换80x60缩略图编码输出" FontSize="11" Foreground="#FF2E7D32" TextWrapping="Wrap" Margin="0,0,0,3" />
                     <TextBlock Text="图片将自动缩放到80x60并编码为JPEG（质量90），教师端查看学生缩略图时生效" FontSize="11" Foreground="#FF2E7D32" TextWrapping="Wrap" />
                             </StackPanel>
@@ -629,7 +630,7 @@
 
                         <!-- 操作按钮 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
-                            <StackPanel IsEnabled="False">
+                            <StackPanel>
                                 <Button x:Name="BtnScreenshotChoose" Content="选择图片" Click="BtnScreenshotChoose_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="36" Margin="0,0,0,6" />
                                 <Button x:Name="BtnScreenshotApply" Content="应用替换" Click="BtnScreenshotApply_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="36" Margin="0,0,0,6" />
                                 <Button x:Name="BtnScreenshotCancelReplace" Content="取消替换" Click="BtnScreenshotCancelReplace_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" Margin="0,0,0,6" />
@@ -637,7 +638,7 @@
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="原理：将图片写入配置，DLL注入后在教师端监控时显示该图片替换真实屏幕。支持png/jpg/jpeg/bmp格式。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,4" />
+                        <TextBlock Text="原理：编码层替换——Hook EncodeToJPEGBuffer，图片自动缩放80x60编码为JPEG后替换输出缓冲区。支持png/jpg/jpeg/bmp格式。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,4" />
                     </StackPanel>
                 </ScrollViewer>
 

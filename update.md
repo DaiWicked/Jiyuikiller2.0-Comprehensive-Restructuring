@@ -1,4 +1,46 @@
 ﻿
+## QD_V2.6 开发中 - 截图替换（编码层方案完整版）
+
+### 新增
+- **截图替换功能重新启用**：采用编码层替换方案，完全重写原作者GDI Hook方案
+- **EncodeToJPEGBuffer参数逆向**：通过四轮DLL注入日志探测，100%确认函数参数含义
+  - a5 = 输出JPEG缓冲区指针（FF D8 FF DB开头，FF D9结尾）
+  - a6->size = 输出JPEG大小
+  - a2=80, a3=60, a4=240(步长), a7=90(JPEG质量)
+- **DLL端实现**：hkEncodeToJPEGBuffer中用预编码JPEG替换输出缓冲区
+- **主程序端实现**：用户选图→自动缩放80×60→JPEG编码质量90→写入INI
+- **应用后自动重启极域**：极域会缓存缩略图JPEG，应用后自动重启学生端使设置生效
+- **UI告示**：截图替换页面添加"应用后将自动重启极域学生端"提示
+- **技术文档**：EncodeToJPEGBuffer参数逆向与截图替换实现.md
+
+### 修复
+- **缩略图上下反向**：极域EncodeToJPEGBuffer输入是bottom-up BMP，输出JPEG本身反向，教师端不翻转显示。生成JPEG前添加垂直翻转（RotateNoneFlipY）
+- **缩略图颜色负片**：极域整条链路按BGR处理，C# GDI+按RGB编码导致红蓝交换。生成JPEG前添加红蓝通道交换（SwapRedBlue）
+- **截图替换不再依赖关闭「允许教师监视电脑」**
+- **不再触碰GDI/驱动层**：完全在编码输出层操作，避免32位Win10崩溃问题
+- **仅替换80×60缩略图**：不影响屏幕广播等其他功能
+- **__try/__except异常保护**：替换失败保持原编码结果
+
+### 探测结果
+- **EncodeToJPEGBufferI422**：hook探测确认实时查看学生屏幕时**不被调用**，实时大屏幕可能用原始位图或其他编码方式
+- **I422探测代码保留在DLL中**（hk40），前20次调用输出参数日志，便于后续分析
+
+### 技术细节
+- INI新增配置项：[JTSettings] FakeJpegPath
+- 假JPEG文件：程序目录下 ake_screenshot.jpg
+- 替换条件：a2==80 && a3==60 && 大小<=65536
+- DLL函数数量：499个（含I422探测）
+- 原作者GDI Hook方案分析：hkGetDesktopWindow/hkGetWindowDC/hkCreateDCW三个hook，崩溃根因是CreateDCW返回NULL导致空指针访问
+
+### 与原作者方案对比
+| 维度 | 原作者GDI Hook | 编码层替换（当前） |
+|------|---------------|-------------------|
+| 原理 | CreateDCW返回NULL + 假窗口DC | EncodeToJPEGBuffer输出替换 |
+| 依赖 | 需关闭allowMonitor | 不依赖allowMonitor |
+| 触碰层级 | GDI/驱动层 | 纯用户态编码层 |
+| 32位Win10兼容性 | 已知崩溃问题 | 无已知兼容性问题 |
+| 影响范围 | 所有GDI绘制 | 仅80x60缩略图编码 |
+
 ## QD_V2.6 开发中 - 截图替换（编码层方案）
 
 ### 新增
@@ -559,3 +601,4 @@
 - 黑屏窗口改回原项目行为（SW_HIDE隐藏）
 - 窗口控制模块修复（HandleDllCallback薄转发、ManualTop/ManualFull、AllowGbTop被动模式）
 - 广播窗口修复（移除每3.1秒缩放逻辑、补发hw:消息）
+

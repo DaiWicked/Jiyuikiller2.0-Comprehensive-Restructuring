@@ -122,6 +122,13 @@ namespace JiYuKiller.Services
                             int y = (60 - h) / 2;
                             g.DrawImage(src, x, y, w, h);
                         }
+                        // 垂直翻转：极域EncodeToJPEGBuffer输入是bottom-up BMP，输出JPEG本身是上下反向的
+                        // 教师端显示时不翻转，所以我们生成的JPEG也必须是反向的才能正常显示
+                        dst.RotateFlip(System.Drawing.RotateFlipType.RotateNoneFlipY);
+                        // 交换红蓝通道：极域输入是BGR格式，编码器按BGR->YCbCr转换
+                        // 我们生成的是RGB->YCbCr，教师端按BGR显示会红蓝交换（负片效果）
+                        // 所以需要先把RGB转成BGR，编码后解码才是BGR，教师端显示正常
+                        SwapRedBlue(dst);
                         ImageCodecInfo jpegCodec = Array.Find(ImageCodecInfo.GetImageEncoders(), e => e.FormatID == ImageFormat.Jpeg.Guid);
                         EncoderParameters encParams = new EncoderParameters(1);
                         encParams.Param[0] = new EncoderParameter(Encoder.Quality, 90L);
@@ -137,6 +144,31 @@ namespace JiYuKiller.Services
                 Logger.Instance.Error("[ScreenshotService] 生成假JPEG失败: " + ex.Message);
                 return "";
             }
+        }
+
+        /// <summary>
+        /// 交换Bitmap的红蓝通道（RGB <-> BGR）
+        /// </summary>
+        private static void SwapRedBlue(Bitmap bmp)
+        {
+            System.Drawing.Imaging.BitmapData data = bmp.LockBits(
+                new System.Drawing.Rectangle(0, 0, bmp.Width, bmp.Height),
+                System.Drawing.Imaging.ImageLockMode.ReadWrite,
+                System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            IntPtr ptr = data.Scan0;
+            int bytes = Math.Abs(data.Stride) * bmp.Height;
+            byte[] rgbValues = new byte[bytes];
+            System.Runtime.InteropServices.Marshal.Copy(ptr, rgbValues, 0, bytes);
+            // Format24bppRgb在内存中实际是BGR顺序（Windows GDI+），但JPEG编码按RGB处理
+            // 所以需要交换B和R，使编码后的数据符合极域的BGR预期
+            for (int i = 0; i < rgbValues.Length; i += 3)
+            {
+                byte temp = rgbValues[i];     // B
+                rgbValues[i] = rgbValues[i + 2]; // R -> B位置
+                rgbValues[i + 2] = temp;     // B -> R位置
+            }
+            System.Runtime.InteropServices.Marshal.Copy(rgbValues, 0, ptr, bytes);
+            bmp.UnlockBits(data);
         }
 
         /// <summary>
@@ -164,15 +196,20 @@ namespace JiYuKiller.Services
                     controller.SendVirusMessage("hk:inipath:" + _iniPath);
                     Logger.Instance.Info("[ScreenshotService] 已通知DLL重新读取设置, 路径=" + _iniPath);
                 }
-                else
+
+                // 极域会缓存缩略图JPEG，应用后需重启极域学生端才能生效
+                // 重启后监控线程会自动重新注入DLL
+                if (controller != null)
                 {
-                    Logger.Instance.Warn("[ScreenshotService] DLL未注入, 跳过通知 (controller=" + (controller != null) + ", installed=" + (controller != null && controller.IsVirusInstalled) + ")");
+                    Logger.Instance.Info("[ScreenshotService] 正在重启极域学生端以应用截图替换...");
+                    OnStatusChanged?.Invoke("正在重启极域学生端以应用设置...");
+                    controller.RestartJiYu();
                 }
 
                 if (_currentImagePath == "")
-                    OnStatusChanged?.Invoke("已清除截图替换。");
+                    OnStatusChanged?.Invoke("已清除截图替换，极域已重启。");
                 else
-                    OnStatusChanged?.Invoke("已应用截图替换设置。");
+                    OnStatusChanged?.Invoke("已应用截图替换，极域已重启生效。");
 
                 return true;
             }

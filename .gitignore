@@ -153,6 +153,20 @@ i.chaoxing_Error_*.txt
 # teacher_sim日志
 teacher_sim.log
 
+# ==========================================
+# 截图替换运行时生成文件
+# ==========================================
+fake_screenshot.jpg
+fake_screen*.jpg
+截图替换_*.jpg
+
+# 测试打包临时目录
+测试打包_*/
+*_测试版/
+*_探测版/
+*_修复版/
+*_完整版/
+
 # 协议窗口临时文件
 agreement_temp/
 *_agreement/
