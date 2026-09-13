@@ -1,4 +1,25 @@
 ﻿
+## QD_V2.6 开发中 - teacher_sim实时观看 + 截图替换
+
+### teacher_sim实时观看功能修复
+- **ffmpeg集成**：打包ffmpeg.exe（87MB）随teacher_sim分发，H.264实时解码不再依赖系统环境
+- **teacher_sim.py路径修复**：优先查找同目录ffmpeg.exe，其次sys.executable目录，最后fallback到imageio_ffmpeg
+- **路径统一**：teacher_sim.exe和ffmpeg.exe统一放在Drivers\目录下（主程序代码写死Drivers\teacher_sim.exe）
+- **画面滚动修复**：根因是编码尺寸1152×768与可见尺寸1150×759不匹配，ffmpeg crop过滤器输出尺寸与读取尺寸不一致导致帧边界错位。修复：去掉crop，ffmpeg输出完整编码尺寸，Pillow显示时裁剪
+- **黑边去除**：ffmpeg输出完整1152×768，PIL显示前crop到1150×759可见区域
+- **窗口可调节大小**：监听<Configure>事件，每帧按窗口尺寸动态缩放（LANCZOS，保持宽高比）
+- **UI按钮**：教师模拟页面目标操作区域新增"启动观看"(紫色)和"停止观看"(灰色)按钮
+- **实时观看协议**：TCP 4806/UMSP channel 10，HHRF(H.264 Annex-B)封装，U/V色度平面交换
+- **已知限制**：Pillow/Tkinter显示窗口，远控模式下鼠标坐标映射基于缩放后图片尺寸
+
+### 实时监控抓包分析（已完成）
+- **三次抓包**：最终在realtime_fullscreen2.pcapng（22792包）中找到实时屏幕协议
+- **端口**：UDP 5575（实时查看，标识0x3e2c）、UDP 5566（屏幕广播，标识0x2377）
+- **参数**：1152×768分辨率，约26fps，每帧压缩后约2900字节
+- **编码**：H.264（HHRF记录），TKPC外层+12字节桌面分片
+- **组播**：5563→225.2.2.29、5572→225.2.2.35（帧同步心跳）
+- **文档**：实时监控抓包分析报告.md
+
 ## QD_V2.6 开发中 - 截图替换（编码层方案完整版）
 
 ### 新增

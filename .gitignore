@@ -196,3 +196,7 @@ EBWebView/
 # 游戏临时文件
 dino.html
 *.html.tmp
+
+# ffmpeg（87MB，不提交到git，发布时单独打包）
+JiYuKiller/Drivers/ffmpeg.exe
+*/Drivers/ffmpeg.exe

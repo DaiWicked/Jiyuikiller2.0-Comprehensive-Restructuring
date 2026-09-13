@@ -768,6 +768,8 @@
                                     <Button Content="关机" Click="BtnTeacherSimQuickShutdown_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
                                     <Button Content="重启" Click="BtnTeacherSimQuickReboot_Click" Style="{StaticResource GlassButton}" Background="#FFFFC107" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
                                     <Button Content="屏幕预览" Click="BtnTeacherSimQuickPreview_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="启动观看" Click="BtnTeacherSimQuickView_Click" Style="{StaticResource GlassButton}" Background="#FF9C27B0" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
+                                    <Button Content="停止观看" Click="BtnTeacherSimQuickViewStop_Click" Style="{StaticResource GlassButton}" Background="#FF6C757D" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
                                     <Button Content="学生信息" Click="BtnTeacherSimQuickInfo_Click" Style="{StaticResource GlassButton}" Background="#FF6C757D" Height="30" Margin="0,0,6,6" FontSize="11" Padding="8,0" />
                                 </WrapPanel>
                             </StackPanel>

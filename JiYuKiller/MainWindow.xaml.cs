@@ -2168,6 +2168,20 @@ namespace JiYuKiller
             _teacherSimService.SendCommand($"preview {ip}");
         }
 
+        private void BtnTeacherSimQuickView_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = TextTeacherSimTargetIP.Text.Trim();
+            if (string.IsNullOrEmpty(ip)) { MessageBox.Show("请先输入目标IP", "提示"); return; }
+            _teacherSimService.SendCommand($"view {ip}");
+        }
+
+        private void BtnTeacherSimQuickViewStop_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = TextTeacherSimTargetIP.Text.Trim();
+            if (string.IsNullOrEmpty(ip)) { MessageBox.Show("请先输入目标IP", "提示"); return; }
+            _teacherSimService.SendCommand($"view_stop {ip}");
+        }
+
         private void BtnTeacherSimQuickInfo_Click(object sender, RoutedEventArgs e)
         {
             string ip = TextTeacherSimTargetIP.Text.Trim();
