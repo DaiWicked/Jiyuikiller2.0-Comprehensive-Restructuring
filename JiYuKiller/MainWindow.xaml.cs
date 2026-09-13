@@ -1811,7 +1811,7 @@ namespace JiYuKiller
             if (!_screenshotInitialized)
             {
                 _screenshotService.OnLog += (msg) => Services.Logger.Instance.Info("[Screenshot] " + msg);
-                _screenshotService.OnStatusChanged += (msg) => Dispatcher.Invoke(() => { TextScreenshotStatus.Text = msg; });
+                _screenshotService.OnStatusChanged += (msg) => Dispatcher.Invoke(() => { TextScreenshotState.Text = msg; });
                 _screenshotInitialized = true;
                 Services.Logger.Instance.Info("[Screenshot] 截图替换事件注册完成");
             }
@@ -1838,14 +1838,12 @@ namespace JiYuKiller
                 TextScreenshotState.Text = "已替换";
                 TextScreenshotState.Foreground = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
                 ScreenshotStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
-                TextScreenshotStatus.Text = "当前替换图片: " + _screenshotService.CurrentImagePath;
             }
             else
             {
                 TextScreenshotState.Text = "未替换";
                 TextScreenshotState.Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
                 ScreenshotStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
-                TextScreenshotStatus.Text = "尚未设置截图替换图片";
             }
         }
 
@@ -1925,7 +1923,9 @@ namespace JiYuKiller
         {
             if (_realtimeService.IsEnabled)
             {
-                TextRealtimeStatus.Text = "已启用 - 教师端观看时生效";
+                TextRealtimeStatus.Text = _realtimeService.IsVideoMode
+                    ? "已启用（视频循环播放）"
+                    : "已启用 - 教师端观看时生效";
                 TextRealtimeStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
                 RealtimeStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
             }
@@ -1935,12 +1935,26 @@ namespace JiYuKiller
                 TextRealtimeStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
                 RealtimeStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
             }
-            TextRealtimePath.Text = string.IsNullOrEmpty(_realtimeService.CurrentImagePath)
-                ? "（未选择图片）"
-                : _realtimeService.CurrentImagePath;
+            // 更新路径显示
+            if (_realtimeService.IsVideoMode)
+            {
+                TextRealtimePath.Text = "[视频] " + (_realtimeService.CurrentVideoPath ?? "");
+            }
+            else
+            {
+                TextRealtimePath.Text = string.IsNullOrEmpty(_realtimeService.CurrentImagePath)
+                    ? "（未设置）"
+                    : _realtimeService.CurrentImagePath;
+            }
+            // 更新预览
+            try
+            {
+                ImgRealtimePreview.Source = _realtimeService.LoadPreviewImage();
+            }
+            catch { }
         }
 
-        private void BtnRealtimeChoose_Click(object sender, RoutedEventArgs e)
+        private void BtnRealtimeChooseImage_Click(object sender, RoutedEventArgs e)
         {
             InitRealtimeReplace();
             Services.Logger.Instance.Info("[Realtime] 点击选择图片");
@@ -1956,6 +1970,28 @@ namespace JiYuKiller
             }
         }
 
+        private void BtnRealtimeChooseVideo_Click(object sender, RoutedEventArgs e)
+        {
+            InitRealtimeReplace();
+            Services.Logger.Instance.Info("[Realtime] 点击选择视频");
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "选择用于实时屏幕替换的视频（建议小于100MB）",
+                Filter = "视频文件(*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.flv)|*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.flv|所有文件(*.*)|*.*"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                if (_realtimeService.ChooseVideo(dlg.FileName))
+                {
+                    UpdateRealtimeState();
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show("视频文件选择失败，请查看状态提示", "实时屏幕替换");
+                }
+            }
+        }
+
         private void BtnRealtimeApply_Click(object sender, RoutedEventArgs e)
         {
             InitRealtimeReplace();
@@ -1968,24 +2004,23 @@ namespace JiYuKiller
                 {
                     string iniPath = @"C:\Users\Public\JiYuKiller\realtime_replace.ini";
                     string yuvPath = @"C:\Users\Public\JiYuKiller\fake_screen.yuv";
+                    string mode = _realtimeService.IsVideoMode ? "视频循环播放" : "静态图片";
                     System.Windows.MessageBox.Show(
-                        "实时替换已启用\n" +
+                        "实时替换已启用（" + mode + "）\n" +
                         "教师端发起实时观看时生效\n" +
-                        "配置文件: " + iniPath + "\n" +
-                        "YUV文件: " + yuvPath + "\n" +
                         "配置存在: " + System.IO.File.Exists(iniPath) + "\n" +
                         "YUV存在: " + System.IO.File.Exists(yuvPath),
                         "实时屏幕替换");
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show("启用失败，请查看日志", "实时屏幕替换");
+                    System.Windows.MessageBox.Show("启用失败，请先选择图片或视频", "实时屏幕替换");
                 }
             }
             catch (Exception ex)
             {
                 Services.Logger.Instance.Error("[Realtime] 启用异常: " + ex);
-                System.Windows.MessageBox.Show("启用异常: " + ex.Message + "\n\n" + ex.StackTrace, "实时屏幕替换");
+                System.Windows.MessageBox.Show("启用异常: " + ex.Message, "实时屏幕替换");
             }
         }
 

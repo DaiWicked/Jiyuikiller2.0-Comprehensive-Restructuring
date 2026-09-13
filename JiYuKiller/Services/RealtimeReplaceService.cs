@@ -1,16 +1,19 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Windows.Media.Imaging;
 
 namespace JiYuKiller.Services
 {
     /// <summary>
     /// 实时屏幕替换服务
+    /// 支持静态图片和视频（用ffmpeg实时解码循环播放）
     /// 通过配置文件+YUV数据文件与DLL通信
-    /// DLL在Encode时读取配置并替换YUV输入帧
     /// </summary>
     public class RealtimeReplaceService
     {
@@ -18,31 +21,31 @@ namespace JiYuKiller.Services
         private const string ConfigPath = @"C:\Users\Public\JiYuKiller\realtime_replace.ini";
         private const string YuvPath = @"C:\Users\Public\JiYuKiller\fake_screen.yuv";
 
-        // 默认编码尺寸（最常见）
         public const int DefaultWidth = 1024;
         public const int DefaultHeight = 768;
+        private const int MaxVideoSizeMB = 100; // 视频大小限制
 
         public string CurrentImagePath { get; private set; } = "";
+        public string CurrentVideoPath { get; private set; } = "";
         public bool IsEnabled { get; private set; } = false;
+        public bool IsVideoMode { get; private set; } = false;
 
         public event Action<string> OnLog;
         public event Action<string> OnStatusChanged;
 
+        private Thread _videoThread;
+        private volatile bool _videoRunning;
+        private Process _ffmpegProcess;
+
         private void Log(string msg) => OnLog?.Invoke(msg);
         private void Status(string msg) => OnStatusChanged?.Invoke(msg);
 
-        /// <summary>
-        /// 确保配置目录存在
-        /// </summary>
         private void EnsureDir()
         {
             if (!Directory.Exists(ConfigDir))
                 Directory.CreateDirectory(ConfigDir);
         }
 
-        /// <summary>
-        /// 选择图片
-        /// </summary>
         public bool ChooseImage(string imagePath)
         {
             if (!File.Exists(imagePath))
@@ -50,84 +53,278 @@ namespace JiYuKiller.Services
                 Status("图片文件不存在");
                 return false;
             }
+            StopVideoThread();
             CurrentImagePath = imagePath;
-            Status("已选择图片: " + Path.GetFileName(imagePath));
-            Log("选择图片: " + imagePath);
+            CurrentVideoPath = "";
+            IsVideoMode = false;
+            Log("已选择图片: " + imagePath);
+            Status("已选择图片，点击启用后生效");
             return true;
         }
 
-        /// <summary>
-        /// 应用实时替换：图片转YUV420并保存，写配置文件
-        /// </summary>
-        public bool Apply(int width = DefaultWidth, int height = DefaultHeight)
+        public bool ChooseVideo(string videoPath)
+        {
+            if (!File.Exists(videoPath))
+            {
+                Status("视频文件不存在");
+                return false;
+            }
+            FileInfo fi = new FileInfo(videoPath);
+            if (fi.Length > MaxVideoSizeMB * 1024 * 1024)
+            {
+                Status($"视频文件过大（{fi.Length / 1024 / 1024}MB），请选择小于{MaxVideoSizeMB}MB的视频");
+                return false;
+            }
+            StopVideoThread();
+            CurrentVideoPath = videoPath;
+            CurrentImagePath = "";
+            IsVideoMode = true;
+            Log("已选择视频: " + videoPath + $" ({fi.Length / 1024 / 1024}MB)");
+            Status("已选择视频，点击启用后循环播放");
+            return true;
+        }
+
+        private string FindFFmpeg()
+        {
+            string[] candidates = new[]
+            {
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "ffmpeg.exe"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "teacher_sim", "ffmpeg.exe"),
+            };
+            foreach (var p in candidates)
+            {
+                if (File.Exists(p)) return p;
+            }
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo("where", "ffmpeg")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                };
+                Process p = Process.Start(psi);
+                string output = p.StandardOutput.ReadToEnd();
+                p.WaitForExit();
+                if (!string.IsNullOrEmpty(output))
+                {
+                    string line = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)[0];
+                    if (File.Exists(line)) return line;
+                }
+            }
+            catch { }
+            return "";
+        }
+
+        public bool Apply()
+        {
+            try
+            {
+                EnsureDir();
+                if (IsVideoMode)
+                    return ApplyVideo();
+                else
+                    return ApplyImage();
+            }
+            catch (Exception ex)
+            {
+                Log("启用失败: " + ex.Message);
+                Status("启用失败: " + ex.Message);
+                return false;
+            }
+        }
+
+        private bool ApplyImage()
         {
             if (string.IsNullOrEmpty(CurrentImagePath) || !File.Exists(CurrentImagePath))
             {
                 Status("请先选择图片");
                 return false;
             }
+            Log("开始转换图片为YUV420(YV12): " + DefaultWidth + "x" + DefaultHeight);
 
-            try
+            using (var src = new Bitmap(CurrentImagePath))
+            using (var bmp = new Bitmap(DefaultWidth, DefaultHeight, System.Drawing.Imaging.PixelFormat.Format24bppRgb))
+            using (var g = Graphics.FromImage(bmp))
             {
-                EnsureDir();
-                Log($"开始转换图片为YUV420: {width}x{height}");
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.SmoothingMode = SmoothingMode.HighQuality;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.DrawImage(src, 0, 0, DefaultWidth, DefaultHeight);
 
-                // 加载并缩放图片
-                using (var src = new Bitmap(CurrentImagePath))
-                using (var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb))
-                using (var g = Graphics.FromImage(bmp))
-                {
-                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                    g.SmoothingMode = SmoothingMode.HighQuality;
-                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                    g.DrawImage(src, 0, 0, width, height);
+                var rect = new Rectangle(0, 0, DefaultWidth, DefaultHeight);
+                var bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadOnly,
+                    System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                int stride = bmpData.Stride;
+                IntPtr ptr = bmpData.Scan0;
+                int bytes = stride * DefaultHeight;
+                byte[] rgbData = new byte[bytes];
+                Marshal.Copy(ptr, rgbData, 0, bytes);
+                bmp.UnlockBits(bmpData);
 
-                    // 锁定位图数据
-                    var rect = new Rectangle(0, 0, width, height);
-                    var bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadOnly,
-                        System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-
-                    int stride = bmpData.Stride;
-                    IntPtr ptr = bmpData.Scan0;
-                    int bytes = stride * height;
-                    byte[] rgbData = new byte[bytes];
-                    Marshal.Copy(ptr, rgbData, 0, bytes);
-                    bmp.UnlockBits(bmpData);
-
-                    // 转YUV420 (I420)
-                    byte[] yuv = ConvertToYUV420(rgbData, width, height, stride);
-
-                    // 保存YUV文件
-                    File.WriteAllBytes(YuvPath, yuv);
-                    Log($"YUV文件已保存: {YuvPath} ({yuv.Length} bytes)");
-                }
-
-                // 写配置文件
-                WriteIni("realtime", "enabled", "1");
-                WriteIni("realtime", "width", width.ToString());
-                WriteIni("realtime", "height", height.ToString());
-                WriteIni("realtime", "image", CurrentImagePath);
-
-                IsEnabled = true;
-                Status("实时替换已启用，教师端观看时生效");
-                Log("实时替换配置已写入: " + ConfigPath);
-                return true;
+                byte[] yuv = ConvertToYUV420(rgbData, DefaultWidth, DefaultHeight, stride);
+                File.WriteAllBytes(YuvPath, yuv);
             }
-            catch (Exception ex)
-            {
-                Log("应用失败: " + ex.Message);
-                Status("应用失败: " + ex.Message);
-                return false;
-            }
+
+            WriteIni("realtime", "enabled", "1");
+            WriteIni("realtime", "width", DefaultWidth.ToString());
+            WriteIni("realtime", "height", DefaultHeight.ToString());
+            WriteIni("realtime", "image", CurrentImagePath);
+            WriteIni("realtime", "video", "");
+
+            IsEnabled = true;
+            IsVideoMode = false;
+            Status("实时替换已启用（图片）");
+            Log("实时替换已启用，YUV文件: " + YuvPath);
+            return true;
         }
 
-        /// <summary>
-        /// 取消实时替换
-        /// </summary>
+        private bool ApplyVideo()
+        {
+            if (string.IsNullOrEmpty(CurrentVideoPath) || !File.Exists(CurrentVideoPath))
+            {
+                Status("请先选择视频");
+                return false;
+            }
+            string ffmpeg = FindFFmpeg();
+            if (string.IsNullOrEmpty(ffmpeg))
+            {
+                Status("未找到ffmpeg.exe，无法播放视频");
+                Log("错误: 未找到ffmpeg.exe");
+                return false;
+            }
+
+            Log("使用ffmpeg: " + ffmpeg);
+            Log("开始视频解码循环: " + CurrentVideoPath);
+
+            WriteIni("realtime", "enabled", "1");
+            WriteIni("realtime", "width", DefaultWidth.ToString());
+            WriteIni("realtime", "height", DefaultHeight.ToString());
+            WriteIni("realtime", "image", "");
+            WriteIni("realtime", "video", CurrentVideoPath);
+
+            StopVideoThread();
+            _videoRunning = true;
+            _videoThread = new Thread(() => VideoDecodeLoop(ffmpeg, CurrentVideoPath))
+            {
+                IsBackground = true,
+                Priority = ThreadPriority.BelowNormal
+            };
+            _videoThread.Start();
+
+            IsEnabled = true;
+            IsVideoMode = true;
+            Status("实时替换已启用（视频循环播放）");
+            return true;
+        }
+
+        private void VideoDecodeLoop(string ffmpegPath, string videoPath)
+        {
+            int frameSize = DefaultWidth * DefaultHeight * 3 / 2;
+            byte[] frameBuffer = new byte[frameSize];
+            int frameCount = 0;
+
+            while (_videoRunning)
+            {
+                try
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo
+                    {
+                        FileName = ffmpegPath,
+                        Arguments = $"-stream_loop -1 -i \"{videoPath}\" -s {DefaultWidth}x{DefaultHeight} -pix_fmt yuv420p -r 25 -f rawvideo -",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true
+                    };
+                    _ffmpegProcess = Process.Start(psi);
+                    _ffmpegProcess.ErrorDataReceived += (s, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
+                            Log("[ffmpeg] " + e.Data);
+                    };
+                    _ffmpegProcess.BeginErrorReadLine();
+
+                    var stdout = _ffmpegProcess.StandardOutput.BaseStream;
+                    while (_videoRunning && !_ffmpegProcess.HasExited)
+                    {
+                        int read = 0;
+                        while (read < frameSize && _videoRunning)
+                        {
+                            int r = stdout.Read(frameBuffer, read, frameSize - read);
+                            if (r <= 0) break;
+                            read += r;
+                        }
+
+                        if (read >= frameSize && _videoRunning)
+                        {
+                            // ffmpeg输出yuv420p是I420(U在前V在后)，极域用YV12(V在前U在后)，交换U/V
+                            SwapUVPlanes(frameBuffer, DefaultWidth, DefaultHeight);
+                            try
+                            {
+                                File.WriteAllBytes(YuvPath, frameBuffer);
+                                frameCount++;
+                                if (frameCount % 250 == 0)
+                                    Log($"视频已播放 {frameCount} 帧");
+                            }
+                            catch (Exception ex)
+                            {
+                                Log("写入YUV失败: " + ex.Message);
+                            }
+                            Thread.Sleep(35); // ~25fps
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    if (!_ffmpegProcess.HasExited)
+                    {
+                        try { _ffmpegProcess.Kill(); } catch { }
+                    }
+                    _ffmpegProcess.WaitForExit(1000);
+                }
+                catch (Exception ex)
+                {
+                    Log("视频解码异常: " + ex.Message);
+                    Thread.Sleep(1000);
+                }
+            }
+            Log("视频解码线程已退出，共播放 " + frameCount + " 帧");
+        }
+
+        private static void SwapUVPlanes(byte[] yuv, int width, int height)
+        {
+            int ySize = width * height;
+            int uvSize = ySize / 4;
+            byte[] temp = new byte[uvSize];
+            Buffer.BlockCopy(yuv, ySize, temp, 0, uvSize);
+            Buffer.BlockCopy(yuv, ySize + uvSize, yuv, ySize, uvSize);
+            Buffer.BlockCopy(temp, 0, yuv, ySize + uvSize, uvSize);
+        }
+
+        private void StopVideoThread()
+        {
+            _videoRunning = false;
+            if (_ffmpegProcess != null && !_ffmpegProcess.HasExited)
+            {
+                try { _ffmpegProcess.Kill(); } catch { }
+            }
+            if (_videoThread != null && _videoThread.IsAlive)
+            {
+                _videoThread.Join(2000);
+            }
+            _videoThread = null;
+            _ffmpegProcess = null;
+        }
+
         public void Disable()
         {
             try
             {
+                StopVideoThread();
                 EnsureDir();
                 WriteIni("realtime", "enabled", "0");
                 IsEnabled = false;
@@ -140,20 +337,16 @@ namespace JiYuKiller.Services
             }
         }
 
-        /// <summary>
-        /// 清除选择
-        /// </summary>
         public void Clear()
         {
             Disable();
             CurrentImagePath = "";
+            CurrentVideoPath = "";
+            IsVideoMode = false;
             try { if (File.Exists(YuvPath)) File.Delete(YuvPath); } catch { }
             Status("已清除");
         }
 
-        /// <summary>
-        /// 加载当前状态
-        /// </summary>
         public void LoadCurrent()
         {
             try
@@ -163,110 +356,133 @@ namespace JiYuKiller.Services
                     string enabled = ReadIni("realtime", "enabled", "0");
                     IsEnabled = enabled == "1";
                     CurrentImagePath = ReadIni("realtime", "image", "");
+                    CurrentVideoPath = ReadIni("realtime", "video", "");
+                    IsVideoMode = !string.IsNullOrEmpty(CurrentVideoPath);
                 }
             }
             catch { }
         }
 
-        /// <summary>
-        /// RGB24转YUV420 (YV12格式: Y + V + U)
-        /// 极域编码器使用YV12（V平面在前，U平面在后）
-        /// 标准I420是Y+U+V，直接输出会导致颜色负片
-        /// </summary>
+        public BitmapImage LoadPreviewImage()
+        {
+            if (IsVideoMode && !string.IsNullOrEmpty(CurrentVideoPath) && File.Exists(CurrentVideoPath))
+            {
+                string ffmpeg = FindFFmpeg();
+                if (!string.IsNullOrEmpty(ffmpeg))
+                {
+                    string tempImg = Path.Combine(Path.GetTempPath(), "video_preview_" + Guid.NewGuid().ToString("N") + ".jpg");
+                    try
+                    {
+                        ProcessStartInfo psi = new ProcessStartInfo
+                        {
+                            FileName = ffmpeg,
+                            Arguments = $"-i \"{CurrentVideoPath}\" -vframes 1 -s 320x240 \"{tempImg}\" -y",
+                            UseShellExecute = false,
+                            CreateNoWindow = true,
+                            RedirectStandardError = true
+                        };
+                        Process p = Process.Start(psi);
+                        p.WaitForExit(5000);
+                        if (File.Exists(tempImg))
+                        {
+                            BitmapImage img = new BitmapImage();
+                            img.BeginInit();
+                            img.CacheOption = BitmapCacheOption.OnLoad;
+                            img.UriSource = new Uri(tempImg);
+                            img.EndInit();
+                            img.Freeze();
+                            try { File.Delete(tempImg); } catch { }
+                            return img;
+                        }
+                    }
+                    catch { }
+                }
+                return null;
+            }
+            else if (!string.IsNullOrEmpty(CurrentImagePath) && File.Exists(CurrentImagePath))
+            {
+                try
+                {
+                    BitmapImage img = new BitmapImage();
+                    img.BeginInit();
+                    img.CacheOption = BitmapCacheOption.OnLoad;
+                    img.UriSource = new Uri(CurrentImagePath);
+                    img.EndInit();
+                    img.Freeze();
+                    return img;
+                }
+                catch { return null; }
+            }
+            return null;
+        }
+
         private byte[] ConvertToYUV420(byte[] rgb, int width, int height, int stride)
         {
             int ySize = width * height;
             int uvSize = width * height / 4;
             byte[] yuv = new byte[ySize + uvSize * 2];
 
-            // Y平面
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
                     int idx = y * stride + x * 3;
-                    byte b = rgb[idx];
-                    byte g = rgb[idx + 1];
-                    byte r = rgb[idx + 2];
-                    // BT.601
+                    byte b = rgb[idx], g = rgb[idx + 1], r = rgb[idx + 2];
                     int yVal = (int)(0.299 * r + 0.587 * g + 0.114 * b);
                     yuv[y * width + x] = (byte)Math.Max(0, Math.Min(255, yVal));
                 }
             }
 
-            // V平面 (Cr) 在前 - YV12格式
+            // V平面在前 (YV12)
             for (int y = 0; y < height; y += 2)
             {
                 for (int x = 0; x < width; x += 2)
                 {
                     double vSum = 0;
                     for (int dy = 0; dy < 2; dy++)
-                    {
                         for (int dx = 0; dx < 2; dx++)
                         {
-                            int px = Math.Min(x + dx, width - 1);
-                            int py = Math.Min(y + dy, height - 1);
+                            int px = Math.Min(x + dx, width - 1), py = Math.Min(y + dy, height - 1);
                             int idx = py * stride + px * 3;
-                            byte b = rgb[idx];
-                            byte g = rgb[idx + 1];
-                            byte r = rgb[idx + 2];
-                            vSum += 0.5 * r - 0.419 * g - 0.081 * b + 128;
+                            vSum += 0.5 * rgb[idx + 2] - 0.419 * rgb[idx + 1] - 0.081 * rgb[idx] + 128;
                         }
-                    }
-                    int vVal = (int)(vSum / 4);
-                    yuv[ySize + (y / 2) * (width / 2) + (x / 2)] = (byte)Math.Max(0, Math.Min(255, vVal));
+                    yuv[ySize + (y / 2) * (width / 2) + (x / 2)] = (byte)Math.Max(0, Math.Min(255, (int)(vSum / 4)));
                 }
             }
 
-            // U平面 (Cb) 在后 - YV12格式
+            // U平面在后 (YV12)
             for (int y = 0; y < height; y += 2)
             {
                 for (int x = 0; x < width; x += 2)
                 {
                     double uSum = 0;
                     for (int dy = 0; dy < 2; dy++)
-                    {
                         for (int dx = 0; dx < 2; dx++)
                         {
-                            int px = Math.Min(x + dx, width - 1);
-                            int py = Math.Min(y + dy, height - 1);
+                            int px = Math.Min(x + dx, width - 1), py = Math.Min(y + dy, height - 1);
                             int idx = py * stride + px * 3;
-                            byte b = rgb[idx];
-                            byte g = rgb[idx + 1];
-                            byte r = rgb[idx + 2];
-                            uSum += -0.169 * r - 0.331 * g + 0.5 * b + 128;
+                            uSum += -0.169 * rgb[idx + 2] - 0.331 * rgb[idx + 1] + 0.5 * rgb[idx] + 128;
                         }
-                    }
-                    int uVal = (int)(uSum / 4);
-                    yuv[ySize + uvSize + (y / 2) * (width / 2) + (x / 2)] = (byte)Math.Max(0, Math.Min(255, uVal));
+                    yuv[ySize + uvSize + (y / 2) * (width / 2) + (x / 2)] = (byte)Math.Max(0, Math.Min(255, (int)(uSum / 4)));
                 }
             }
-
             return yuv;
         }
 
-        #region INI读写
-
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        private static extern uint GetPrivateProfileString(string lpAppName, string lpKeyName,
-            string lpDefault, StringBuilder lpReturnedString, uint nSize, string lpFileName);
-
+        private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        private static extern bool WritePrivateProfileString(string lpAppName, string lpKeyName,
-            string lpString, string lpFileName);
+        private static extern long WritePrivateProfileString(string section, string key, string val, string filePath);
 
         private string ReadIni(string section, string key, string def)
         {
-            var sb = new StringBuilder(256);
-            GetPrivateProfileString(section, key, def, sb, 256, ConfigPath);
+            StringBuilder sb = new StringBuilder(1024);
+            GetPrivateProfileString(section, key, def, sb, 1024, ConfigPath);
             return sb.ToString();
         }
-
         private void WriteIni(string section, string key, string val)
         {
             WritePrivateProfileString(section, key, val, ConfigPath);
         }
-
-        #endregion
     }
 }

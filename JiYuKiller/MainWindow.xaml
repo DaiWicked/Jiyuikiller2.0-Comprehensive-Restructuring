@@ -588,7 +588,7 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- 截图替换页面 -->
+                <!-- 虚假反监视页面 -->
                 <ScrollViewer x:Name="PageScreenshot" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
                     <StackPanel Margin="16,12">
                         <!-- 标题栏 -->
@@ -598,77 +598,65 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Button Content="←" Click="BtnScreenshotBack_Click" Style="{StaticResource GlassButton}" Width="36" Height="32" FontSize="14" Padding="0" />
-                            <TextBlock Grid.Column="1" Text="截图替换" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#FF1a1a2e" />
+                            <TextBlock Grid.Column="1" Text="虚假反监视" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#FF1a1a2e" />
                         </Grid>
 
-                        <!-- 功能稳定性警告 -->
-                        <Border Background="#33FFF3CD" BorderBrush="#FF856404" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="⚠ 功能暂时禁用" FontSize="14" FontWeight="Bold" Foreground="#FF856404" Margin="0,0,0,6" />
-                                <TextBlock Text="编码层替换方案：Hook EncodeToJPEGBuffer，在JPEG编码完成后替换输出数据" FontSize="11" Foreground="#FF2E7D32" TextWrapping="Wrap" Margin="0,0,0,3" />
-                            <TextBlock Text="注意：应用后将自动重启极域学生端以使设置生效" FontSize="11" Foreground="#FFE65100" TextWrapping="Wrap" Margin="0,0,0,6" />
-                    <TextBlock Text="不依赖关闭「允许教师监视」，不触碰GDI/驱动，仅替换80x60缩略图编码输出" FontSize="11" Foreground="#FF2E7D32" TextWrapping="Wrap" Margin="0,0,0,3" />
-                    <TextBlock Text="图片将自动缩放到80x60并编码为JPEG（质量90），教师端查看学生缩略图时生效" FontSize="11" Foreground="#FF2E7D32" TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
-
-                        <!-- 状态监测 -->
+                        <!-- 缩略图替换 -->
                         <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Ellipse x:Name="ScreenshotStatusDot" Width="12" Height="12" Fill="#FF999999" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock x:Name="TextScreenshotState" Text="未替换" FontSize="15" FontWeight="Bold" Foreground="#FF666666" />
-                                    <TextBlock x:Name="TextScreenshotStatus" Text="尚未设置截图替换图片" FontSize="12" Foreground="#FF888899" Margin="0,2,0,0" TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <!-- 图片预览 -->
-                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="图片预览" FontSize="14" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6" />
-                                <Border Background="#FFEEEEF5" CornerRadius="8" Height="180" VerticalAlignment="Stretch">
-                                    <Image x:Name="ImgScreenshotPreview" Stretch="Uniform" Margin="4" />
-                                </Border>
-                                <TextBlock x:Name="TextScreenshotPath" Text="（未设置）" FontSize="11" Foreground="#FF888899" Margin="0,6,0,0" TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
-
-                        <!-- 操作按钮 -->
-                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
-                            <StackPanel>
-                                <Button x:Name="BtnScreenshotChoose" Content="选择图片" Click="BtnScreenshotChoose_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="36" Margin="0,0,0,6" />
-                                <Button x:Name="BtnScreenshotApply" Content="应用替换" Click="BtnScreenshotApply_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="36" Margin="0,0,0,6" />
-                                <Button x:Name="BtnScreenshotCancelReplace" Content="取消替换" Click="BtnScreenshotCancelReplace_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" Margin="0,0,0,6" />
-                                <Button x:Name="BtnScreenshotCancel" Content="放弃选择" Click="BtnScreenshotCancel_Click" Style="{StaticResource GlassButton}" Background="#FF6C757D" Height="36" />
-                            </StackPanel>
-                        </Border>
-
-                        <TextBlock Text="原理：编码层替换——Hook EncodeToJPEGBuffer，图片自动缩放80x60编码为JPEG后替换输出缓冲区。支持png/jpg/jpeg/bmp格式。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,4" />
-
-                        <!-- 实时屏幕替换（实验性） -->
-                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,12,0,10">
                             <StackPanel>
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="实时屏幕替换（实验性）" FontSize="15" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
+                                    <TextBlock Text="缩略图替换" FontSize="15" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
+                                    <Ellipse x:Name="ScreenshotStatusDot" Width="12" Height="12" Fill="#FF999999" VerticalAlignment="Center" />
+                                </Grid>
+                                <TextBlock Text="教师端学生列表中的80×60缩略图。应用后自动重启极域学生端生效。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <!-- 缩略图预览 -->
+                                <Border Background="#FFEEEEF5" CornerRadius="8" Height="100" VerticalAlignment="Stretch" Margin="0,0,0,8">
+                                    <Image x:Name="ImgScreenshotPreview" Stretch="Uniform" Margin="4" />
+                                </Border>
+                                <TextBlock x:Name="TextScreenshotPath" Text="（未设置）" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <TextBlock x:Name="TextScreenshotState" Text="未替换" FontSize="12" Foreground="#FF666666" Margin="0,0,0,8" />
+                                <Button x:Name="BtnScreenshotChoose" Content="选择图片" Click="BtnScreenshotChoose_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="36" Margin="0,0,0,6" />
+                                <Button x:Name="BtnScreenshotApply" Content="应用缩略图替换" Click="BtnScreenshotApply_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="36" Margin="0,0,0,6" />
+                                <Button x:Name="BtnScreenshotCancelReplace" Content="取消缩略图替换" Click="BtnScreenshotCancelReplace_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 实时屏幕替换 -->
+                        <Border Background="#15000000" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="实时屏幕替换" FontSize="15" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
                                     <Ellipse x:Name="RealtimeStatusDot" Width="12" Height="12" Fill="#FF999999" VerticalAlignment="Center" />
                                 </Grid>
-                                <TextBlock Text="教师端实时观看时替换整个屏幕画面（非缩略图）。通过Hook H.264编码器输入YUV帧实现。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <TextBlock Text="教师端实时观看学生屏幕时，显示替换的图片或视频（循环播放）。即时生效，无需重启。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                <!-- 实时替换预览 -->
+                                <Border Background="#FFEEEEF5" CornerRadius="8" Height="160" VerticalAlignment="Stretch" Margin="0,0,0,8">
+                                    <Image x:Name="ImgRealtimePreview" Stretch="Uniform" Margin="4" />
+                                </Border>
+                                <TextBlock x:Name="TextRealtimePath" Text="（未设置）" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,4" />
                                 <TextBlock x:Name="TextRealtimeStatus" Text="未启用" FontSize="12" Foreground="#FF666666" Margin="0,0,0,8" />
-                                <TextBlock x:Name="TextRealtimePath" Text="（未选择图片）" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,8" />
-                                <Button x:Name="BtnRealtimeChoose" Content="选择替换图片" Click="BtnRealtimeChoose_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="36" Margin="0,0,0,6" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="BtnRealtimeChooseImage" Content="选择图片" Click="BtnRealtimeChooseImage_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="36" Margin="0,0,4,0" />
+                                    <Button x:Name="BtnRealtimeChooseVideo" Content="选择视频" Click="BtnRealtimeChooseVideo_Click" Style="{StaticResource GlassButton}" Background="#FF9C27B0" Height="36" Grid.Column="1" Margin="4,0,0,0" />
+                                </Grid>
                                 <Button x:Name="BtnRealtimeApply" Content="启用实时替换" Click="BtnRealtimeApply_Click" Style="{StaticResource GlassButton}" Background="#FF28A745" Height="36" Margin="0,0,0,6" />
                                 <Button x:Name="BtnRealtimeDisable" Content="关闭实时替换" Click="BtnRealtimeDisable_Click" Style="{StaticResource GlassButton}" Background="#FFDC3545" Height="36" />
                             </StackPanel>
                         </Border>
+
+                        <TextBlock Text="原理：缩略图替换Hook EncodeToJPEGBuffer（编码层）；实时屏幕替换Hook H.264编码器输入YUV帧（vtable patch）。视频需ffmpeg支持，建议视频文件小于50MB。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,4" />
                     </StackPanel>
                 </ScrollViewer>
 
@@ -1189,7 +1177,7 @@
                                         <Button x:Name="NavCustom" Content="自定义设置" Click="NavCustom_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="76" Height="44" />
                                         <Button x:Name="NavUdpAttack" Content="UDP攻击" Click="NavUdpAttack_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavChat" Content="小小私聊" Click="NavChat_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
-                                        <Button x:Name="NavScreenshot" Content="截图替换" Click="NavScreenshot_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
+                                        <Button x:Name="NavScreenshot" Content="虚假反监视" Click="NavScreenshot_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavTeacherSim" Content="教师模拟" Click="NavTeacherSim_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                         <Button x:Name="NavGames" Content="小游戏" Click="NavGames_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
                                         <Button x:Name="NavHelp" Content="帮助文档" Click="NavHelp_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />
