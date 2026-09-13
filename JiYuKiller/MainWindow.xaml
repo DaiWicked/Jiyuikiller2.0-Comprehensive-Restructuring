@@ -1,4 +1,4 @@
-<Window x:Class="JiYuKiller.MainWindow"
+﻿<Window x:Class="JiYuKiller.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="i.chaoxing Main Window"
@@ -141,6 +141,7 @@
                             <Button x:Name="BtnLoadDriver" Content="加载内核驱动" Style="{StaticResource GlassButton}" Click="BtnLoadDriver_Click" Background="#FF6F42C1" Margin="0,0,6,6" />
                             <Button x:Name="BtnUnloadDriver" Content="卸载内核驱动" Style="{StaticResource GlassButton}" Click="BtnUnloadDriver_Click" Background="#FF6C757D" Margin="0,0,6,6" />
                             <Button x:Name="BtnLocateJiYu" Content="选择极域路径" Style="{StaticResource GlassButton}" Click="BtnLocateJiYu_Click" Background="#FF6C757D" Margin="0,0,6,6" />
+                            <Button x:Name="BtnReadJiYuPassword" Content="读取极域密码" Style="{StaticResource GlassButton}" Click="BtnReadJiYuPassword_Click" Background="#FF17A2B8" Margin="0,0,6,6" />
                             <Button x:Name="BtnAdvancedSettings" Content="软件高级设置" Style="{StaticResource GlassButton}" Click="BtnAdvancedSettings_Click" Background="#FFDC3545" Margin="0,0,6,6" />
                             <Button x:Name="BtnSaveSettings" Content="保存设置" Style="{StaticResource GlassButton}" Click="BtnSaveSettings_Click" Background="#FF28A745" Margin="0,0,6,6" />
                             <Button x:Name="BtnResetSettings" Content="恢复默认" Style="{StaticResource GlassButton}" Click="BtnResetSettings_Click" Background="#FFFFC107" Foreground="#FF0A0A0A" Margin="0,0,6,6" />

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
@@ -975,6 +975,31 @@ namespace JiYuKiller
                 MessageBox.Show("极域路径已设置，点击保存设置生效。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
+
+        private void BtnReadJiYuPassword_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("读取极域密码", "BtnReadJiYuPassword");
+
+            try
+            {
+                string passwd = Services.JiYuController.Instance.ReadJiYuPassword(false);
+
+                if (!string.IsNullOrEmpty(passwd))
+                {
+                    MessageBox.Show("已成功读取极域密码：\n\n" + passwd, "极域密码", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("极域密码读取失败！\n\n您可以尝试万能密码：\nmythware_super_password", "读取失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("[MainWindow] 读取极域密码异常: " + ex.Message);
+                MessageBox.Show("读取过程中发生异常：\n" + ex.Message + "\n\n您可以尝试万能密码：\nmythware_super_password", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
 
         #endregion
 

@@ -1061,5 +1061,198 @@ namespace JiYuKiller.Services
             OnStatusChanged?.Invoke();
             return _fakeFull;
         }
+        #region 极域密码读取（移植自原项目 ReadTopDomanPassword + UnDecryptJiyuKnock）
+
+        /// <summary>
+        /// 读取极域电子教室密码
+        /// 对应原项目 TrainerWorker::ReadTopDomanPassword
+        /// </summary>
+        /// <param name="forceDecrypt">true=强制使用解密模式（6.0），false=先尝试普通注册表读取</param>
+        /// <returns>密码字符串，失败返回null</returns>
+        public string ReadJiYuPassword(bool forceDecrypt = false)
+        {
+            Logger.Instance.FunctionCall("ReadJiYuPassword forceDecrypt=" + forceDecrypt);
+
+            if (!forceDecrypt)
+            {
+                string passwd = ReadRegistryPasswordNormal();
+                if (passwd != null)
+                {
+                    if (passwd == "Passwd[123456]")
+                    {
+                        Logger.Instance.Info("[JiYuController] 检测到6.0版本标记，切换到解密模式");
+                    }
+                    else
+                    {
+                        string extracted = ExtractPasswordFromPasswdFormat(passwd);
+                        if (extracted != null)
+                        {
+                            Logger.Instance.Info("[JiYuController] 普通模式读取密码成功");
+                            return extracted;
+                        }
+                    }
+                }
+            }
+
+            return ReadRegistryPasswordDecrypt();
+        }
+
+        private string ReadRegistryPasswordNormal()
+        {
+            string val = ReadRegistryString(
+                @"SOFTWARE\TopDomain\e-Learning Class Standard\1.00",
+                "UninstallPasswd",
+                Microsoft.Win32.RegistryView.Registry64);
+            if (val != null) return val;
+
+            val = ReadRegistryString(
+                @"SOFTWARE\Wow6432Node\TopDomain\e-Learning Class Standard\1.00",
+                "UninstallPasswd",
+                Microsoft.Win32.RegistryView.Registry64);
+            return val;
+        }
+
+        private string ReadRegistryPasswordDecrypt()
+        {
+            string subKey = Environment.Is64BitOperatingSystem
+                ? @"SOFTWARE\Wow6432Node\TopDomain\e-Learning Class\Student"
+                : @"SOFTWARE\TopDomain\e-Learning Class\Student";
+
+            byte[] data = ReadRegistryBinary(subKey, "Knock1", Microsoft.Win32.RegistryView.Registry64);
+            if (data == null || data.Length < 4)
+            {
+                Logger.Instance.Warn("[JiYuController] 读取 Knock1 注册表值失败或数据不足");
+                return null;
+            }
+
+            Logger.Instance.Info("[JiYuController] 读取 Knock1 成功，长度=" + data.Length);
+
+            string passwd = DecryptJiYuKnock(data);
+            if (passwd != null)
+            {
+                Logger.Instance.Info("[JiYuController] 解密模式读取密码成功");
+            }
+            else
+            {
+                Logger.Instance.Warn("[JiYuController] UnDecryptJiyuKnock 解密失败");
+            }
+            return passwd;
+        }
+
+        private string ExtractPasswordFromPasswdFormat(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return null;
+            int start = raw.IndexOf('[');
+            int end = raw.LastIndexOf(']');
+            if (start >= 0 && end > start)
+            {
+                return raw.Substring(start + 1, end - start - 1);
+            }
+            if (raw.Length > 6) return raw.Substring(6);
+            return raw;
+        }
+
+        /// <summary>
+        /// 极域6.0 Knock1 解密算法
+        /// 严格移植自原项目 UnDecryptJiyuKnock
+        /// 1. 每个DWORD异或 0x50434C45
+        /// 2. 每个DWORD再异或 0x454C4350
+        /// 3. 从 Data[Data[0]] 偏移处读取 UTF-16LE 字符串
+        /// </summary>
+        private string DecryptJiYuKnock(byte[] data)
+        {
+            if (data == null || data.Length < 4) return null;
+
+            try
+            {
+                int dwordCount = data.Length / 4;
+
+                for (int i = 0; i < dwordCount; i++)
+                {
+                    int offset = i * 4;
+                    uint val = BitConverter.ToUInt32(data, offset);
+                    val ^= 0x50434C45u;
+                    byte[] bytes = BitConverter.GetBytes(val);
+                    Array.Copy(bytes, 0, data, offset, 4);
+                }
+
+                for (int i = 0; i < dwordCount; i++)
+                {
+                    int offset = i * 4;
+                    uint val = BitConverter.ToUInt32(data, offset);
+                    val ^= 0x454C4350u;
+                    byte[] bytes = BitConverter.GetBytes(val);
+                    Array.Copy(bytes, 0, data, offset, 4);
+                }
+
+                int startOffset = data[0];
+                if (startOffset >= data.Length)
+                {
+                    Logger.Instance.Warn("[JiYuController] 解密后起始偏移越界: " + startOffset);
+                    return null;
+                }
+
+                var strBytes = new System.Collections.Generic.List<byte>();
+                for (int i = startOffset; i + 1 < data.Length; i += 2)
+                {
+                    byte lo = data[i];
+                    byte hi = data[i + 1];
+                    if (lo == 0 && hi == 0) break;
+                    strBytes.Add(lo);
+                    strBytes.Add(hi);
+                }
+
+                if (strBytes.Count == 0) return "";
+                return Encoding.Unicode.GetString(strBytes.ToArray());
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("[JiYuController] DecryptJiYuKnock 异常: " + ex.Message);
+                return null;
+            }
+        }
+
+        private string ReadRegistryString(string subKey, string valueName, Microsoft.Win32.RegistryView view)
+        {
+            try
+            {
+                using (var baseKey = Microsoft.Win32.RegistryKey.OpenBaseKey(
+                    Microsoft.Win32.RegistryHive.LocalMachine, view))
+                using (var key = baseKey.OpenSubKey(subKey))
+                {
+                    if (key == null) return null;
+                    object val = key.GetValue(valueName);
+                    return val as string;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Debug("[JiYuController] 读取注册表字符串失败: " + subKey + " - " + ex.Message);
+                return null;
+            }
+        }
+
+        private byte[] ReadRegistryBinary(string subKey, string valueName, Microsoft.Win32.RegistryView view)
+        {
+            try
+            {
+                using (var baseKey = Microsoft.Win32.RegistryKey.OpenBaseKey(
+                    Microsoft.Win32.RegistryHive.LocalMachine, view))
+                using (var key = baseKey.OpenSubKey(subKey))
+                {
+                    if (key == null) return null;
+                    return key.GetValue(valueName) as byte[];
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Debug("[JiYuController] 读取注册表二进制失败: " + subKey + " - " + ex.Message);
+                return null;
+            }
+        }
+
+        #endregion
+
+
     }
 }
