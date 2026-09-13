@@ -1699,6 +1699,19 @@ namespace JiYuKiller
             svc.SendCommand(ip, 4705, TextUdpMessage.Text);
         }
 
+        private void BtnUdpQuickCmd_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as Button;
+            if (btn == null || btn.Tag == null) return;
+            string cmd = btn.Tag.ToString();
+            TextUdpMessage.Text = cmd;
+            Services.Logger.Instance.ButtonClick("UDP攻击-快捷指令", cmd);
+            RegisterUdpLog();
+            string ip = TextUdpTargetIp.Text.Trim();
+            if (string.IsNullOrEmpty(ip)) { TextUdpLog.AppendText("请输入目标IP\n"); return; }
+            var svc = Services.UdpAttackService.Instance;
+            svc.SendCommand(ip, 4705, cmd);
+        }
         private void BtnUdpShutdown_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("UDP攻击-远程关机", "BtnUdpShutdown");
@@ -2127,6 +2140,12 @@ namespace JiYuKiller
             TextTeacherSimCommand.Focus();
         }
 
+        private void BtnTeacherSimQuickMsgAll_Click(object sender, RoutedEventArgs e)
+        {
+            string msg = Microsoft.VisualBasic.Interaction.InputBox("请输入要群发的消息内容：", "群发消息", "", -1, -1);
+            if (string.IsNullOrWhiteSpace(msg)) return;
+            _teacherSimService.SendCommand("msgall " + msg);
+        }
         private void BtnTeacherSimQuickBlack_Click(object sender, RoutedEventArgs e)
         {
             string ip = TextTeacherSimTargetIP.Text.Trim();
