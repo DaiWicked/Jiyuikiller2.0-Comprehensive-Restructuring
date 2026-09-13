@@ -1946,12 +1946,15 @@ namespace JiYuKiller
                     ? "（未设置）"
                     : _realtimeService.CurrentImagePath;
             }
-            // 更新预览
-            try
+            // 图片模式立即更新预览，视频模式由选择视频时的后台线程处理
+            if (!_realtimeService.IsVideoMode)
             {
-                ImgRealtimePreview.Source = _realtimeService.LoadPreviewImage();
+                try
+                {
+                    ImgRealtimePreview.Source = _realtimeService.LoadPreviewImage();
+                }
+                catch { }
             }
-            catch { }
         }
 
         private void BtnRealtimeChooseImage_Click(object sender, RoutedEventArgs e)
@@ -1984,6 +1987,23 @@ namespace JiYuKiller
                 if (_realtimeService.ChooseVideo(dlg.FileName))
                 {
                     UpdateRealtimeState();
+                    // 后台线程提取视频第一帧作为预览，避免UI阻塞
+                    string videoPath = dlg.FileName;
+                    System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+                    {
+                        try
+                        {
+                            var preview = _realtimeService.LoadPreviewImage();
+                            if (preview != null)
+                            {
+                                Dispatcher.Invoke(() => { ImgRealtimePreview.Source = preview; });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Services.Logger.Instance.Error("[Realtime] 视频预览提取失败: " + ex.Message);
+                        }
+                    });
                 }
                 else
                 {
