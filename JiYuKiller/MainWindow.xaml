@@ -595,9 +595,9 @@
                         <Border Background="#33FFF3CD" BorderBrush="#FF856404" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <TextBlock Text="⚠ 功能暂时禁用" FontSize="14" FontWeight="Bold" Foreground="#FF856404" Margin="0,0,0,6" />
-                                <TextBlock Text="截图替换依赖「允许教师监视电脑」关闭，关闭后教师端查看屏幕时可能导致极域学生端崩溃（原作者已知问题，32位Win10尤甚）" FontSize="11" Foreground="#FF856404" TextWrapping="Wrap" Margin="0,0,0,3" />
-                                <TextBlock Text="该功能通过DLL注入实现，测试后并不理想，而且有很多不稳定性" FontSize="11" Foreground="#FF856404" TextWrapping="Wrap" Margin="0,0,0,3" />
-                                <TextBlock Text="为保证程序的正常运行，该功能暂时禁用" FontSize="11" Foreground="#FF856404" TextWrapping="Wrap" />
+                                <TextBlock Text="编码层替换方案：Hook EncodeToJPEGBuffer，在JPEG编码完成后替换输出数据" FontSize="11" Foreground="#FF2E7D32" TextWrapping="Wrap" Margin="0,0,0,3" />
+                    <TextBlock Text="不依赖关闭「允许教师监视」，不触碰GDI/驱动，仅替换80x60缩略图编码输出" FontSize="11" Foreground="#FF2E7D32" TextWrapping="Wrap" Margin="0,0,0,3" />
+                    <TextBlock Text="图片将自动缩放到80x60并编码为JPEG（质量90），教师端查看学生缩略图时生效" FontSize="11" Foreground="#FF2E7D32" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
 

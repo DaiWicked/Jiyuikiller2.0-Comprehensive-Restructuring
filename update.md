@@ -1,4 +1,28 @@
-﻿# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
+﻿
+## QD_V2.6 开发中 - 截图替换（编码层方案）
+
+### 新增
+- **截图替换功能重新启用**：采用编码层替换方案，完全重写原作者GDI Hook方案
+- **EncodeToJPEGBuffer参数逆向**：通过四轮DLL注入日志探测，100%确认函数参数含义
+  - a5 = 输出JPEG缓冲区指针（FF D8 FF DB开头，FF D9结尾）
+  - a6->size = 输出JPEG大小
+  - a2=80, a3=60, a4=240(步长), a7=90(JPEG质量)
+- **DLL端实现**：hkEncodeToJPEGBuffer中用预编码JPEG替换输出缓冲区
+- **主程序端实现**：用户选图→自动缩放80×60→JPEG编码质量90→写入INI
+- **技术文档**：EncodeToJPEGBuffer参数逆向与截图替换实现.md
+
+### 修复
+- 截图替换不再依赖关闭「允许教师监视电脑」
+- 不再触碰GDI/驱动层，避免32位Win10崩溃问题
+- 仅替换80×60缩略图，不影响屏幕广播等其他功能
+- __try/__except异常保护，替换失败保持原编码结果
+
+### 技术细节
+- INI新增配置项：[JTSettings] FakeJpegPath
+- 假JPEG文件：程序目录下 ake_screenshot.jpg
+- 替换条件：a2==80 && a3==60 && 大小<=65536
+- DLL函数数量：497个（调试代码已清理）
+# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
 
 ## QD_V2.5_JiYuRebuild_IMTeacher (2026-09-13) - 教师模拟完善 + 密码读取 + 全体命令
 
