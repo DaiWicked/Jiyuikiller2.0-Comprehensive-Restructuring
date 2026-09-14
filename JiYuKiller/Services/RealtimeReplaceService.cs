@@ -198,6 +198,9 @@ namespace JiYuKiller.Services
             Log("使用ffmpeg: " + ffmpeg);
             Log("开始视频解码循环: " + CurrentVideoPath);
 
+            // 先删除旧的YUV文件，确保视频解码线程从头开始写
+            try { if (File.Exists(YuvPath)) File.Delete(YuvPath); } catch { }
+
             WriteIni("realtime", "enabled", "1");
             WriteIni("realtime", "width", DefaultWidth.ToString());
             WriteIni("realtime", "height", DefaultHeight.ToString());
