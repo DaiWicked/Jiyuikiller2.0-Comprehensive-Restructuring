@@ -107,7 +107,7 @@ namespace JiYuKiller.Models
         public int WallpaperOpacity { get; set; } = 80;
 
         // === 版本信息 ===
-        public string Version { get; set; } = "QD_V2.5_JiYuRebuild_IMTeacher";
+        public string Version { get; set; } = "QD_V2.7_JiYuRebuild_JustLikeThis";
 
         // === 用户协议 ===
         public bool Argeed { get; set; } = false;

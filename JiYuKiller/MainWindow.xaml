@@ -641,13 +641,12 @@
                                 <Border Background="#FFEEEEF5" CornerRadius="8" Height="160" VerticalAlignment="Stretch" Margin="0,0,0,8">
                                     <Grid>
                                         <Image x:Name="ImgRealtimePreview" Stretch="Uniform" Margin="4" Visibility="Visible" />
-                                        <MediaElement x:Name="MediaRealtimePreview" Stretch="Uniform" Margin="4" Visibility="Collapsed" LoadedBehavior="Manual" UnloadedBehavior="Stop" MediaEnded="MediaRealtimePreview_MediaEnded" IsMuted="True" />
+                                        <TextBlock x:Name="TextVideoPreviewHint" Text="点击下方按钮，用系统播放器预览视频" FontSize="13" Foreground="#FF888899" VerticalAlignment="Center" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="20" Visibility="Collapsed" />
                                     </Grid>
                                 </Border>
                                 <!-- 视频播放控制 -->
                                 <StackPanel x:Name="GridVideoControls" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,8" Visibility="Collapsed">
-                                    <Button x:Name="BtnVideoPlayPause" Content="暂停" Click="BtnVideoPlayPause_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="32" Width="64" Padding="8,0" Margin="0,0,10,0" />
-                                    <TextBlock x:Name="TextVideoHint" Text="视频预览（循环播放，已静音）" FontSize="11" Foreground="#FF888899" VerticalAlignment="Center" />
+                                    <Button x:Name="BtnVideoPlayPause" Content="用系统播放器预览" Click="BtnVideoPlayPause_Click" Style="{StaticResource GlassButton}" Background="#FF9C27B0" Height="32" Padding="12,0" />
                                 </StackPanel>
                                 <TextBlock x:Name="TextRealtimePath" Text="（未设置）" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,4" />
                                 <TextBlock x:Name="TextRealtimeStatus" Text="未启用" FontSize="12" Foreground="#FF666666" Margin="0,0,0,8" />

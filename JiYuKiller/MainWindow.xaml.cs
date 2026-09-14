@@ -1959,11 +1959,10 @@ namespace JiYuKiller
 
         private void BtnRealtimeChooseImage_Click(object sender, RoutedEventArgs e)
         {
-            // 图片模式：显示Image，隐藏MediaElement
+            // 图片模式：显示Image，隐藏文字提示和视频按钮
             ImgRealtimePreview.Visibility = System.Windows.Visibility.Visible;
-            MediaRealtimePreview.Visibility = System.Windows.Visibility.Collapsed;
+            TextVideoPreviewHint.Visibility = System.Windows.Visibility.Collapsed;
             GridVideoControls.Visibility = System.Windows.Visibility.Collapsed;
-            try { MediaRealtimePreview.Stop(); } catch { }
             InitRealtimeReplace();
             Services.Logger.Instance.Info("[Realtime] 点击选择图片");
             var dlg = new Microsoft.Win32.OpenFileDialog
@@ -1992,14 +1991,10 @@ namespace JiYuKiller
                 if (_realtimeService.ChooseVideo(dlg.FileName))
                 {
                     UpdateRealtimeState();
-                    // 视频模式：显示MediaElement并循环播放
-                    string videoPath = dlg.FileName;
+                    // 视频模式：显示文字提示，隐藏Image
                     ImgRealtimePreview.Visibility = System.Windows.Visibility.Collapsed;
-                    MediaRealtimePreview.Visibility = System.Windows.Visibility.Visible;
+                    TextVideoPreviewHint.Visibility = System.Windows.Visibility.Visible;
                     GridVideoControls.Visibility = System.Windows.Visibility.Visible;
-                    MediaRealtimePreview.Source = new Uri(videoPath);
-                    MediaRealtimePreview.Pause();
-                    BtnVideoPlayPause.Content = "播放";
                 }
                 else
                 {
@@ -2588,32 +2583,23 @@ namespace JiYuKiller
 
         private void BtnVideoPlayPause_Click(object sender, RoutedEventArgs e)
         {
-            if (MediaRealtimePreview.Visibility != System.Windows.Visibility.Visible) return;
+            // 用系统默认播放器打开视频文件
+            string videoPath = _realtimeService?.CurrentVideoPath;
+            if (string.IsNullOrEmpty(videoPath) || !System.IO.File.Exists(videoPath))
+            {
+                System.Windows.MessageBox.Show("视频文件不存在", "实时屏幕替换");
+                return;
+            }
             try
             {
-                if (BtnVideoPlayPause.Content.ToString() == "暂停")
-                {
-                    MediaRealtimePreview.Pause();
-                    BtnVideoPlayPause.Content = "播放";
-                }
-                else
-                {
-                    MediaRealtimePreview.Play();
-                    BtnVideoPlayPause.Content = "暂停";
-                }
+                System.Diagnostics.Process.Start(videoPath);
+                Services.Logger.Instance.Info("[Realtime] 用系统播放器打开视频: " + videoPath);
             }
-            catch { }
-        }
-
-        private void MediaRealtimePreview_MediaEnded(object sender, RoutedEventArgs e)
-        {
-            // 循环播放
-            try
+            catch (Exception ex)
             {
-                MediaRealtimePreview.Position = TimeSpan.Zero;
-                MediaRealtimePreview.Play();
+                Services.Logger.Instance.Error("[Realtime] 打开视频失败: " + ex.Message);
+                System.Windows.MessageBox.Show("打开视频失败: " + ex.Message, "实时屏幕替换");
             }
-            catch { }
         }
     }
 }
