@@ -1378,6 +1378,12 @@ namespace JiYuKiller
             ShowHelpSubPage("key");
         }
 
+        private void HelpNavAntiMonitor_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("帮助-虚假反监视", "HelpNavAntiMonitor");
+            ShowHelpSubPage("antimonitor");
+        }
+
         private void HelpNavOthers_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("帮助-其他", "HelpNavOthers");
@@ -1394,6 +1400,7 @@ namespace JiYuKiller
         {
             HelpContentIntro.Visibility = Visibility.Collapsed;
             HelpContentKey.Visibility = Visibility.Collapsed;
+            HelpContentAntiMonitor.Visibility = Visibility.Collapsed;
             HelpContentOthers.Visibility = Visibility.Collapsed;
             HelpContentDisclaimer.Visibility = Visibility.Collapsed;
 
@@ -1402,6 +1409,8 @@ namespace JiYuKiller
             HelpNavIntro.Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66));
             HelpNavKey.Background = new SolidColorBrush(Colors.Transparent);
             HelpNavKey.Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66));
+            HelpNavAntiMonitor.Background = new SolidColorBrush(Colors.Transparent);
+            HelpNavAntiMonitor.Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66));
             HelpNavOthers.Background = new SolidColorBrush(Colors.Transparent);
             HelpNavOthers.Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66));
             HelpNavDisclaimer.Background = new SolidColorBrush(Colors.Transparent);
@@ -1418,6 +1427,11 @@ namespace JiYuKiller
                     HelpContentKey.Visibility = Visibility.Visible;
                     HelpNavKey.Background = new SolidColorBrush(Color.FromRgb(0x00, 0x7B, 0xFF));
                     HelpNavKey.Foreground = new SolidColorBrush(Colors.White);
+                    break;
+                case "antimonitor":
+                    HelpContentAntiMonitor.Visibility = Visibility.Visible;
+                    HelpNavAntiMonitor.Background = new SolidColorBrush(Color.FromRgb(0x00, 0x7B, 0xFF));
+                    HelpNavAntiMonitor.Foreground = new SolidColorBrush(Colors.White);
                     break;
                 case "others":
                     HelpContentOthers.Visibility = Visibility.Visible;
