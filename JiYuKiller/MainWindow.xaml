@@ -867,7 +867,33 @@
 
                                 <TextBlock Text="操作方法" FontSize="14" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,6" />
                                 <TextBlock Text="本软件专为小白设计，默认情况下，您不需要修改任何参数，直接运行exe，并最小化即可，软件会自动进行操作。" FontSize="13" Foreground="#FF006BEF" TextWrapping="Wrap" Margin="0,0,0,4" />
-                                <TextBlock Text="如果默认模式无法满足您的需求，可点主界面的「控制台和设置」进行自定义配置。" FontSize="13" Foreground="#FF0A0A0A" TextWrapping="Wrap" />
+                                <TextBlock Text="如果默认模式无法满足您的需求，可点主界面的「控制台和设置」进行自定义配置。" FontSize="13" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                                <TextBlock Text="虚假反监视" FontSize="14" FontWeight="Bold" Foreground="#FFFF8B0D" Margin="0,0,0,6" />
+                                <TextBlock Text="虚假反监视功能可以在教师端查看您的屏幕时，显示您预设的图片或视频，而不是真实屏幕内容。" FontSize="13" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="0,0,0,6" />
+
+                                <TextBlock Text="缩略图替换" FontSize="13" FontWeight="Bold" Foreground="#FF006BEF" Margin="0,0,0,4" />
+                                <TextBlock Text="• 选择一张图片，点击「应用缩略图替换」" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 图片会自动缩放到80×60并编码为JPEG" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 教师端学生列表中的缩略图会显示您选择的图片" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 应用后需要重启极域学生端生效" FontSize="12" Foreground="#FFDC3545" TextWrapping="Wrap" Margin="8,2,0,6" />
+
+                                <TextBlock Text="实时屏幕替换 - 图片模式" FontSize="13" FontWeight="Bold" Foreground="#FF006BEF" Margin="0,0,0,4" />
+                                <TextBlock Text="• 选择一张图片，点击「启用实时替换」" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 教师端实时查看您的屏幕时，会显示您选择的图片" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 点击「关闭实时替换」恢复真实屏幕" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,6" />
+
+                                <TextBlock Text="实时屏幕替换 - 视频模式" FontSize="13" FontWeight="Bold" Foreground="#FF006BEF" Margin="0,0,0,4" />
+                                <TextBlock Text="• 选择一个视频文件（建议小于50MB）" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 点击「用系统播放器预览」可以预览视频" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 点击「启用实时替换」，教师端会看到视频播放" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 视频通过ffmpeg解码为YUV帧，约10fps" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,6" />
+
+                                <TextBlock Text="注意事项" FontSize="13" FontWeight="Bold" Foreground="#FFDC3545" Margin="0,0,0,4" />
+                                <TextBlock Text="• 缩略图替换和实时屏幕替换是独立功能，可分别设置" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 切换图片/视频模式时，请先关闭实时替换再重新启用" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 实时屏幕替换依赖DLL注入，部分杀毒软件可能会拦截" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
+                                <TextBlock Text="• 视频模式下32位系统可能出现主程序卡顿，建议使用图片模式" FontSize="12" Foreground="#FF0A0A0A" TextWrapping="Wrap" Margin="8,2,0,2" />
                             </StackPanel>
 
                             <!-- 快捷键 -->
@@ -954,7 +980,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.9" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
+                                            <Slider x:Name="SliderBlurIntensity" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.8" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderBlurIntensity_ValueChanged" />
                                             <TextBlock x:Name="TextBlurValue" Grid.Column="1" Text="90%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
@@ -966,7 +992,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0.05" Maximum="1" Value="0.5" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
+                                            <Slider x:Name="SliderContentOpacity" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0.05" Maximum="1" Value="0.25" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
                                             <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="50%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
@@ -978,7 +1004,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderOuterGlow" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.2" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderOuterGlow_ValueChanged" />
+                                            <Slider x:Name="SliderOuterGlow" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.05" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderOuterGlow_ValueChanged" />
                                             <TextBlock x:Name="TextOuterGlowValue" Grid.Column="1" Text="20%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
@@ -990,7 +1016,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderInnerGlow" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.3" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderInnerGlow_ValueChanged" />
+                                            <Slider x:Name="SliderInnerGlow" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.05" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderInnerGlow_ValueChanged" />
                                             <TextBlock x:Name="TextInnerGlowValue" Grid.Column="1" Text="30%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
