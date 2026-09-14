@@ -639,8 +639,16 @@
                                 <TextBlock Text="教师端实时观看学生屏幕时，显示替换的图片或视频（循环播放）。即时生效，无需重启。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,8" />
                                 <!-- 实时替换预览 -->
                                 <Border Background="#FFEEEEF5" CornerRadius="8" Height="160" VerticalAlignment="Stretch" Margin="0,0,0,8">
-                                    <Image x:Name="ImgRealtimePreview" Stretch="Uniform" Margin="4" />
+                                    <Grid>
+                                        <Image x:Name="ImgRealtimePreview" Stretch="Uniform" Margin="4" Visibility="Visible" />
+                                        <MediaElement x:Name="MediaRealtimePreview" Stretch="Uniform" Margin="4" Visibility="Collapsed" LoadedBehavior="Manual" UnloadedBehavior="Stop" MediaEnded="MediaRealtimePreview_MediaEnded" IsMuted="True" />
+                                    </Grid>
                                 </Border>
+                                <!-- 视频播放控制 -->
+                                <StackPanel x:Name="GridVideoControls" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,8" Visibility="Collapsed">
+                                    <Button x:Name="BtnVideoPlayPause" Content="暂停" Click="BtnVideoPlayPause_Click" Style="{StaticResource GlassButton}" Background="#FF007AFF" Height="32" Width="64" Padding="8,0" Margin="0,0,10,0" />
+                                    <TextBlock x:Name="TextVideoHint" Text="视频预览（循环播放，已静音）" FontSize="11" Foreground="#FF888899" VerticalAlignment="Center" />
+                                </StackPanel>
                                 <TextBlock x:Name="TextRealtimePath" Text="（未设置）" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,4" />
                                 <TextBlock x:Name="TextRealtimeStatus" Text="未启用" FontSize="12" Foreground="#FF666666" Margin="0,0,0,8" />
                                 <Grid Margin="0,0,0,6">

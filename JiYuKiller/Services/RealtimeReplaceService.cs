@@ -219,10 +219,14 @@ namespace JiYuKiller.Services
             return true;
         }
 
+        private const int DecodeWidth = 320;
+        private const int DecodeHeight = 240;
+
         private void VideoDecodeLoop(string ffmpegPath, string videoPath)
         {
-            int frameSize = DefaultWidth * DefaultHeight * 3 / 2;
-            byte[] frameBuffer = new byte[frameSize];
+            int srcFrameSize = DecodeWidth * DecodeHeight * 3 / 2;
+            byte[] srcYuv = new byte[srcFrameSize];
+            byte[] dstYuv = new byte[DefaultWidth * DefaultHeight * 3 / 2];
             int frameCount = 0;
 
             while (_videoRunning)
@@ -232,7 +236,8 @@ namespace JiYuKiller.Services
                     ProcessStartInfo psi = new ProcessStartInfo
                     {
                         FileName = ffmpegPath,
-                        Arguments = $"-stream_loop -1 -i \"{videoPath}\" -s {DefaultWidth}x{DefaultHeight} -pix_fmt yuv420p -r 25 -f rawvideo -",
+                        // rawvideo YUV420P 320x240，无编码开销，性能最好
+                        Arguments = $"-stream_loop -1 -i \"{videoPath}\" -s {DecodeWidth}x{DecodeHeight} -pix_fmt yuv420p -r 10 -f rawvideo -",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
@@ -241,7 +246,7 @@ namespace JiYuKiller.Services
                     _ffmpegProcess = Process.Start(psi);
                     _ffmpegProcess.ErrorDataReceived += (s, e) =>
                     {
-                        if (!string.IsNullOrEmpty(e.Data))
+                        if (!string.IsNullOrEmpty(e.Data) && e.Data.Contains("frame=") && frameCount % 30 == 0)
                             Log("[ffmpeg] " + e.Data);
                     };
                     _ffmpegProcess.BeginErrorReadLine();
@@ -250,29 +255,29 @@ namespace JiYuKiller.Services
                     while (_videoRunning && !_ffmpegProcess.HasExited)
                     {
                         int read = 0;
-                        while (read < frameSize && _videoRunning)
+                        while (read < srcFrameSize && _videoRunning)
                         {
-                            int r = stdout.Read(frameBuffer, read, frameSize - read);
+                            int r = stdout.Read(srcYuv, read, srcFrameSize - read);
                             if (r <= 0) break;
                             read += r;
                         }
 
-                        if (read >= frameSize && _videoRunning)
+                        if (read >= srcFrameSize && _videoRunning)
                         {
-                            // ffmpeg输出yuv420p是I420(U在前V在后)，极域用YV12(V在前U在后)，交换U/V
-                            SwapUVPlanes(frameBuffer, DefaultWidth, DefaultHeight);
+                            // YUV420P最近邻缩放到1024x768，并交换U/V(I420->YV12)
+                            ScaleYUV420ToYV12(srcYuv, DecodeWidth, DecodeHeight, dstYuv, DefaultWidth, DefaultHeight);
                             try
                             {
-                                File.WriteAllBytes(YuvPath, frameBuffer);
+                                File.WriteAllBytes(YuvPath, dstYuv);
                                 frameCount++;
-                                if (frameCount % 250 == 0)
+                                if (frameCount % 30 == 0)
                                     Log($"视频已播放 {frameCount} 帧");
                             }
                             catch (Exception ex)
                             {
                                 Log("写入YUV失败: " + ex.Message);
                             }
-                            Thread.Sleep(35); // ~25fps
+                            Thread.Sleep(80); // ~12fps，给ffmpeg留解码时间
                         }
                         else
                         {
@@ -293,6 +298,99 @@ namespace JiYuKiller.Services
                 }
             }
             Log("视频解码线程已退出，共播放 " + frameCount + " 帧");
+        }
+
+        /// <summary>
+        /// YUV420P(I420)最近邻缩放到目标尺寸，并输出YV12(V在前U在后)
+        /// </summary>
+        private static void ScaleYUV420ToYV12(byte[] src, int sw, int sh, byte[] dst, int dw, int dh)
+        {
+            int srcYSize = sw * sh;
+            int srcUVSize = srcYSize / 4;
+            int dstYSize = dw * dh;
+            int dstUVSize = dstYSize / 4;
+
+            // Y平面缩放
+            for (int y = 0; y < dh; y++)
+            {
+                int sy = y * sh / dh;
+                for (int x = 0; x < dw; x++)
+                {
+                    int sx = x * sw / dw;
+                    dst[y * dw + x] = src[sy * sw + sx];
+                }
+            }
+            // V平面 (YV12: V在前，源I420中U在srcYSize, V在srcYSize+srcUVSize)
+            int srcUOff = srcYSize;
+            int srcVOff = srcYSize + srcUVSize;
+            int dstVOff = dstYSize;
+            int dstUOff = dstYSize + dstUVSize;
+            for (int y = 0; y < dh / 2; y++)
+            {
+                int sy = y * (sh / 2) / (dh / 2);
+                for (int x = 0; x < dw / 2; x++)
+                {
+                    int sx = x * (sw / 2) / (dw / 2);
+                    dst[dstVOff + y * (dw / 2) + x] = src[srcVOff + sy * (sw / 2) + sx];
+                    dst[dstUOff + y * (dw / 2) + x] = src[srcUOff + sy * (sw / 2) + sx];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Bitmap转YV12 (Y+V+U)
+        /// </summary>
+        private static byte[] BitmapToYV12(System.Drawing.Bitmap bmp)
+        {
+            int w = bmp.Width, h = bmp.Height;
+            int ySize = w * h;
+            int uvSize = ySize / 4;
+            byte[] yuv = new byte[ySize * 3 / 2];
+
+            var data = bmp.LockBits(new System.Drawing.Rectangle(0, 0, w, h),
+                System.Drawing.Imaging.ImageLockMode.ReadOnly,
+                System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            IntPtr ptr = data.Scan0;
+            int stride = data.Stride;
+            byte[] rgb = new byte[stride * h];
+            System.Runtime.InteropServices.Marshal.Copy(ptr, rgb, 0, rgb.Length);
+            bmp.UnlockBits(data);
+
+            // Y平面
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    int idx = y * stride + x * 3;
+                    byte r = rgb[idx + 2], gr = rgb[idx + 1], b = rgb[idx];
+                    // BT.601
+                    int Y = ((66 * r + 129 * gr + 25 * b + 128) >> 8) + 16;
+                    yuv[y * w + x] = (byte)(Y < 0 ? 0 : (Y > 255 ? 255 : Y));
+                }
+            }
+            // V平面 (YV12: V在前)
+            for (int y = 0; y < h / 2; y++)
+            {
+                for (int x = 0; x < w / 2; x++)
+                {
+                    int idx = (y * 2) * stride + (x * 2) * 3;
+                    byte r = rgb[idx + 2], gr = rgb[idx + 1], b = rgb[idx];
+                    int V = ((112 * r - 94 * gr - 18 * b + 128) >> 8) + 128;
+                    yuv[ySize + y * (w / 2) + x] = (byte)(V < 0 ? 0 : (V > 255 ? 255 : V));
+                }
+            }
+            // U平面
+            for (int y = 0; y < h / 2; y++)
+            {
+                for (int x = 0; x < w / 2; x++)
+                {
+                    int idx = (y * 2) * stride + (x * 2) * 3;
+                    byte r = rgb[idx + 2], gr = rgb[idx + 1], b = rgb[idx];
+                    int U = ((-38 * r - 74 * gr + 112 * b + 128) >> 8) + 128;
+                    yuv[ySize + uvSize + y * (w / 2) + x] = (byte)(U < 0 ? 0 : (U > 255 ? 255 : U));
+                }
+            }
+            return yuv;
         }
 
         private static void SwapUVPlanes(byte[] yuv, int width, int height)

@@ -1959,6 +1959,11 @@ namespace JiYuKiller
 
         private void BtnRealtimeChooseImage_Click(object sender, RoutedEventArgs e)
         {
+            // 图片模式：显示Image，隐藏MediaElement
+            ImgRealtimePreview.Visibility = System.Windows.Visibility.Visible;
+            MediaRealtimePreview.Visibility = System.Windows.Visibility.Collapsed;
+            GridVideoControls.Visibility = System.Windows.Visibility.Collapsed;
+            try { MediaRealtimePreview.Stop(); } catch { }
             InitRealtimeReplace();
             Services.Logger.Instance.Info("[Realtime] 点击选择图片");
             var dlg = new Microsoft.Win32.OpenFileDialog
@@ -1987,23 +1992,14 @@ namespace JiYuKiller
                 if (_realtimeService.ChooseVideo(dlg.FileName))
                 {
                     UpdateRealtimeState();
-                    // 后台线程提取视频第一帧作为预览，避免UI阻塞
+                    // 视频模式：显示MediaElement并循环播放
                     string videoPath = dlg.FileName;
-                    System.Threading.ThreadPool.QueueUserWorkItem(_ =>
-                    {
-                        try
-                        {
-                            var preview = _realtimeService.LoadPreviewImage();
-                            if (preview != null)
-                            {
-                                Dispatcher.Invoke(() => { ImgRealtimePreview.Source = preview; });
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Services.Logger.Instance.Error("[Realtime] 视频预览提取失败: " + ex.Message);
-                        }
-                    });
+                    ImgRealtimePreview.Visibility = System.Windows.Visibility.Collapsed;
+                    MediaRealtimePreview.Visibility = System.Windows.Visibility.Visible;
+                    GridVideoControls.Visibility = System.Windows.Visibility.Visible;
+                    MediaRealtimePreview.Source = new Uri(videoPath);
+                    MediaRealtimePreview.Pause();
+                    BtnVideoPlayPause.Content = "播放";
                 }
                 else
                 {
@@ -2589,5 +2585,35 @@ namespace JiYuKiller
 
         #endregion
 
+
+        private void BtnVideoPlayPause_Click(object sender, RoutedEventArgs e)
+        {
+            if (MediaRealtimePreview.Visibility != System.Windows.Visibility.Visible) return;
+            try
+            {
+                if (BtnVideoPlayPause.Content.ToString() == "暂停")
+                {
+                    MediaRealtimePreview.Pause();
+                    BtnVideoPlayPause.Content = "播放";
+                }
+                else
+                {
+                    MediaRealtimePreview.Play();
+                    BtnVideoPlayPause.Content = "暂停";
+                }
+            }
+            catch { }
+        }
+
+        private void MediaRealtimePreview_MediaEnded(object sender, RoutedEventArgs e)
+        {
+            // 循环播放
+            try
+            {
+                MediaRealtimePreview.Position = TimeSpan.Zero;
+                MediaRealtimePreview.Play();
+            }
+            catch { }
+        }
     }
 }
