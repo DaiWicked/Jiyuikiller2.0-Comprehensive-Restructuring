@@ -131,7 +131,7 @@ namespace JiYuKiller.Services
                         SwapRedBlue(dst);
                         ImageCodecInfo jpegCodec = Array.Find(ImageCodecInfo.GetImageEncoders(), e => e.FormatID == ImageFormat.Jpeg.Guid);
                         EncoderParameters encParams = new EncoderParameters(1);
-                        encParams.Param[0] = new EncoderParameter(Encoder.Quality, 90L);
+                        encParams.Param[0] = new EncoderParameter(Encoder.Quality, 60L);
                         dst.Save(fakeJpegPath, jpegCodec, encParams);
                     }
                 }
