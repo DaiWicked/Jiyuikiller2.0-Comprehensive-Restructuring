@@ -28,7 +28,7 @@ namespace JiYuKiller.Effects
         private bool _isCapturing;
         private bool _isDeactivatedCapture;
         private GlassyEffect _glassyEffect;
-        private double _blurIntensity = 0.9;
+        private double _blurIntensity = 0.8;
 
         public GlassyWindowManager(Window window, Border backdropBorder, Border glassyBorder)
         {
