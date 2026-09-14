@@ -363,6 +363,9 @@ namespace JiYuKiller.Services
             }
         }
 
+        // [死代码-已注释] BitmapToYV12: 与ConvertToYUV420功能重复，从未被调用
+        // 保留供参考：整数运算BT.601转换，ConvertToYUV420使用浮点运算
+        /*
         /// <summary>
         /// Bitmap转YV12 (Y+V+U)
         /// </summary>
@@ -418,7 +421,10 @@ namespace JiYuKiller.Services
             }
             return yuv;
         }
+        */
 
+        // [死代码-已注释] SwapUVPlanes: 从未被调用，YUV转换已在ScaleYUV420ToYV12和ConvertToYUV420中直接处理
+        /*
         private static void SwapUVPlanes(byte[] yuv, int width, int height)
         {
             int ySize = width * height;
@@ -428,6 +434,7 @@ namespace JiYuKiller.Services
             Buffer.BlockCopy(yuv, ySize + uvSize, yuv, ySize, uvSize);
             Buffer.BlockCopy(temp, 0, yuv, ySize + uvSize, uvSize);
         }
+        */
 
         private void StopVideoThread()
         {
