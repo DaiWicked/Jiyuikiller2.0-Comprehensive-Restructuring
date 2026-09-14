@@ -95,7 +95,7 @@ namespace JiYuKiller.Models
 
         // === Liquid Glass 设置 ===
         /// <summary>玻璃透明度 (0-100)</summary>
-        public int GlassOpacity { get; set; } = 72;
+        public int GlassOpacity { get; set; } = 25;
 
         /// <summary>玻璃背景色 (white/blue/gray/dark/purple/green)</summary>
         public string GlassBgColor { get; set; } = "white";
