@@ -328,6 +328,12 @@ namespace JiYuKiller
             {
                 _glassyManager = new Effects.GlassyWindowManager(this, BackdropLayer, GlassyLayer);
                 Services.Logger.Instance.Info("毛玻璃效果管理器初始化成功");
+                // 确保模糊强度默认值生效（Slider ValueChanged在_glassyManager初始化前触发）
+                if (SliderBlurIntensity != null)
+                {
+                    _glassyManager.BlurIntensity = SliderBlurIntensity.Value;
+                    Services.Logger.Instance.Debug($"毛玻璃模糊强度已同步: {SliderBlurIntensity.Value:F2}");
+                }
                 InitWallpaper();
                 InitNoiseLayer();
             }
