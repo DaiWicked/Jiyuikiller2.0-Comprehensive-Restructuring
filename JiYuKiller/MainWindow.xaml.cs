@@ -2005,7 +2005,7 @@ namespace JiYuKiller
 
         private void BtnRealtimeApply_Click(object sender, RoutedEventArgs e)
         {
-            InitRealtimeReplace();
+            // 不调用InitRealtimeReplace()，避免LoadCurrent覆盖用户已选择的视频/图片状态
             Services.Logger.Instance.Info("[Realtime] 点击启用");
             try
             {
@@ -2037,7 +2037,7 @@ namespace JiYuKiller
 
         private void BtnRealtimeDisable_Click(object sender, RoutedEventArgs e)
         {
-            InitRealtimeReplace();
+            // 不调用InitRealtimeReplace()，避免LoadCurrent覆盖状态
             Services.Logger.Instance.Info("[Realtime] 点击关闭");
             _realtimeService.Disable();
             UpdateRealtimeState();
