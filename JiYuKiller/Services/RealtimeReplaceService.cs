@@ -86,15 +86,38 @@ namespace JiYuKiller.Services
 
         private string FindFFmpeg()
         {
-            string[] candidates = new[]
+            bool is64Bit = Environment.Is64BitOperatingSystem;
+            Log($"系统位数: {(is64Bit ? "64位" : "32位")}");
+
+            // 64位系统优先使用64位ffmpeg（性能更好），其次32位
+            string[] candidates;
+            if (is64Bit)
             {
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "ffmpeg.exe"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "teacher_sim", "ffmpeg.exe"),
-            };
+                candidates = new[]
+                {
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg64.exe"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "ffmpeg64.exe"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "ffmpeg.exe"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "teacher_sim", "ffmpeg.exe"),
+                };
+            }
+            else
+            {
+                candidates = new[]
+                {
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "ffmpeg.exe"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "teacher_sim", "ffmpeg.exe"),
+                };
+            }
             foreach (var p in candidates)
             {
-                if (File.Exists(p)) return p;
+                if (File.Exists(p))
+                {
+                    Log($"使用ffmpeg: {p}");
+                    return p;
+                }
             }
             try
             {
@@ -222,8 +245,8 @@ namespace JiYuKiller.Services
             return true;
         }
 
-        private const int DecodeWidth = 320;
-        private const int DecodeHeight = 240;
+        private const int DecodeWidth = 640;
+        private const int DecodeHeight = 480;
 
         private void VideoDecodeLoop(string ffmpegPath, string videoPath)
         {
@@ -240,7 +263,7 @@ namespace JiYuKiller.Services
                     {
                         FileName = ffmpegPath,
                         // rawvideo YUV420P 320x240，无编码开销，性能最好
-                        Arguments = $"-stream_loop -1 -i \"{videoPath}\" -s {DecodeWidth}x{DecodeHeight} -pix_fmt yuv420p -r 10 -f rawvideo -",
+                        Arguments = $"-stream_loop -1 -i \"{videoPath}\" -s {DecodeWidth}x{DecodeHeight} -pix_fmt yuv420p -r 15 -f rawvideo -",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
@@ -280,7 +303,7 @@ namespace JiYuKiller.Services
                             {
                                 Log("写入YUV失败: " + ex.Message);
                             }
-                            Thread.Sleep(80); // ~12fps，给ffmpeg留解码时间
+                            // 不Sleep，由ffmpeg的-r 15控制帧率
                         }
                         else
                         {
