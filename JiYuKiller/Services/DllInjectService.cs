@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -45,6 +45,89 @@ namespace JiYuKiller.Services
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern IntPtr GetModuleHandleW(string lpModuleName);
 
+        // ==== Toolhelp32 模块枚举 ====
+        // 用途: 判断目标进程里"某个 DLL 到底加载了没有"。
+        // 这是"注入是否成功"的真实判据 —— 远程线程有没有返回并不等于 DLL 没加载成功:
+        // 实测(VM 日志 02:20)出现过远程线程超 5 秒未返回、但 DLL 其实已经加载的情况,
+        // 第二次注入因"模块已存在"而在同一毫秒内返回(LoadLibraryW 只把引用计数 +1)。
+        private const uint TH32CS_SNAPMODULE = 0x00000008;
+        private const uint TH32CS_SNAPMODULE32 = 0x00000010;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct MODULEENTRY32W
+        {
+            public uint dwSize;
+            public uint th32ModuleID;
+            public uint th32ProcessID;
+            public uint GlblcntUsage;
+            public uint ProccntUsage;
+            public IntPtr modBaseAddr;
+            public uint modBaseSize;
+            public IntPtr hModule;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
+            public string szModule;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szExePath;
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool Module32FirstW(IntPtr hSnapshot, ref MODULEENTRY32W lpme);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool Module32NextW(IntPtr hSnapshot, ref MODULEENTRY32W lpme);
+
+        /// <summary>
+        /// 查询目标进程是否已加载指定文件名的模块。
+        /// </summary>
+        /// <remarks>
+        /// 标志必须用 TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32 (0x18)：
+        /// 单独用 0x10 在 64 位目标上会以错误 18(ERROR_NO_MORE_FILES) 失败（已实测）。
+        /// 本程序是 32 位、目标极域也是 32 位，0x18 组合在 32 位调用方 + 32 位目标下实测可用。
+        /// </remarks>
+        private static bool TryGetRemoteModule(int pid, string moduleFileName, out IntPtr baseAddress)
+        {
+            baseAddress = IntPtr.Zero;
+
+            IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, (uint)pid);
+            if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1))
+            {
+                Logger.Instance.Debug("[Inject] 模块快照失败, 错误码: " + Marshal.GetLastWin32Error());
+                return false;
+            }
+
+            try
+            {
+                MODULEENTRY32W entry = new MODULEENTRY32W();
+                entry.dwSize = (uint)Marshal.SizeOf(typeof(MODULEENTRY32W));
+
+                if (!Module32FirstW(snapshot, ref entry))
+                {
+                    Logger.Instance.Debug("[Inject] Module32First 失败, 错误码: " + Marshal.GetLastWin32Error());
+                    return false;
+                }
+
+                do
+                {
+                    if (string.Equals(entry.szModule, moduleFileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        baseAddress = entry.modBaseAddr;
+                        return true;
+                    }
+                    entry.dwSize = (uint)Marshal.SizeOf(typeof(MODULEENTRY32W));
+                }
+                while (Module32NextW(snapshot, ref entry));
+
+                return false;
+            }
+            finally
+            {
+                CloseHandle(snapshot);
+            }
+        }
+
         private const uint PROCESS_CREATE_THREAD = 0x0002;
         private const uint PROCESS_QUERY_INFORMATION = 0x0400;
         private const uint PROCESS_VM_OPERATION = 0x0008;
@@ -69,6 +152,19 @@ namespace JiYuKiller.Services
             {
                 Logger.Instance.Error("[Inject] DLL 文件不存在: " + dllPath);
                 return false;
+            }
+
+            // 注入前先确认目标进程是否已经加载过这个 DLL。
+            // 已加载就直接按成功返回: 重复注入只会把引用计数 +1，并可能触发一次多余的 DLL 回调
+            //（VM 实测日志里出现过这种"第二次注入在同一毫秒内返回成功"的冗余注入）。
+            string moduleFileName = System.IO.Path.GetFileName(dllPath);
+            IntPtr alreadyLoadedBase;
+            if (TryGetRemoteModule(pid, moduleFileName, out alreadyLoadedBase))
+            {
+                Logger.Instance.Info(string.Format(
+                    "[Inject] 目标进程已加载 {0} (基址=0x{1:X8}), 跳过重复注入: PID={2}",
+                    moduleFileName, (long)alreadyLoadedBase, pid));
+                return true;
             }
 
             IntPtr hProcess = OpenProcess(
@@ -123,22 +219,60 @@ namespace JiYuKiller.Services
                     return false;
                 }
 
-                // 等待线程结束
-                uint waitResult = WaitForSingleObject(hThread, 5000);
+                // 等待线程结束。
+                // 用 15 秒而不是原来的 5 秒: 实测正常注入耗时 0.20s / 0.53s / 1.85s / 2.66s / 3.45s，
+                // 但 VM 上出现过一次 >5 秒(首次加载 580KB 的 DLL 时被极域自己的加载器锁拖慢)，
+                // 固定 5 秒会把"慢但确实成功"的注入误判为失败。
+                const uint InjectWaitMs = 15000;
+                uint waitResult = WaitForSingleObject(hThread, InjectWaitMs);
+
                 if (waitResult == WAIT_TIMEOUT)
                 {
-                    Logger.Instance.Error($"[Inject] 远程线程等待超时(5000ms), 注入结果未知: PID={pid}");
                     CloseHandle(hThread);
                     VirtualFreeEx(hProcess, lpRemoteString, 0, MEM_RELEASE);
+
+                    // 超时不能直接判失败: "远程线程没返回"不等于"DLL 没加载"。
+                    // 用模块枚举查真实结果 —— 这才是注入是否成功的判据。
+                    IntPtr loadedBase;
+                    if (TryGetRemoteModule(pid, moduleFileName, out loadedBase))
+                    {
+                        Logger.Instance.Info(string.Format(
+                            "[Inject] 远程线程等待超时({0}ms), 但模块确已加载, 按成功处理: PID={1}, 模块基址=0x{2:X8}",
+                            InjectWaitMs, pid, (long)loadedBase));
+                        return true;
+                    }
+
+                    Logger.Instance.Error(string.Format(
+                        "[Inject] 远程线程等待超时({0}ms)且模块未加载, 注入失败: PID={1}, DLL={2}",
+                        InjectWaitMs, pid, dllPath));
                     return false;
                 }
 
-                // 必须校验 LoadLibraryW 的返回值:
-                // 远程线程创建成功 != DLL 加载成功, 返回 0 表示加载失败(未找到文件/位数不匹配/被拦截)。
+                // 读取远程线程退出码（从此只作为诊断信息，不再作为成功判据）
                 uint exitCode;
                 bool gotExitCode = GetExitCodeThread(hThread, out exitCode);
                 CloseHandle(hThread);
                 VirtualFreeEx(hProcess, lpRemoteString, 0, MEM_RELEASE);
+
+                // ==== 最终判据: 目标进程的模块列表里到底有没有这个 DLL ====
+                //
+                // 为什么不能只看 LoadLibraryW 的返回值:
+                //   成功时它返回 HMODULE(基址)，失败返回 0；但如果线程内部发生异常，
+                //   GetExitCodeThread 拿到的是"异常码"而不是 0。
+                //   实测(本机用一个 32 位假靶子)就出现过返回 0xC0000005(STATUS_ACCESS_VIOLATION)，
+                //   旧判据只拦 `== 0`，于是把它当成"模块基址 0xC0000005"并报"注入成功"，
+                //   而事实上 DLL 根本没加载 —— 紧接着的日志就是"未找到病毒窗口"。
+                // 只有"模块已出现在目标进程的模块表里"才是可靠的成功证据。
+                IntPtr finalBase;
+                bool moduleLoaded = TryGetRemoteModule(pid, moduleFileName, out finalBase);
+
+                if (moduleLoaded)
+                {
+                    Logger.Instance.Info(string.Format(
+                        "[Inject] DLL 注入成功, TID={0}, 模块基址=0x{1:X8}, LoadLibraryW 返回=0x{2:X8}",
+                        threadId, (long)finalBase, exitCode));
+                    return true;
+                }
 
                 if (!gotExitCode)
                 {
@@ -146,16 +280,24 @@ namespace JiYuKiller.Services
                     return false;
                 }
 
-                if (exitCode == 0 || exitCode == STILL_ACTIVE)
+                if (exitCode == 0)
                 {
                     Logger.Instance.Error(string.Format(
-                        "[Inject] LoadLibraryW 返回 0x{0:X8}, DLL 未加载成功 (PID={1}, DLL={2})。常见原因: 目标进程位数不匹配 / 路径不可访问 / 被安全软件拦截",
-                        exitCode, pid, dllPath));
-                    return false;
+                        "[Inject] LoadLibraryW 返回 0 且模块未加载 ⇒ 注入失败 (PID={0}, DLL={1})。常见原因: 目标进程位数不匹配 / 路径不可访问 / 被安全软件拦截",
+                        pid, dllPath));
                 }
-
-                Logger.Instance.Info(string.Format("[Inject] DLL 注入成功, TID={0}, 模块基址=0x{1:X8}", threadId, exitCode));
-                return true;
+                else if (exitCode == STILL_ACTIVE)
+                {
+                    Logger.Instance.Error(string.Format(
+                        "[Inject] 远程线程仍在活动且模块未加载 ⇒ 注入失败: PID={0}", pid));
+                }
+                else
+                {
+                    Logger.Instance.Error(string.Format(
+                        "[Inject] 远程线程以 0x{0:X8} 结束(疑似线程内异常, 如 0xC0000005=访问冲突) 且模块未加载 ⇒ 注入失败 (PID={1}, DLL={2})",
+                        exitCode, pid, dllPath));
+                }
+                return false;
             }
             catch (Exception ex)
             {
