@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
@@ -20,6 +20,8 @@ namespace JiYuKiller.Services
 
         private BitmapSource _cachedWallpaper;
         private string _cachedPath;
+        private DateTime _cachedWriteTimeUtc;
+        private long _cachedLength = -1;
 
         public bool IsValid { get; private set; }
         public string LastError { get; private set; }
@@ -42,7 +44,29 @@ namespace JiYuKiller.Services
         public BitmapSource LoadWallpaper(string path)
         {
             if (!ValidateWallpaper(path)) return null;
-            if (_cachedWallpaper != null && _cachedPath == path) return _cachedWallpaper;
+
+            // 缓存键必须包含文件修改时间与大小:
+            // 原实现只比较路径, 用户用同名文件覆盖图片后仍会返回旧位图。
+            DateTime writeTimeUtc;
+            long length;
+            try
+            {
+                FileInfo info = new FileInfo(path);
+                writeTimeUtc = info.LastWriteTimeUtc;
+                length = info.Length;
+            }
+            catch (Exception ex)
+            {
+                LastError = "读取文件信息失败: " + ex.Message;
+                IsValid = false;
+                return null;
+            }
+
+            if (_cachedWallpaper != null && _cachedPath == path &&
+                _cachedWriteTimeUtc == writeTimeUtc && _cachedLength == length)
+            {
+                return _cachedWallpaper;
+            }
 
             try
             {
@@ -70,6 +94,8 @@ namespace JiYuKiller.Services
 
                 _cachedWallpaper = cropped;
                 _cachedPath = path;
+                _cachedWriteTimeUtc = writeTimeUtc;
+                _cachedLength = length;
                 return cropped;
             }
             catch (Exception ex)
@@ -84,6 +110,8 @@ namespace JiYuKiller.Services
         {
             _cachedWallpaper = null;
             _cachedPath = null;
+            _cachedWriteTimeUtc = default(DateTime);
+            _cachedLength = -1;
             IsValid = false;
         }
 

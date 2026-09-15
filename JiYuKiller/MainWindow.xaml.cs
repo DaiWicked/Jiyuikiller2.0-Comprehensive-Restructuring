@@ -1130,12 +1130,38 @@ namespace JiYuKiller
                     targetPage.RenderTransform = trans;
 
                     // 直接用BeginAnimation, 不用Storyboard(Storyboard无法对不在可视化树的TranslateTransform动画)
+                    // 动画默认 FillBehavior=HoldEnd, 结束后属性会永久停留在"被动画接管"的状态,
+                    // 之后再直接赋值 Opacity/RenderTransform 都不会生效, 因此这里在完成时把终值写回基值并摘掉动画。
                     var fadeAnim = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(280));
                     fadeAnim.EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+                    fadeAnim.Completed += (s, a) =>
+                    {
+                        try
+                        {
+                            targetPage.Opacity = 1;
+                            targetPage.BeginAnimation(UIElement.OpacityProperty, null);
+                        }
+                        catch (Exception ex)
+                        {
+                            Services.Logger.Instance.Debug("页面淡入动画收尾失败: " + ex.Message);
+                        }
+                    };
                     targetPage.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
 
                     var slideAnim = new System.Windows.Media.Animation.DoubleAnimation(fromX, 0, TimeSpan.FromMilliseconds(280));
                     slideAnim.EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+                    slideAnim.Completed += (s, a) =>
+                    {
+                        try
+                        {
+                            trans.X = 0;
+                            trans.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null);
+                        }
+                        catch (Exception ex)
+                        {
+                            Services.Logger.Instance.Debug("页面滑动动画收尾失败: " + ex.Message);
+                        }
+                    };
                     trans.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, slideAnim);
 
                     Services.Logger.Instance.Debug($"页面方向过渡: {pageName}, fromX={fromX}");
@@ -1407,13 +1433,19 @@ namespace JiYuKiller
                         var procs = Process.GetProcessesByName("StudentMain");
                         if (procs.Length > 0)
                         {
-                            foreach (var p in procs) p.Kill();
+                            foreach (var p in procs)
+                            {
+                                try { p.Kill(); }
+                                catch { /* 进程可能已退出 */ }
+                            }
                             AppendDebugOutput($"[成功] 已杀死 {procs.Length} 个极域进程");
                         }
                         else
                         {
                             AppendDebugOutput("[提示] 未找到极域进程");
                         }
+                        // Process 对象持有进程句柄, 必须释放
+                        foreach (var p in procs) p.Dispose();
                         UpdateJiYuStatus();
                         break;
 
@@ -1544,15 +1576,23 @@ namespace JiYuKiller
             try
             {
                 var processes = Process.GetProcessesByName("StudentMain");
-                if (processes.Length > 0)
+                try
                 {
-                    TextJiYuStatus.Text = $"极域状态: 运行中 (PID={processes[0].Id})";
-                    TextJiYuStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
+                    if (processes.Length > 0)
+                    {
+                        TextJiYuStatus.Text = $"极域状态: 运行中 (PID={processes[0].Id})";
+                        TextJiYuStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x28, 0xA7, 0x45));
+                    }
+                    else
+                    {
+                        TextJiYuStatus.Text = "极域状态: 未运行";
+                        TextJiYuStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xDC, 0x35, 0x45));
+                    }
                 }
-                else
+                finally
                 {
-                    TextJiYuStatus.Text = "极域状态: 未运行";
-                    TextJiYuStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xDC, 0x35, 0x45));
+                    // 该函数在每次状态刷新时都会调用, 必须释放 Process 句柄
+                    foreach (var p in processes) p.Dispose();
                 }
             }
             catch
@@ -1616,7 +1656,28 @@ namespace JiYuKiller
         private void ForceExit()
         {
             Services.Logger.Instance.Info("强制退出应用程序");
+
+            // 关键: 必须置位。OnClosing 在 _isExiting==false 时会 e.Cancel=true 并把窗口隐藏到托盘,
+            // 原先这条路径没有置位, 关机/重启流程里窗口的关闭会被取消。
+            _isExiting = true;
+
             try { _controller.Stop(); } catch { }
+
+            // 与 ExitApplication 保持一致: 教师端模拟进程也需要停止
+            try
+            {
+                if (_teacherSimService != null && _teacherSimService.IsRunning)
+                {
+                    _teacherSimService.Stop();
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Warn("停止教师端模拟进程失败: " + ex.Message);
+            }
+
+            try { _glassyManager?.Dispose(); } catch { }
+
             try
             {
                 if (_trayIcon != null)
@@ -2833,7 +2894,8 @@ namespace JiYuKiller
                 // 文件只释放一次, 避免重复IO
                 if (!_eggExtracted || !System.IO.File.Exists(_eggTempPath))
                 {
-                    string tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "学习不通");
+                    // 与驱动/DLL 使用同一个释放目录, 避免在多处硬编码临时路径
+                    string tempDir = Services.EmbeddedResourceService.TempDir;
                     System.IO.Directory.CreateDirectory(tempDir);
                     _eggTempPath = System.IO.Path.Combine(tempDir, "egg.mp4");
 
@@ -2871,7 +2933,10 @@ namespace JiYuKiller
                 }
 
                 EggWindow.Visibility = System.Windows.Visibility.Visible;
-                EggMedia.Source = new System.Uri(_eggTempPath);
+                // 上一次播放失败时可能把视频元素隐藏了, 这里恢复
+                EggMedia.Visibility = System.Windows.Visibility.Visible;
+                // 必须显式 Absolute: 相对 Uri 会让 MediaElement 无法定位到本地文件
+                EggMedia.Source = new System.Uri(_eggTempPath, System.UriKind.Absolute);
                 EggMedia.Play();
                 Services.Logger.Instance.Info("[彩蛋] 视频开始播放");
             }
@@ -2879,6 +2944,31 @@ namespace JiYuKiller
             {
                 Services.Logger.Instance.Error("[彩蛋] 播放失败", ex);
                 _eggShowing = false;
+            }
+        }
+
+        /// <summary>
+        /// 彩蛋视频播放失败时的回退处理。
+        /// 播放失败时 MediaElement 只留一个黑框, 之前没有任何提示或日志。
+        /// </summary>
+        private void EggMedia_MediaFailed(object sender, ExceptionRoutedEventArgs e)
+        {
+            string reason = e != null && e.ErrorException != null
+                ? e.ErrorException.Message
+                : "(未知错误)";
+
+            Services.Logger.Instance.Error(
+                "[彩蛋] 视频播放失败, 文件: " + _eggTempPath + ", 原因: " + reason +
+                "。常见原因: 目标机器缺少 H.264 解码器(Win7 N/KN 版无 Media Feature Pack)或本窗口为分层窗口(AllowsTransparency=True)导致视频无法合成。");
+
+            try
+            {
+                // 失败时给出可读提示, 不要留一个纯黑窗口
+                EggMedia.Visibility = System.Windows.Visibility.Collapsed;
+            }
+            catch
+            {
+                // 忽略
             }
         }
 

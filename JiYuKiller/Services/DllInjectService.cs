@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -55,6 +55,8 @@ namespace JiYuKiller.Services
         private const uint MEM_RELEASE = 0x8000;
         private const uint PAGE_READWRITE = 4;
         private const uint INFINITE = 0xFFFFFFFF;
+        private const uint WAIT_TIMEOUT = 0x00000102;
+        private const uint STILL_ACTIVE = 259;
 
         /// <summary>
         /// 注入 DLL 到目标进程
@@ -122,11 +124,37 @@ namespace JiYuKiller.Services
                 }
 
                 // 等待线程结束
-                WaitForSingleObject(hThread, 5000);
+                uint waitResult = WaitForSingleObject(hThread, 5000);
+                if (waitResult == WAIT_TIMEOUT)
+                {
+                    Logger.Instance.Error($"[Inject] 远程线程等待超时(5000ms), 注入结果未知: PID={pid}");
+                    CloseHandle(hThread);
+                    VirtualFreeEx(hProcess, lpRemoteString, 0, MEM_RELEASE);
+                    return false;
+                }
+
+                // 必须校验 LoadLibraryW 的返回值:
+                // 远程线程创建成功 != DLL 加载成功, 返回 0 表示加载失败(未找到文件/位数不匹配/被拦截)。
+                uint exitCode;
+                bool gotExitCode = GetExitCodeThread(hThread, out exitCode);
                 CloseHandle(hThread);
                 VirtualFreeEx(hProcess, lpRemoteString, 0, MEM_RELEASE);
 
-                Logger.Instance.Info("[Inject] DLL 注入成功, TID=" + threadId);
+                if (!gotExitCode)
+                {
+                    Logger.Instance.Error("[Inject] 读取远程线程退出码失败, 错误码: " + Marshal.GetLastWin32Error());
+                    return false;
+                }
+
+                if (exitCode == 0 || exitCode == STILL_ACTIVE)
+                {
+                    Logger.Instance.Error(string.Format(
+                        "[Inject] LoadLibraryW 返回 0x{0:X8}, DLL 未加载成功 (PID={1}, DLL={2})。常见原因: 目标进程位数不匹配 / 路径不可访问 / 被安全软件拦截",
+                        exitCode, pid, dllPath));
+                    return false;
+                }
+
+                Logger.Instance.Info(string.Format("[Inject] DLL 注入成功, TID={0}, 模块基址=0x{1:X8}", threadId, exitCode));
                 return true;
             }
             catch (Exception ex)
@@ -162,18 +190,51 @@ namespace JiYuKiller.Services
                 // 写入模块名
                 byte[] moduleNameBytes = Encoding.Unicode.GetBytes(moduleName + "\0");
                 IntPtr lpRemoteString = VirtualAllocEx(hProcess, IntPtr.Zero, (uint)moduleNameBytes.Length, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+                if (lpRemoteString == IntPtr.Zero)
+                {
+                    Logger.Instance.Error("[Inject] 分配远程内存失败, 错误码: " + Marshal.GetLastWin32Error());
+                    return false;
+                }
+
                 UIntPtr bytesWritten;
-                WriteProcessMemory(hProcess, lpRemoteString, moduleNameBytes, (uint)moduleNameBytes.Length, out bytesWritten);
+                if (!WriteProcessMemory(hProcess, lpRemoteString, moduleNameBytes, (uint)moduleNameBytes.Length, out bytesWritten))
+                {
+                    Logger.Instance.Error("[Inject] 写入模块名失败, 错误码: " + Marshal.GetLastWin32Error());
+                    VirtualFreeEx(hProcess, lpRemoteString, 0, MEM_RELEASE);
+                    return false;
+                }
 
                 // GetModuleHandleW
                 IntPtr hKernel32 = GetModuleHandle("kernel32.dll");
                 IntPtr lpGetModuleHandle = GetProcAddress(hKernel32, "GetModuleHandleW");
+                if (lpGetModuleHandle == IntPtr.Zero)
+                {
+                    Logger.Instance.Error("[Inject] 获取 GetModuleHandleW 地址失败");
+                    VirtualFreeEx(hProcess, lpRemoteString, 0, MEM_RELEASE);
+                    return false;
+                }
+
                 IntPtr hThread = CreateRemoteThread(hProcess, IntPtr.Zero, 0, lpGetModuleHandle, lpRemoteString, 0, out IntPtr threadId);
+                if (hThread == IntPtr.Zero)
+                {
+                    Logger.Instance.Error("[Inject] 创建 GetModuleHandleW 远程线程失败, 错误码: " + Marshal.GetLastWin32Error());
+                    VirtualFreeEx(hProcess, lpRemoteString, 0, MEM_RELEASE);
+                    return false;
+                }
+
                 WaitForSingleObject(hThread, 5000);
-                GetExitCodeThread(hThread, out uint hModule);
+                uint hModuleExit;
+                bool gotModule = GetExitCodeThread(hThread, out hModuleExit);
                 CloseHandle(hThread);
                 VirtualFreeEx(hProcess, lpRemoteString, 0, MEM_RELEASE);
 
+                if (!gotModule)
+                {
+                    Logger.Instance.Error("[Inject] 读取远程线程退出码失败, 错误码: " + Marshal.GetLastWin32Error());
+                    return false;
+                }
+
+                uint hModule = hModuleExit;
                 if (hModule == 0)
                 {
                     Logger.Instance.Warn("[Inject] 未找到模块: " + moduleName);
@@ -182,9 +243,31 @@ namespace JiYuKiller.Services
 
                 // FreeLibrary
                 IntPtr lpFreeLibrary = GetProcAddress(hKernel32, "FreeLibrary");
+                if (lpFreeLibrary == IntPtr.Zero)
+                {
+                    Logger.Instance.Error("[Inject] 获取 FreeLibrary 地址失败");
+                    return false;
+                }
+
                 hThread = CreateRemoteThread(hProcess, IntPtr.Zero, 0, lpFreeLibrary, (IntPtr)hModule, 0, out threadId);
+                if (hThread == IntPtr.Zero)
+                {
+                    Logger.Instance.Error("[Inject] 创建 FreeLibrary 远程线程失败, 错误码: " + Marshal.GetLastWin32Error());
+                    return false;
+                }
+
                 WaitForSingleObject(hThread, 5000);
+                uint freeResult;
+                bool gotFreeResult = GetExitCodeThread(hThread, out freeResult);
                 CloseHandle(hThread);
+
+                if (!gotFreeResult || freeResult == 0)
+                {
+                    Logger.Instance.Warn(string.Format(
+                        "[Inject] FreeLibrary 返回 {0}, 模块可能仍驻留在目标进程: {1}",
+                        gotFreeResult ? freeResult.ToString() : "(读取失败)", moduleName));
+                    return false;
+                }
 
                 Logger.Instance.Info("[Inject] DLL 卸载成功");
                 return true;

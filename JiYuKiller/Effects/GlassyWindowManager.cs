@@ -12,12 +12,12 @@ namespace JiYuKiller.Effects
 {
     /// <summary>
     /// 毛玻璃窗口管理器
-    /// 移植�?WPF-Liquid-Glass-Effect-main �?GlassyWindowBehavior
-    /// 负责桌面截图捕获、着色器参数更新、背景同�?
+    /// 移植自 WPF-Liquid-Glass-Effect-main 的 GlassyWindowBehavior
+    /// 负责桌面截图捕获、着色器参数更新、背景同步
     /// </summary>
     public class GlassyWindowManager : IDisposable
     {
-        /// <summary>桌面截图/区域更新时触发（用于底栏等子区域同步背景�?/summary>
+        /// <summary>桌面截图/区域更新时触发（用于底栏等子区域同步背景）</summary>
         public event Action BackdropUpdated;
 
         private const int SwHide = 0;
@@ -32,6 +32,7 @@ namespace JiYuKiller.Effects
         private bool _isDeactivatedCapture;
         private GlassyEffect _glassyEffect;
         private double _blurIntensity = 0.8;
+        private bool _isDisposed;
 
         public GlassyWindowManager(Window window, Border backdropBorder, Border glassyBorder)
         {
@@ -47,7 +48,7 @@ namespace JiYuKiller.Effects
             _window.Deactivated += OnDeactivated;
             _window.Closed += OnClosed;
 
-            // 如果窗口已经加载（在Loaded事件之后才创建管理器），直接初始�?
+            // 如果窗口已经加载（在Loaded事件之后才创建管理器），直接初始化
             if (window.IsLoaded)
             {
                 Services.Logger.Instance.Info("窗口已加载，直接执行毛玻璃初始化");
@@ -57,7 +58,7 @@ namespace JiYuKiller.Effects
         }
 
         /// <summary>
-        /// 模糊强度�?.0 - 1.0�?
+        /// 模糊强度（0.0 - 1.0）
         /// </summary>
         public double BlurIntensity
         {
@@ -106,7 +107,10 @@ namespace JiYuKiller.Effects
 
         private void OnDeactivated(object sender, EventArgs e)
         {
-            if (_isDeactivatedCapture)
+            // 窗口已释放 / 已最小化 / 已不可见时不要做"隐藏-截图-显示"，
+            // 否则关闭或最小化过程中会额外闪烁一次。
+            if (_isDisposed || _isDeactivatedCapture || !_window.IsVisible ||
+                _window.WindowState == WindowState.Minimized)
             {
                 return;
             }
@@ -157,17 +161,17 @@ namespace JiYuKiller.Effects
                     _glassyEffect = new GlassyEffect();
                     if (_glassyEffect.IsShaderLoaded)
                     {
-                        Services.Logger.Instance.Info("GlassyEffect 像素睢�色器创建成功");
+                        Services.Logger.Instance.Info("GlassyEffect 像素着色器创建成功");
                     }
                     else
                     {
-                        Services.Logger.Instance.Warn("GlassyEffect 像素睢�色器加载失败，将使用普��半透明效果");
+                        Services.Logger.Instance.Warn("GlassyEffect 像素着色器加载失败，将使用普通半透明效果");
                         _glassyEffect = null;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Services.Logger.Instance.Warn($"GlassyEffect 创建失败: {ex.Message}，将使用普��半透明效果");
+                    Services.Logger.Instance.Warn($"GlassyEffect 创建失败: {ex.Message}，将使用普通半透明效果");
                     _glassyEffect = null;
                 }
             }
@@ -205,6 +209,11 @@ namespace JiYuKiller.Effects
 
         private void ScheduleDelayedBackdropUpdate()
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             if (_backdropUpdateTimer == null)
             {
                 _backdropUpdateTimer = new DispatcherTimer(DispatcherPriority.Render)
@@ -231,7 +240,7 @@ namespace JiYuKiller.Effects
 
         private void CaptureBehindWindow()
         {
-            if (_isCapturing)
+            if (_isCapturing || _isDisposed)
             {
                 return;
             }
@@ -332,6 +341,12 @@ namespace JiYuKiller.Effects
 
         public void Dispose()
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+            _isDisposed = true;
+
             if (_backdropUpdateTimer != null)
             {
                 _backdropUpdateTimer.Stop();
@@ -346,6 +361,8 @@ namespace JiYuKiller.Effects
             _window.Activated -= OnActivated;
             _window.Deactivated -= OnDeactivated;
             _window.Closed -= OnClosed;
+
+            BackdropUpdated = null;
         }
 
         [DllImport("user32.dll")]

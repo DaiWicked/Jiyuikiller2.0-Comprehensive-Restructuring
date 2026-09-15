@@ -7,6 +7,11 @@ namespace JiYuKiller
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            // 全局异常捕获必须先注册:
+            // 原实现放在协议窗口之后, 一旦 Load()/协议窗口/资源释放抛异常就完全没有错误报告。
+            this.DispatcherUnhandledException += App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
             // 先加载设置，根据DebugMode决定是否启用日志
             Models.AppSettings settings = Models.AppSettings.Load();
 
@@ -17,9 +22,14 @@ namespace JiYuKiller
             // DebugMode为false时不启用日志，不生成日志文件
 
             Services.Logger.Instance.Info("应用程序启动");
-            Services.EmbeddedResourceService.ExtractAll();
+            if (!Services.EmbeddedResourceService.ExtractAll())
+            {
+                Services.Logger.Instance.Warn("[启动] 嵌入资源未全部释放成功, 驱动/DLL 相关功能可能不可用");
+            }
             Services.Logger.Instance.Info($"当前目录: {AppDomain.CurrentDomain.BaseDirectory}");
-            Services.Logger.Instance.Info($"操作系统: {Environment.OSVersion}");
+            Services.Logger.Instance.Info($"操作系统(受兼容性垫片影响): {Environment.OSVersion}");
+            // Environment.OSVersion 在缺少 supportedOS 清单时会谎报 6.2.9200, 这里额外记录真实版本
+            Services.Logger.Instance.Info($"操作系统(真实): {Services.DriverService.DescribeRealWindowsVersion()}");
             Services.Logger.Instance.Info($".NET版本: {Environment.Version}");
             Services.Logger.Instance.Info($"64位系统: {Environment.Is64BitOperatingSystem}");
             Services.Logger.Instance.Info($"64位进程: {Environment.Is64BitProcess}");
@@ -48,12 +58,6 @@ namespace JiYuKiller
             {
                 Services.Logger.Instance.Debug("[协议] 用户已同意协议, 跳过");
             }
-
-            // 全局异常捕获 - UI线程
-            this.DispatcherUnhandledException += App_DispatcherUnhandledException;
-
-            // 全局异常捕获 - 非UI线程
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             // 手动创建并显示主窗口(移除了StartupUri, 避免协议窗口关闭后应用退出)
             Services.Logger.Instance.Info("[启动] 创建主窗口");

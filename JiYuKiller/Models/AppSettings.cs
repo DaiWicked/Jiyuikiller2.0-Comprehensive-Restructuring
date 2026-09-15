@@ -153,34 +153,72 @@ namespace JiYuKiller.Models
         /// <summary>
         /// 保存设置
         /// </summary>
+        /// <remarks>
+        /// 先写临时文件再原子替换。
+        /// 原实现直接 FileMode.Create 打开目标文件，一旦序列化中途抛异常(或进程被杀)，
+        /// 原配置文件就已被截断成 0 字节，下次启动会静默回落到默认设置。
+        /// </remarks>
         public void Save()
         {
+            string tempPath = SettingsPath + ".tmp";
             try
             {
                 XmlSerializer serializer = new XmlSerializer(typeof(AppSettings));
-                using (FileStream fs = new FileStream(SettingsPath, FileMode.Create))
+                using (FileStream fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     serializer.Serialize(fs, this);
                 }
+
+                if (File.Exists(SettingsPath))
+                {
+                    File.Replace(tempPath, SettingsPath, null);
+                }
+                else
+                {
+                    File.Move(tempPath, SettingsPath);
+                }
+
                 Services.Logger.Instance.Info($"设置保存成功，到: {SettingsPath}");
             }
             catch (Exception ex)
             {
                 Services.Logger.Instance.Error($"设置保存失败", ex);
+                try
+                {
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+                }
+                catch
+                {
+                    // 清理临时文件失败无碍
+                }
             }
         }
 
         /// <summary>
         /// 恢复默认设置
         /// </summary>
+        /// <remarks>
+        /// 只重置"设置项"，不重置"用户数据":
+        ///   Version       —— 版本号由编译期默认值决定
+        ///   Argeed        —— 用户协议是否已同意(清掉会导致协议窗口再次弹出)
+        ///   JiYuMainPath  —— 用户手动指定的极域安装路径(清掉会丢失定位结果)
+        /// </remarks>
         public void ResetToDefault()
         {
             AppSettings def = new AppSettings();
-            // 保留版本信息
             string ver = this.Version;
+            bool argeed = this.Argeed;
+            string jiYuPath = this.JiYuMainPath;
+
             CopyFrom(def);
+
             this.Version = ver;
-            Services.Logger.Instance.Warn("设置已恢复默认");
+            this.Argeed = argeed;
+            this.JiYuMainPath = jiYuPath;
+            Services.Logger.Instance.Warn("设置已恢复默认（已保留版本号、协议同意状态与极域路径）");
         }
 
         private void CopyFrom(AppSettings other)

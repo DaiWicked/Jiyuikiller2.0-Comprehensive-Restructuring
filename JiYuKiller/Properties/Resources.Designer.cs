@@ -1,4 +1,4 @@
-namespace JiYuKiller.Properties {
+﻿namespace JiYuKiller.Properties {
     using System;
     using System.CodeDom.Compiler;
     using System.ComponentModel;

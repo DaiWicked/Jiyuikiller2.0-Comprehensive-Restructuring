@@ -10,7 +10,9 @@
         AllowsTransparency="True"
         WindowStyle="None"
         ResizeMode="NoResize" ShowInTaskbar="True"
-        MinWidth="400" MinHeight="450">
+        MinWidth="400" MinHeight="450"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display">
 
     <Window.Resources>
         <!-- 页面切换动画 -->
@@ -259,7 +261,11 @@
                             <Button x:Name="BtnBackFromAboutMe" Content="← 返回" Style="{StaticResource GlassButton}" Click="BtnBackFromAboutMe_Click" HorizontalAlignment="Left" Margin="0,0,0,12" Background="#FF6C757D" Padding="12,6" />
 
                             <!-- 头像 -->
+                            <!-- 注意: ClipToBounds 只做矩形裁剪, 圆角必须靠 Border.Clip 的 RectangleGeometry -->
                             <Border Width="120" Height="120" CornerRadius="60" Margin="0,0,0,16" ClipToBounds="True">
+                                <Border.Clip>
+                                    <RectangleGeometry Rect="0,0,120,120" RadiusX="60" RadiusY="60" />
+                                </Border.Clip>
                                 <Image Source="pack://application:,,,/学习不通;component/Assets/me.png" Stretch="UniformToFill" />
                             </Border>
 
@@ -607,7 +613,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="缩略图替换" FontSize="15" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
-                                    <Ellipse x:Name="ScreenshotStatusDot" Width="12" Height="12" Fill="#FF999999" VerticalAlignment="Center" />
+                                    <Ellipse x:Name="ScreenshotStatusDot" Grid.Column="1" HorizontalAlignment="Right" Width="12" Height="12" Fill="#FF999999" VerticalAlignment="Center" />
                                 </Grid>
                                 <TextBlock Text="教师端学生列表中的80×60缩略图。应用后自动重启极域学生端生效。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,8" />
                                 <!-- 缩略图预览 -->
@@ -631,7 +637,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="实时屏幕替换" FontSize="15" FontWeight="Bold" Foreground="#FF1a1a2e" VerticalAlignment="Center" />
-                                    <Ellipse x:Name="RealtimeStatusDot" Width="12" Height="12" Fill="#FF999999" VerticalAlignment="Center" />
+                                    <Ellipse x:Name="RealtimeStatusDot" Grid.Column="1" HorizontalAlignment="Right" Width="12" Height="12" Fill="#FF999999" VerticalAlignment="Center" />
                                 </Grid>
                                 <TextBlock Text="教师端实时观看学生屏幕时，显示替换的图片或视频（循环播放）。即时生效，无需重启。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,0,0,8" />
                                 <!-- 实时替换预览 -->
@@ -1028,7 +1034,11 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
+                                        <!-- UniformToFill 会填满整个矩形, 圆角必须用 Border.Clip(ClipToBounds 只裁矩形) -->
                                         <Border Grid.Column="0" Width="150" Height="100" CornerRadius="6" Background="#20000000" BorderBrush="#40000000" BorderThickness="1" ClipToBounds="True">
+                                            <Border.Clip>
+                                                <RectangleGeometry Rect="0,0,150,100" RadiusX="6" RadiusY="6" />
+                                            </Border.Clip>
                                             <Image x:Name="ImageWallpaperPreview" Stretch="UniformToFill" />
                                         </Border>
                                         <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
@@ -1097,7 +1107,7 @@
                              BorderBrush="#FF0A0A0A"
                              BorderThickness="1"
                              VerticalScrollBarVisibility="Hidden"
-                             HorizontalScrollBarVisibility="Hidden"
+                             HorizontalScrollBarVisibility="Auto"
                              TextWrapping="NoWrap" />
                 </Grid>
 
@@ -1250,7 +1260,7 @@
                 </Grid>
                 <!-- 视频区域(保持黑色不透明) -->
                 <Border Grid.Row="1" Background="#FF000000">
-                    <MediaElement x:Name="EggMedia" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" />
+                    <MediaElement x:Name="EggMedia" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" MediaFailed="EggMedia_MediaFailed" />
                 </Border>
                 <!-- 底部按钮 -->
                 <Grid Grid.Row="2" Background="#18FFFFFF">

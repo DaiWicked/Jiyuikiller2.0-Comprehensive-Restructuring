@@ -1,12 +1,13 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
 
 namespace JiYuKiller.Services
 {
     /// <summary>
     /// 嵌入式资源释放服务
-    /// 将嵌入的驱动和DLL释放到临时目录
+    /// 将嵌入的驱动和DLL释放到本用户目录
     /// </summary>
     public static class EmbeddedResourceService
     {
@@ -14,7 +15,10 @@ namespace JiYuKiller.Services
         private static readonly object _lock = new object();
 
         /// <summary>
-        /// 获取临时目录路径
+        /// 释放目录。
+        /// 优先 %LOCALAPPDATA%\学习不通 (按用户隔离)，取不到时回退 %TEMP%\学习不通。
+        /// 不再使用 %TEMP% 作为首选: 该目录全局可写且内容可被其它进程预置,
+        /// 配合"仅比较文件长度"的旧逻辑会直接复用被替换过的驱动/DLL。
         /// </summary>
         public static string TempDir
         {
@@ -22,44 +26,75 @@ namespace JiYuKiller.Services
             {
                 if (string.IsNullOrEmpty(_tempDir))
                 {
-                    _tempDir = Path.Combine(Path.GetTempPath(), "学习不通");
+                    string baseDir = null;
+                    try
+                    {
+                        baseDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    }
+                    catch
+                    {
+                        baseDir = null;
+                    }
+
+                    if (string.IsNullOrEmpty(baseDir))
+                    {
+                        baseDir = Path.GetTempPath();
+                    }
+
+                    _tempDir = Path.Combine(baseDir, "学习不通");
                 }
                 return _tempDir;
             }
         }
 
         /// <summary>
-        /// 释放所有嵌入资源到临时目录
+        /// 释放所有嵌入资源到释放目录
         /// </summary>
-        public static void ExtractAll()
+        /// <returns>驱动与DLL是否都已就绪</returns>
+        public static bool ExtractAll()
         {
             lock (_lock)
             {
                 try
                 {
                     Directory.CreateDirectory(TempDir);
-                    Logger.Instance.Info($"[EmbeddedResource] 临时目录: {TempDir}");
+                    Logger.Instance.Info($"[EmbeddedResource] 释放目录: {TempDir}");
 
-                    // 释放驱动和DLL
-                    ExtractResource("JiYuKiller.Drivers.JiYuTrainerDriver.sys",
+                    bool driverOk = ExtractResource("JiYuKiller.Drivers.JiYuTrainerDriver.sys",
                         Path.Combine(TempDir, "JiYuTrainerDriver.sys"));
-                    ExtractResource("JiYuKiller.Drivers.JiYuTrainerHooks.dll",
+                    bool hooksOk = ExtractResource("JiYuKiller.Drivers.JiYuTrainerHooks.dll",
                         Path.Combine(TempDir, "JiYuTrainerHooks.dll"));
 
-                    Logger.Instance.Info("[EmbeddedResource] 所有嵌入资源释放完成");
+                    if (driverOk && hooksOk)
+                    {
+                        Logger.Instance.Info("[EmbeddedResource] 所有嵌入资源释放完成");
+                    }
+                    else
+                    {
+                        Logger.Instance.Error(string.Format(
+                            "[EmbeddedResource] 嵌入资源释放未全部成功: 驱动={0}, DLL={1}",
+                            driverOk, hooksOk));
+                    }
+
+                    return driverOk && hooksOk;
                 }
                 catch (Exception ex)
                 {
                     Logger.Instance.Error("[EmbeddedResource] 释放资源失败", ex);
+                    return false;
                 }
             }
         }
 
         /// <summary>
-        /// 释放单个嵌入资源
+        /// 释放单个嵌入资源。
+        /// 通过 SHA-256 比对判断是否可复用已有文件，长度相同但内容不同的文件会被覆盖。
         /// </summary>
-        private static void ExtractResource(string resourceName, string outputPath)
+        /// <returns>目标文件是否已是最新且存在</returns>
+        private static bool ExtractResource(string resourceName, string outputPath)
         {
+            string tempPath = outputPath + ".tmp";
+
             try
             {
                 Assembly asm = Assembly.GetExecutingAssembly();
@@ -68,35 +103,112 @@ namespace JiYuKiller.Services
                     if (stream == null)
                     {
                         Logger.Instance.Warn($"[EmbeddedResource] 资源不存在: {resourceName}");
-                        return;
+                        return false;
                     }
 
-                    // 如果文件已存在且大小相同，跳过
-                    if (File.Exists(outputPath))
+                    string expectedHash = ComputeStreamHash(stream);
+                    stream.Position = 0;
+
+                    if (File.Exists(outputPath) &&
+                        string.Equals(ComputeFileHash(outputPath), expectedHash, StringComparison.OrdinalIgnoreCase))
                     {
-                        FileInfo fi = new FileInfo(outputPath);
-                        if (fi.Length == stream.Length)
-                        {
-                            Logger.Instance.Debug($"[EmbeddedResource] 文件已存在，跳过: {Path.GetFileName(outputPath)}");
-                            return;
-                        }
+                        Logger.Instance.Debug($"[EmbeddedResource] 文件已是最新，跳过: {Path.GetFileName(outputPath)}");
+                        return true;
                     }
 
-                    using (FileStream fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+                    // 先写临时文件再改名, 避免出现"内容写到一半"的目标文件被上层直接加载
+                    using (FileStream fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
                     {
                         stream.CopyTo(fs);
                     }
-                    Logger.Instance.Info($"[EmbeddedResource] 已释放: {Path.GetFileName(outputPath)} ({stream.Length} bytes)");
+
+                    if (File.Exists(outputPath))
+                    {
+                        File.Delete(outputPath);
+                    }
+                    File.Move(tempPath, outputPath);
+
+                    Logger.Instance.Info($"[EmbeddedResource] 已释放: {Path.GetFileName(outputPath)} ({stream.Length} bytes, SHA256={ShortHash(expectedHash)})");
+                    return true;
                 }
             }
             catch (Exception ex)
             {
                 Logger.Instance.Error($"[EmbeddedResource] 释放失败: {resourceName}", ex);
+                TryDelete(tempPath);
+                return false;
+            }
+        }
+
+        private static string ComputeStreamHash(Stream stream)
+        {
+            long position = stream.CanSeek ? stream.Position : 0;
+            using (SHA256 sha = SHA256.Create())
+            {
+                byte[] hash = sha.ComputeHash(stream);
+                if (stream.CanSeek)
+                {
+                    stream.Position = position;
+                }
+                return ToHex(hash);
+            }
+        }
+
+        private static string ComputeFileHash(string path)
+        {
+            try
+            {
+                using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (SHA256 sha = SHA256.Create())
+                {
+                    return ToHex(sha.ComputeHash(fs));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Warn($"[EmbeddedResource] 计算文件哈希失败: {path} ({ex.Message})");
+                return null;
+            }
+        }
+
+        private static string ToHex(byte[] bytes)
+        {
+            char[] chars = new char[bytes.Length * 2];
+            const string hex = "0123456789abcdef";
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                chars[i * 2] = hex[bytes[i] >> 4];
+                chars[i * 2 + 1] = hex[bytes[i] & 0xF];
+            }
+            return new string(chars);
+        }
+
+        private static string ShortHash(string hash)
+        {
+            if (string.IsNullOrEmpty(hash) || hash.Length <= 12)
+            {
+                return hash;
+            }
+            return hash.Substring(0, 12);
+        }
+
+        private static void TryDelete(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch
+            {
+                // 清理失败无碍
             }
         }
 
         /// <summary>
-        /// 获取驱动文件路径（优先临时目录，回退到exe目录Drivers）
+        /// 获取驱动文件路径（优先释放目录，回退到exe目录Drivers）
         /// </summary>
         public static string GetDriverPath()
         {
@@ -122,7 +234,7 @@ namespace JiYuKiller.Services
         }
 
         /// <summary>
-        /// 清理临时目录
+        /// 清理释放目录
         /// </summary>
         public static void Cleanup()
         {
@@ -131,12 +243,12 @@ namespace JiYuKiller.Services
                 if (Directory.Exists(TempDir))
                 {
                     Directory.Delete(TempDir, true);
-                    Logger.Instance.Info("[EmbeddedResource] 临时目录已清理");
+                    Logger.Instance.Info("[EmbeddedResource] 释放目录已清理");
                 }
             }
             catch (Exception ex)
             {
-                Logger.Instance.Warn($"[EmbeddedResource] 清理临时目录失败: {ex.Message}");
+                Logger.Instance.Warn($"[EmbeddedResource] 清理释放目录失败: {ex.Message}");
             }
         }
     }

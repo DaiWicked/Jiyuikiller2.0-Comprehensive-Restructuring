@@ -21,6 +21,10 @@ namespace JiYuKiller.Services
         private volatile bool _isRunning;
         private Models.AppSettings _settings;
 
+        // 用于中断监控线程的等待, 使 Stop() 不必等满一个 CKInterval 周期
+        private readonly System.Threading.ManualResetEventSlim _stopEvent =
+            new System.Threading.ManualResetEventSlim(false);
+
         // 服务
         private readonly DllInjectService _dllInject = new DllInjectService();
         private readonly DriverService _driver = new DriverService();
@@ -196,6 +200,7 @@ namespace JiYuKiller.Services
             }
 
             _isRunning = true;
+            _stopEvent.Reset();
             _monitorThread = new Thread(MonitorLoop)
             {
                 IsBackground = true,
@@ -214,6 +219,7 @@ namespace JiYuKiller.Services
             if (!_isRunning) return;
 
             _isRunning = false;
+            _stopEvent.Set();
             _monitorThread?.Join(2000);
 
             // 卸载注入的DLL
@@ -241,7 +247,6 @@ namespace JiYuKiller.Services
         private void MonitorLoop()
         {
             Logger.Instance.Info("[JiYuController] 监控线程开始运行");
-            int checkInterval = Math.Max(1000, Math.Min(10000, _settings.CKInterval > 0 ? _settings.CKInterval : 3000));
 
             while (_isRunning)
             {
@@ -266,7 +271,15 @@ namespace JiYuKiller.Services
                     Logger.Instance.Error("[JiYuController] 监控循环异常", ex);
                 }
 
-                Thread.Sleep(checkInterval);
+                // 每轮重新读取 CKInterval, 使设置界面修改的间隔立即生效(旧实现只在进入循环时读一次)。
+                int checkInterval = Math.Max(1000, Math.Min(10000,
+                    _settings.CKInterval > 0 ? _settings.CKInterval : 3000));
+
+                // 可中断等待: Stop() 触发后立即退出, 不必等满一个周期
+                if (_stopEvent.Wait(checkInterval))
+                {
+                    break;
+                }
             }
 
             Logger.Instance.Info("[JiYuController] 监控线程已退出");
@@ -282,10 +295,22 @@ namespace JiYuKiller.Services
             foreach (string name in JiYuProcessNames)
             {
                 Process[] processes = Process.GetProcessesByName(name);
+
+                // 每个检查周期都会枚举一次, 必须释放所有 Process 对象(含未选中的),
+                // 否则进程句柄与 GC 压力会持续累积。
                 if (processes.Length > 0)
                 {
                     jiYuProcess = processes[0];
+                    for (int i = 1; i < processes.Length; i++)
+                    {
+                        processes[i].Dispose();
+                    }
                     break;
+                }
+
+                for (int i = 0; i < processes.Length; i++)
+                {
+                    processes[i].Dispose();
                 }
             }
 
@@ -327,6 +352,8 @@ namespace JiYuKiller.Services
                         Logger.Instance.Error("[JiYuController] 结束极域进程失败", ex);
                     }
                 }
+
+                jiYuProcess.Dispose();
             }
             else
             {
@@ -421,7 +448,8 @@ namespace JiYuKiller.Services
             WritePrivateProfileString("JTSettings", "BandAllRunOp", _settings.BanJiYuRunOp ? "TRUE" : "FALSE", iniPath);
             WritePrivateProfileString("JTSettings", "ProhibitKillProcess", _settings.ProhibitKillProcess ? "TRUE" : "FALSE", iniPath);
             WritePrivateProfileString("JTSettings", "ProhibitCloseWindow", _settings.ProhibitCloseWindow ? "TRUE" : "FALSE", iniPath);
-            WritePrivateProfileString("JTSettings", "DoNotShowVirusWindow", "TRUE", iniPath);
+            // 修复: 原实现硬编码 "TRUE", 导致高级设置里"隐藏极域端控制输出窗口"取消勾选也不生效
+            WritePrivateProfileString("JTSettings", "DoNotShowVirusWindow", _settings.DoNotShowVirusWindow ? "TRUE" : "FALSE", iniPath);
             WritePrivateProfileString("JTSettings", "ForceDisableWatchDog", _settings.ForceDisableWatchDog ? "TRUE" : "FALSE", iniPath);
             WritePrivateProfileString("JTSettings", "AllowGbTop", _settings.AllowGbTop ? "TRUE" : "FALSE", iniPath);
             WritePrivateProfileString("JTSettings", "AllowMonitor", _settings.AllowMonitor ? "TRUE" : "FALSE", iniPath);
@@ -737,9 +765,20 @@ namespace JiYuKiller.Services
                 if (_driver.OpenDriver())
                 {
                     // 发送初始化参数
-                    bool isXp = Environment.OSVersion.Version.Major < 6;
-                    bool isWin7 = Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor == 1;
-                    uint buildVer = (uint)Environment.OSVersion.Version.Build;
+                    // 必须使用"真实"系统版本:
+                    //   Environment.OSVersion 走 GetVersionEx, 在缺少 supportedOS 清单时会把
+                    //   Win8.1/Win10 一律报成 6.2.9200, 于是 isWin7 与 isWinXP 会同时为 false,
+                    //   驱动就会按错误的版本分支选择内核结构偏移。
+                    bool isXp, isWin7;
+                    DriverService.GetDriverInitFlags(out isXp, out isWin7);
+                    uint buildVer = DriverService.GetRealWindowsBuild();
+
+                    // 日志格式与参考实现 DriverLoader.cpp:XLoadDriver() 保持一致, 便于对照排查
+                    Logger.Instance.Info("Windows Bulid version " + buildVer);
+                    Logger.Instance.Info(string.Format(
+                        "[JiYuController] 真实系统版本={0}, isWin7={1}, isWinXP={2}, build={3}",
+                        DriverService.DescribeRealWindowsVersion(), isWin7, isXp, buildVer));
+
                     _driver.SendInitParam(isXp, isWin7, buildVer);
 
                     Logger.Instance.Info("[JiYuController] 驱动加载成功");
@@ -776,7 +815,14 @@ namespace JiYuKiller.Services
                 MessageBox.Show("请先加载内核驱动。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
-            return _driver.KillProcess(pid);
+            int ntStatus;
+            bool ok = _driver.KillProcess(pid, out ntStatus);
+            if (!ok)
+            {
+                Logger.Instance.Error(string.Format(
+                    "[JiYuController] 内核级杀进程失败, PID={0}, NTSTATUS=0x{1:X8}", pid, ntStatus));
+            }
+            return ok;
         }
 
         /// <summary>
@@ -801,7 +847,8 @@ namespace JiYuKiller.Services
             {
                 if (_driver.IsDriverOpened)
                 {
-                    bool result = _driver.KillProcess(JiYuProcessId);
+                    int ntStatus;
+                    bool result = _driver.KillProcess(JiYuProcessId, out ntStatus);
                     if (result)
                     {
                         Logger.Instance.Info("[JiYuController] 内核级杀死极域成功 PID=" + JiYuProcessId);
@@ -811,6 +858,12 @@ namespace JiYuKiller.Services
                         _studentControlled = false;
                         OnStatusChanged?.Invoke();
                     }
+                    else
+                    {
+                        Logger.Instance.Error(string.Format(
+                            "[JiYuController] 内核级杀进程失败, PID={0}, NTSTATUS=0x{1:X8}",
+                            JiYuProcessId, ntStatus));
+                    }
                     return result;
                 }
                 Logger.Instance.Warn("[JiYuController] 驱动未打开，回退到用户态杀进程");
@@ -819,8 +872,10 @@ namespace JiYuKiller.Services
             // TerminateProcess / NtTerminateProcess: 用户态杀进程
             try
             {
-                Process proc = Process.GetProcessById(JiYuProcessId);
-                proc.Kill();
+                using (Process proc = Process.GetProcessById(JiYuProcessId))
+                {
+                    proc.Kill();
+                }
                 Logger.Instance.Info("[JiYuController] 已杀死极域进程 PID=" + JiYuProcessId + " (模式: " + mode + ")");
                 IsJiYuRunning = false;
                 JiYuProcessId = 0;
@@ -877,31 +932,97 @@ namespace JiYuKiller.Services
             try
             {
                 // 对应原项目 MUnLoadDriverServiceWithMessage(L"TDNetFilter")
-                ProcessStartInfo psi = new ProcessStartInfo("sc.exe", "stop TDNetFilter")
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true
-                };
-                Process p = Process.Start(psi);
-                p.WaitForExit(5000);
+                string stopOutput;
+                int stopExit = RunSc("stop TDNetFilter", out stopOutput);
+                string deleteOutput;
+                int deleteExit = RunSc("delete TDNetFilter", out deleteOutput);
 
-                psi = new ProcessStartInfo("sc.exe", "delete TDNetFilter")
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true
-                };
-                p = Process.Start(psi);
-                p.WaitForExit(5000);
+                Logger.Instance.Info(string.Format(
+                    "[JiYuController] sc stop TDNetFilter 退出码={0}, 输出={1}", stopExit, stopOutput.Trim()));
+                Logger.Instance.Info(string.Format(
+                    "[JiYuController] sc delete TDNetFilter 退出码={0}, 输出={1}", deleteExit, deleteOutput.Trim()));
 
-                Logger.Instance.Info("[JiYuController] 已尝试卸载极域网络过滤驱动 TDNetFilter");
-                MessageBox.Show("已尝试解除网络控制（卸载 TDNetFilter 驱动）。\n\n如果极域仍限制网络，请重启电脑。", "完成", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (deleteExit == 0)
+                {
+                    MessageBox.Show("已解除网络控制（TDNetFilter 驱动已停止并删除）。", "完成", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    // 原实现无论成功失败都提示"已尝试解除", 这里改为按退出码给出真实结果
+                    MessageBox.Show(
+                        "未能删除 TDNetFilter 驱动（sc delete 退出码 " + deleteExit + "）。\n\n" +
+                        "常见原因：服务正在运行或被其它进程占用。\n" +
+                        "请重启电脑后再试，或手动执行：sc delete TDNetFilter",
+                        "未完成", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
             }
             catch (Exception ex)
             {
                 Logger.Instance.Error("[JiYuController] 卸载网络过滤驱动失败", ex);
                 MessageBox.Show("操作失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 运行 sc.exe 子命令，排空输出并返回退出码。
+        /// 原实现只 WaitForExit 不读取输出：子进程写满管道后会阻塞，而且 Process 对象既不释放、
+        /// 超时后也不结束，句柄会一直挂着。这里改用异步读取 + 超时强杀 + using 释放。
+        /// </summary>
+        private static int RunSc(string arguments, out string output)
+        {
+            output = "";
+
+            ProcessStartInfo psi = new ProcessStartInfo("sc.exe", arguments)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            using (Process p = Process.Start(psi))
+            {
+                if (p == null)
+                {
+                    output = "(无法启动 sc.exe)";
+                    return -1;
+                }
+
+                StringBuilder sb = new StringBuilder();
+                object gate = new object();
+                DataReceivedEventHandler collect = (s, e) =>
+                {
+                    if (e.Data != null)
+                    {
+                        lock (gate)
+                        {
+                            sb.AppendLine(e.Data);
+                        }
+                    }
+                };
+
+                p.OutputDataReceived += collect;
+                p.ErrorDataReceived += collect;
+                p.BeginOutputReadLine();
+                p.BeginErrorReadLine();
+
+                if (!p.WaitForExit(5000))
+                {
+                    try { p.Kill(); } catch { }
+                    lock (gate)
+                    {
+                        output = sb.ToString() + " (等待超时, 已强制结束)";
+                    }
+                    return -1;
+                }
+
+                // 无参 WaitForExit 会等异步输出读取结束, 否则可能读到不完整的输出
+                p.WaitForExit();
+                lock (gate)
+                {
+                    output = sb.ToString();
+                }
+                return p.ExitCode;
             }
         }
 

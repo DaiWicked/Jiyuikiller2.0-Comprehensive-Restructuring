@@ -1,11 +1,12 @@
-﻿<Application x:Class="JiYuKiller.App"
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application x:Class="JiYuKiller.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <!-- 全局 Liquid Glass 样式 -->
         <ResourceDictionary>
-            <!-- ��������/ָʾ���ɶ�����ˢ����ɫ�汳����������Ӧ�� -->
+            <!-- 导航栏前景色/指示器画刷，随底栏背景明暗自适应 -->
             <SolidColorBrush x:Key="NavForegroundBrush" Color="#FFF2F5F8" />
             <SolidColorBrush x:Key="NavIndicatorBrushTop" Color="#5AFFFFFF" />
             <SolidColorBrush x:Key="NavIndicatorBrushBottom" Color="#30FFFFFF" />
@@ -17,7 +18,7 @@
             <Color x:Key="GlassSuccessColor">#FF28A745</Color>
             <Color x:Key="GlassDangerColor">#FFFF6B6B</Color>
 
-            <!-- COUI 5级Surface配色（从源码提取: F0F1F2->�?>�?>E6E6E6->白） -->
+            <!-- COUI 5级Surface配色（从源码提取: F0F1F2 -> 白 -> 白 -> E6E6E6 -> 白） -->
             <Color x:Key="SurfaceLevel0Color">#FFF0F1F2</Color>
             <Color x:Key="SurfaceLevel1Color">#FFFFFFFF</Color>
             <Color x:Key="SurfaceLevel2Color">#FFFFFFFF</Color>
@@ -37,8 +38,8 @@
             <SolidColorBrush x:Key="GlassSuccessBrush" Color="{StaticResource GlassSuccessColor}" />
             <SolidColorBrush x:Key="GlassDangerBrush" Color="{StaticResource GlassDangerColor}" />
 
-            <!-- 玻璃按钮样式（��鉴COUI: Sink按压缩放 + 状��层覆盖 + Storyboard动画�?-->
-            <!-- 注意: 不动画背景色, 只��过状��层叠加暗色, 保留按钮原始背景�?-->
+            <!-- 玻璃按钮样式（借鉴COUI: Sink按压缩放 + 状态层覆盖 + Storyboard动画） -->
+            <!-- 注意: 不动画背景色, 只通过状态层叠加暗色, 保留按钮原始背景色 -->
             <Style x:Key="GlassButton" TargetType="Button">
                 <Setter Property="Background" Value="{StaticResource GlassPrimaryBrush}" />
                 <Setter Property="Foreground" Value="White" />
@@ -50,10 +51,10 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
-                            <Grid x:Name="btnRoot">
+                            <Grid x:Name="btnRoot" RenderTransformOrigin="0.5,0.5">
                                 <Grid.RenderTransform>
                                     <TransformGroup>
-                                        <ScaleTransform x:Name="btnScale" ScaleX="1" ScaleY="1" CenterX="0.5" CenterY="0.5" />
+                                        <ScaleTransform x:Name="btnScale" ScaleX="1" ScaleY="1" />
                                         <TranslateTransform x:Name="btnTranslate" Y="0" />
                                     </TransformGroup>
                                 </Grid.RenderTransform>
@@ -66,11 +67,11 @@
                                         Padding="{TemplateBinding Padding}">
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
-                                <!-- 状��层（COUI: 悬停8%�? 按压12%黑） -->
+                                <!-- 状态层（COUI: 悬停8%白, 按压12%黑） -->
                                 <Border x:Name="stateLayer" CornerRadius="8" Background="#00000000" IsHitTestVisible="False" />
                             </Grid>
                             <ControlTemplate.Triggers>
-                                <!-- 悬停: 上移1px + 状��层8%�?-->
+                                <!-- 悬停: 上移1px + 状态层8%白 -->
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Trigger.EnterActions>
                                         <BeginStoryboard>
@@ -89,7 +90,7 @@
                                         </BeginStoryboard>
                                     </Trigger.ExitActions>
                                 </Trigger>
-                                <!-- 按压: 缩放0.92 + 状��层12%�?+ 回弹 -->
+                                <!-- 按压: 缩放0.92 + 状态层12%黑 + 回弹 -->
                                 <Trigger Property="IsPressed" Value="True">
                                     <Trigger.EnterActions>
                                         <BeginStoryboard>
@@ -130,7 +131,7 @@
                 </Setter>
             </Style>
 
-            <!-- 导航栏液态玻璃按钮样式（动画作用在整个Grid, 整体缩放, 不受BlurEffect影响�?-->
+            <!-- 导航栏液态玻璃按钮样式（动画作用在整个Grid, 整体缩放, 不受BlurEffect影响） -->
             <Style x:Key="NavGlassButton" TargetType="Button">
                 <Setter Property="Foreground" Value="{DynamicResource NavForegroundBrush}" />
                 <Setter Property="FontSize" Value="13" />
@@ -139,14 +140,14 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
-                            <Grid x:Name="navRoot">
+                            <Grid x:Name="navRoot" RenderTransformOrigin="0.5,0.5">
                                 <Grid.RenderTransform>
                                     <TransformGroup>
-                                        <ScaleTransform x:Name="navScale" ScaleX="1" ScaleY="1" CenterX="0.5" CenterY="0.5" />
+                                        <ScaleTransform x:Name="navScale" ScaleX="1" ScaleY="1" />
                                         <TranslateTransform x:Name="navTranslate" Y="0" />
                                     </TransformGroup>
                                 </Grid.RenderTransform>
-                                <!-- 高斯模糊玻璃背景�?-->
+                                <!-- 高斯模糊玻璃背景层 -->
                                 <Border x:Name="glassBg" Background="#28FFFFFF" CornerRadius="16">
                                     <Border.Effect>
                                         <BlurEffect Radius="6" />
@@ -154,9 +155,9 @@
                                 </Border>
                                 <!-- 边缘高光 -->
                                 <Border x:Name="glassBorder" CornerRadius="16" BorderThickness="1" BorderBrush="#40FFFFFF" IsHitTestVisible="False" />
-                                <!-- 状��层 -->
+                                <!-- 状态层 -->
                                 <Border x:Name="navStateLayer" CornerRadius="16" Background="#00000000" IsHitTestVisible="False" />
-                                <!-- 文字�?-->
+                                <!-- 文字层 -->
                                 <ContentPresenter x:Name="content" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
                             </Grid>
                             <ControlTemplate.Triggers>
@@ -238,7 +239,21 @@
                 </Setter>
             </Style>
 
-            <!-- 玻璃滑块样式（��鉴COUI: Thumb悬停放大1.1, 拖动放大1.25, 带阴影） -->
+            <!-- 填充RepeatButton样式（Slider已填充部分，背景由Slider.Foreground经TemplateBinding传入） -->
+            <Style x:Key="SliderRepeatButtonFill" TargetType="RepeatButton">
+                <Setter Property="Focusable" Value="False" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RepeatButton">
+                            <Border Height="4" CornerRadius="2"
+                                    VerticalAlignment="Center"
+                                    Background="{TemplateBinding Background}" />
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- 玻璃滑块样式（借鉴COUI: Thumb悬停放大1.1, 拖动放大1.25, 带阴影） -->
             <Style x:Key="GlassSlider" TargetType="Slider">
                 <Setter Property="Foreground" Value="{StaticResource GlassPrimaryBrush}" />
                 <Setter Property="Background" Value="#20000000" />
@@ -249,12 +264,12 @@
                             <Grid>
                                 <!-- 轨道背景 -->
                                 <Border x:Name="TrackBackground" Height="4" CornerRadius="2" Background="#30000000" VerticalAlignment="Center" />
-                                <!-- 已填充部�?-->
-                                <Border x:Name="TrackFill" Height="4" CornerRadius="2" Background="{TemplateBinding Foreground}" VerticalAlignment="Center" HorizontalAlignment="Left" Width="0" />
                                 <!-- Thumb -->
                                 <Track x:Name="PART_Track">
                                     <Track.DecreaseRepeatButton>
-                                        <RepeatButton Style="{StaticResource SliderRepeatButtonTransparent}" Command="Slider.DecreaseLarge" />
+                                        <RepeatButton Style="{StaticResource SliderRepeatButtonFill}"
+                                                      Background="{TemplateBinding Foreground}"
+                                                      Command="Slider.DecreaseLarge" />
                                     </Track.DecreaseRepeatButton>
                                     <Track.IncreaseRepeatButton>
                                         <RepeatButton Style="{StaticResource SliderRepeatButtonTransparent}" Command="Slider.IncreaseLarge" />
@@ -322,7 +337,7 @@
                 </Setter>
             </Style>
 
-            <!-- 玻璃弢�关样式（借鉴COUI Switch: 滑块滑动动画�?-->
+            <!-- 玻璃开关样式（借鉴COUI Switch: 滑块滑动动画） -->
             <Style x:Key="GlassSwitch" TargetType="CheckBox">
                 <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />
                 <Setter Property="FontSize" Value="14" />
@@ -335,21 +350,18 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <!-- 弢�关轨�?-->
+                                <!-- 开关轨道 -->
                                 <Border x:Name="track" Width="44" Height="24" CornerRadius="12" Background="#40000000" VerticalAlignment="Center">
-                                    <Border.RenderTransform>
-                                        <TranslateTransform x:Name="knob" X="2" Y="0" />
-                                    </Border.RenderTransform>
+                                    <!-- 开关滑块 -->
+                                    <Ellipse x:Name="knobCircle" Width="20" Height="20" Fill="White" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0,0,0">
+                                        <Ellipse.RenderTransform>
+                                            <TranslateTransform x:Name="knobTrans" X="0" Y="0" />
+                                        </Ellipse.RenderTransform>
+                                        <Ellipse.Effect>
+                                            <DropShadowEffect Color="#40000000" BlurRadius="3" ShadowDepth="1" />
+                                        </Ellipse.Effect>
+                                    </Ellipse>
                                 </Border>
-                                <!-- 弢�关滑�?-->
-                                <Ellipse x:Name="knobCircle" Width="20" Height="20" Fill="White" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0,0,0">
-                                    <Ellipse.RenderTransform>
-                                        <TranslateTransform x:Name="knobTrans" X="0" Y="0" />
-                                    </Ellipse.RenderTransform>
-                                    <Ellipse.Effect>
-                                        <DropShadowEffect Color="#40000000" BlurRadius="3" ShadowDepth="1" />
-                                    </Ellipse.Effect>
-                                </Ellipse>
                                 <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" />
                             </Grid>
                             <ControlTemplate.Triggers>
@@ -358,7 +370,7 @@
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <ColorAnimation Storyboard.TargetName="track" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#FF37B0FF" Duration="0:0:0.2" />
-                                                <DoubleAnimation Storyboard.TargetName="knobTrans" Storyboard.TargetProperty="X" To="22" Duration="0:0:0.2" />
+                                                <DoubleAnimation Storyboard.TargetName="knobTrans" Storyboard.TargetProperty="X" To="20" Duration="0:0:0.2" />
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </Trigger.EnterActions>
@@ -377,7 +389,7 @@
                 </Setter>
             </Style>
 
-            <!-- 玻璃复��框样式 -->
+            <!-- 玻璃复选框样式 -->
             <Style x:Key="GlassCheckBox" TargetType="CheckBox">
                 <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />
                 <Setter Property="FontSize" Value="14" />
@@ -385,7 +397,7 @@
                 <Setter Property="Cursor" Value="Hand" />
             </Style>
 
-            <!-- 玻璃输入框样�?-->
+            <!-- 玻璃输入框样式 -->
             <Style x:Key="GlassTextBox" TargetType="TextBox">
                 <Setter Property="Background" Value="#A6FFFFFF" />
                 <Setter Property="BorderBrush" Value="#1F000000" />
@@ -397,4 +409,3 @@
         </ResourceDictionary>
     </Application.Resources>
 </Application>
-
