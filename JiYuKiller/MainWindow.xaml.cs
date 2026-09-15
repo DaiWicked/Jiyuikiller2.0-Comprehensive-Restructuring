@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
@@ -452,8 +452,23 @@ namespace JiYuKiller
                 {
                     brush = brush.Clone();
                 }
-                res["NavForegroundBrush"] = brush;
-                _navFgBrush = brush;
+
+                // ⚠️ 这里【绝对不要】写 res["NavForegroundBrush"] = brush;
+                //
+                // 实测结论(本机用 PowerShell + WPF 复现，两步对照实验):
+                //   新建画刷                                        -> IsFrozen = False
+                //   放进普通 ResourceDictionary                     -> IsFrozen = False
+                //   放进 Application.Resources                      -> IsFrozen = **True**  ← 会自动冻结
+                //   把 Clone() 出来的可变副本写进 Application.Resources -> IsFrozen = **True**  ← 又被冻住
+                // 所以原先那句 `res["NavForegroundBrush"] = brush;` 会把刚 Clone 出来的可变副本
+                // 立刻重新冻住，于是下面给按钮设的本地值也是冻结对象，
+                // UpdateNavBarTextTheme 里的 BeginAnimation 必然抛
+                //   "无法在 System.Windows.Media.SolidColorBrush 上激活 Color 属性，因为该对象已密封或已冻结"
+                // （32 位 VM 实测日志里就是：初始化时 fg冻结=True，之后每次刷新都报"文字动画失败"，
+                //   "本次配色未生效，保持原状态待下次重试" 重试了 9 次全部失败。）
+                //
+                // 11 个导航按钮用的是本地值，优先级高于 Style Setter 里的
+                // {DynamicResource NavForegroundBrush}，所以既不需要、也不应该去改资源字典。
 
                 // 关键：Style密封后Setter里的画刷已被冻结，必须直接给按钮设本地值
                 // 本地值优先级高于Style Setter，不会被冻结
@@ -464,6 +479,19 @@ namespace JiYuKiller
                 foreach (var btn in navButtons)
                 {
                     if (btn != null) btn.Foreground = brush;
+                }
+                _navFgBrush = brush;
+
+                // 兜底：万一将来又被冻结(例如有人把画刷重新塞回资源字典)，再换一份可变副本。
+                // 不入任何资源字典的 Clone 不会被自动冻结，可以安全动画。
+                if (_navFgBrush.IsFrozen)
+                {
+                    Services.Logger.Instance.Warn("[NavBar] 文字画刷仍为冻结状态，已改用可变副本");
+                    _navFgBrush = _navFgBrush.Clone();
+                    foreach (var btn in navButtons)
+                    {
+                        if (btn != null) btn.Foreground = _navFgBrush;
+                    }
                 }
 
                 // 滑动指示器渐变：同理
