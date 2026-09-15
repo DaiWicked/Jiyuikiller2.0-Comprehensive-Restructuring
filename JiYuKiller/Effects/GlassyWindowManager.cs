@@ -1,4 +1,4 @@
-using JiYuKiller.Effects;
+﻿using JiYuKiller.Effects;
 using JiYuKiller.Services;
 using System;
 using System.Runtime.InteropServices;
@@ -11,13 +11,13 @@ using System.Windows.Threading;
 namespace JiYuKiller.Effects
 {
     /// <summary>
-    /// 毛玻璃窗口管理器
-    /// 移植自 WPF-Liquid-Glass-Effect-main 的 GlassyWindowBehavior
-    /// 负责桌面截图捕获、着色器参数更新、背景同步
+    /// 姣涚幓鐠冪獥鍙ｇ鐞嗗櫒
+    /// 绉绘鑷?WPF-Liquid-Glass-Effect-main 鐨?GlassyWindowBehavior
+    /// 璐熻矗妗岄潰鎴浘鎹曡幏銆佺潃鑹插櫒鍙傛暟鏇存柊銆佽儗鏅悓姝?
     /// </summary>
     public class GlassyWindowManager : IDisposable
     {
-        /// <summary>桌面截图/区域更新时触发（用于底栏等子区域同步背景）</summary>
+        /// <summary>妗岄潰鎴浘/鍖哄煙鏇存柊鏃惰Е鍙戯紙鐢ㄤ簬搴曟爮绛夊瓙鍖哄煙鍚屾鑳屾櫙锛?/summary>
         public event Action BackdropUpdated;
 
         private const int SwHide = 0;
@@ -47,17 +47,17 @@ namespace JiYuKiller.Effects
             _window.Deactivated += OnDeactivated;
             _window.Closed += OnClosed;
 
-            // 如果窗口已经加载（在Loaded事件之后才创建管理器），直接初始化
+            // 濡傛灉绐楀彛宸茬粡鍔犺浇锛堝湪Loaded浜嬩欢涔嬪悗鎵嶅垱寤虹鐞嗗櫒锛夛紝鐩存帴鍒濆鍖?
             if (window.IsLoaded)
             {
-                Services.Logger.Instance.Info("窗口已加载，直接执行毛玻璃初始化");
+                Services.Logger.Instance.Info("绐楀彛宸插姞杞斤紝鐩存帴鎵ц姣涚幓鐠冨垵濮嬪寲");
                 OnSourceInitialized(window, EventArgs.Empty);
                 OnLoaded(window, new RoutedEventArgs());
             }
         }
 
         /// <summary>
-        /// 模糊强度（0.0 - 1.0）
+        /// 妯＄硦寮哄害锛?.0 - 1.0锛?
         /// </summary>
         public double BlurIntensity
         {
@@ -157,17 +157,17 @@ namespace JiYuKiller.Effects
                     _glassyEffect = new GlassyEffect();
                     if (_glassyEffect.IsShaderLoaded)
                     {
-                        Services.Logger.Instance.Info("GlassyEffect 像素着色器创建成功");
+                        Services.Logger.Instance.Info("GlassyEffect 鍍忕礌鐫€鑹插櫒鍒涘缓鎴愬姛");
                     }
                     else
                     {
-                        Services.Logger.Instance.Warn("GlassyEffect 像素着色器加载失败，将使用普通半透明效果");
+                        Services.Logger.Instance.Warn("GlassyEffect 鍍忕礌鐫€鑹插櫒鍔犺浇澶辫触锛屽皢浣跨敤鏅€氬崐閫忔槑鏁堟灉");
                         _glassyEffect = null;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Services.Logger.Instance.Warn($"GlassyEffect 创建失败: {ex.Message}，将使用普通半透明效果");
+                    Services.Logger.Instance.Warn($"GlassyEffect 鍒涘缓澶辫触: {ex.Message}锛屽皢浣跨敤鏅€氬崐閫忔槑鏁堟灉");
                     _glassyEffect = null;
                 }
             }
@@ -177,11 +177,11 @@ namespace JiYuKiller.Effects
                 try
                 {
                     _glassyBorder.Effect = _glassyEffect;
-                    Services.Logger.Instance.Info("GlassyEffect 已应用到 GlassyLayer");
+                    Services.Logger.Instance.Info("GlassyEffect 宸插簲鐢ㄥ埌 GlassyLayer");
                 }
                 catch (Exception ex)
                 {
-                    Services.Logger.Instance.Warn($"GlassyEffect 应用失败: {ex.Message}");
+                    Services.Logger.Instance.Warn($"GlassyEffect 搴旂敤澶辫触: {ex.Message}");
                     _glassyBorder.Effect = null;
                 }
             }
@@ -264,7 +264,7 @@ namespace JiYuKiller.Effects
 
         private void UpdateBackdropCapture()
         {
-            if (_backdropBrush == null || _window.WindowState == WindowState.Minimized)
+            if (_backdropBrush == null || _window.WindowState == WindowState.Minimized || System.Windows.PresentationSource.FromVisual(_window) == null)
             {
                 return;
             }
@@ -272,7 +272,7 @@ namespace JiYuKiller.Effects
             var snapshot = ScreenCaptureHelper.FullScreenSnapshot;
             if (snapshot == null)
             {
-                Services.Logger.Instance.Warn("桌面截图为空，无法更新毛玻璃背景");
+                Services.Logger.Instance.Warn("妗岄潰鎴浘涓虹┖锛屾棤娉曟洿鏂版瘺鐜荤拑鑳屾櫙");
                 return;
             }
 
@@ -317,12 +317,12 @@ namespace JiYuKiller.Effects
             }
 
             _backdropBrush.Viewbox = new Rect(x, y, width, height);
-            Services.Logger.Instance.Debug($"毛玻璃背景已更新: 区域=({x},{y},{width}x{height}), 截图尺寸={snapshot.PixelWidth}x{snapshot.PixelHeight}");
+            Services.Logger.Instance.Debug($"姣涚幓鐠冭儗鏅凡鏇存柊: 鍖哄煙=({x},{y},{width}x{height}), 鎴浘灏哄={snapshot.PixelWidth}x{snapshot.PixelHeight}");
             BackdropUpdated?.Invoke();
         }
 
         /// <summary>
-        /// 强制刷新背景截图
+        /// 寮哄埗鍒锋柊鑳屾櫙鎴浘
         /// </summary>
         public void RefreshBackdrop()
         {
@@ -352,3 +352,4 @@ namespace JiYuKiller.Effects
         private static extern bool ShowWindow(IntPtr hwnd, int nCmdShow);
     }
 }
+

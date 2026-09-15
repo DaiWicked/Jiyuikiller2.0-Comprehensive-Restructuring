@@ -454,6 +454,17 @@ namespace JiYuKiller
                 res["NavForegroundBrush"] = brush;
                 _navFgBrush = brush;
 
+                // 关键：Style密封后Setter里的画刷已被冻结，必须直接给按钮设本地值
+                // 本地值优先级高于Style Setter，不会被冻结
+                var navButtons = new System.Windows.Controls.Button[] {
+                    NavQuick, NavSetting, NavCustom, NavUdpAttack, NavChat,
+                    NavScreenshot, NavTeacherSim, NavGames, NavHelp, NavDebug, NavAbout
+                };
+                foreach (var btn in navButtons)
+                {
+                    if (btn != null) btn.Foreground = brush;
+                }
+
                 // 滑动指示器渐变：同理
                 if (NavIndicator != null)
                 {
