@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -799,8 +799,18 @@ namespace JiYuKiller.Services
         public void UnloadDriver()
         {
             Logger.Instance.FunctionCall("UnloadDriver");
-            _driver.UnloadDriver();
-            Logger.Instance.Info("[JiYuController] 驱动已卸载");
+
+            // 按真实结果记日志: 原来无论成功失败都写"驱动已卸载"，卸载失败时日志会骗人
+            //（具体错误码在上方 [Driver] 开头的日志里）。
+            bool ok = _driver.UnloadDriver();
+            if (ok)
+            {
+                Logger.Instance.Info("[JiYuController] 驱动已卸载");
+            }
+            else
+            {
+                Logger.Instance.Error("[JiYuController] 驱动卸载失败, 详见上方 [Driver] 日志");
+            }
             OnStatusChanged?.Invoke();
         }
 

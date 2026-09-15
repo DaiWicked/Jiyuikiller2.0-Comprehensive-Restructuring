@@ -666,11 +666,14 @@ namespace JiYuKiller.Services
                     int err = Marshal.GetLastWin32Error();
                     if (err == ERROR_SERVICE_DOES_NOT_EXIST)
                     {
-                        Logger.Instance.Warn("[Driver] 驱动服务不存在，无需卸载");
+                        // 服务本来就不存在 = "已经没有可卸载的东西", 属于正常结果而不是警告。
+                        // 用户连点几次"卸载内核驱动"时会反复走到这里, 用 WARN 会刷出看起来像报错的消息。
+                        Logger.Instance.Info("[Driver] 驱动服务不存在，无需卸载");
                     }
                     else
                     {
                         Logger.Instance.Error("[Driver] 打开驱动服务失败, 错误码: " + err);
+                        return false;
                     }
                 }
                 else
