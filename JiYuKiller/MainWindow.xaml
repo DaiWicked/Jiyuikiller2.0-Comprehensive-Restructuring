@@ -1158,7 +1158,12 @@
                         </LinearGradientBrush>
                     </Border.BorderBrush>
                     <!-- 圆角裁剪根：Clip由C#按尺寸更新，半径=23（外圆角24-描边1，同心） -->
-                    <Grid x:Name="NavBarClipRoot" ClipToBounds="True">
+                    <!-- 鼠标事件只用于"指针跟随柔光"和"点击波纹"，不设置 e.Handled，不影响按钮点击 -->
+                    <Grid x:Name="NavBarClipRoot" ClipToBounds="True"
+                          MouseMove="NavBarClipRoot_MouseMove"
+                          MouseEnter="NavBarClipRoot_MouseEnter"
+                          MouseLeave="NavBarClipRoot_MouseLeave"
+                          PreviewMouseLeftButtonDown="NavBarClipRoot_PreviewMouseLeftButtonDown">
                         <!-- 2a-1: 液态玻璃折射层（外层挂 NavBarLensEffect，内层做模糊）
                              嵌套的原因：WPF 的 Effect 只能挂一个，父元素挂 shader 时它的 Input
                              采样里正好包含"子元素已模糊"的结果，这样就不必在 ps_2_0 里自己写高斯核。
@@ -1201,7 +1206,25 @@
                                 </LinearGradientBrush>
                             </Border.Background>
                         </Border>
-                        <!-- 2d: 导航内容（唯一参与命中测试的部分，原样保留） -->
+                        <!-- 2d: 液态动态层（指针跟随柔光 + 点击波纹）
+                             Canvas 的子元素不参与布局；整层 IsHitTestVisible=False 不拦鼠标 -->
+                        <Canvas x:Name="NavBarFxLayer" IsHitTestVisible="False">
+                            <!-- 跟随指针的柔光团：位置由 C# 按鼠标坐标写入 TranslateTransform -->
+                            <Border x:Name="NavBarSpecular" Width="200" Height="80" Opacity="0"
+                                    Canvas.Left="-100" Canvas.Top="-40">
+                                <Border.RenderTransform>
+                                    <TranslateTransform x:Name="NavBarSpecularTransform" X="0" Y="0" />
+                                </Border.RenderTransform>
+                                <Border.Background>
+                                    <RadialGradientBrush Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5" GradientOrigin="0.5,0.5">
+                                        <GradientStop Color="#34FFFFFF" Offset="0" />
+                                        <GradientStop Color="#14FFFFFF" Offset="0.45" />
+                                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                                    </RadialGradientBrush>
+                                </Border.Background>
+                            </Border>
+                        </Canvas>
+                        <!-- 2e: 导航内容（唯一参与命中测试的部分，原样保留） -->
                         <ScrollViewer x:Name="NavScrollViewer" HorizontalScrollBarVisibility="Hidden"
                                       VerticalScrollBarVisibility="Disabled" Padding="2,4"
                                       PreviewMouseWheel="NavScrollViewer_PreviewMouseWheel">

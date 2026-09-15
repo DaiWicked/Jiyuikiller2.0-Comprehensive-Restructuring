@@ -1053,6 +1053,109 @@ namespace JiYuKiller
             }
         }
 
+        // ===== 底栏液态动态效果：指针跟随柔光 + 点击波纹（纯 WPF，无着色器开销）=====
+
+        /// <summary>指针在底栏上移动：柔光团跟随鼠标（直接赋值，不做动画，避免每次移动都新建动画时钟）</summary>
+        private void NavBarClipRoot_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (NavBarSpecularTransform == null || NavBarFxLayer == null) return;
+            try
+            {
+                Point p = e.GetPosition(NavBarFxLayer);
+                NavBarSpecularTransform.X = p.X;
+                NavBarSpecularTransform.Y = p.Y;
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Debug("[NavBar] 柔光跟随失败: " + ex.Message);
+            }
+        }
+
+        private void NavBarClipRoot_MouseEnter(object sender, MouseEventArgs e)
+        {
+            FadeNavBarSpecular(1.0);
+        }
+
+        private void NavBarClipRoot_MouseLeave(object sender, MouseEventArgs e)
+        {
+            FadeNavBarSpecular(0.0);
+        }
+
+        private void FadeNavBarSpecular(double to)
+        {
+            if (NavBarSpecular == null) return;
+            try
+            {
+                var anim = new System.Windows.Media.Animation.DoubleAnimation(
+                    to, TimeSpan.FromMilliseconds(180))
+                {
+                    EasingFunction = new System.Windows.Media.Animation.CubicEase
+                    {
+                        EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
+                    }
+                };
+                NavBarSpecular.BeginAnimation(UIElement.OpacityProperty, anim);
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Debug("[NavBar] 柔光淡入淡出失败: " + ex.Message);
+            }
+        }
+
+        /// <summary>底栏上按下左键：从按压点扩散一圈波纹，播完自动移除</summary>
+        private void NavBarClipRoot_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (NavBarFxLayer == null) return;
+            try
+            {
+                Point p = e.GetPosition(NavBarFxLayer);
+
+                var ripple = new System.Windows.Shapes.Ellipse
+                {
+                    Width = 24,
+                    Height = 24,
+                    StrokeThickness = 2,
+                    Stroke = new SolidColorBrush(Color.FromArgb(0x60, 0xFF, 0xFF, 0xFF)),
+                    Fill = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
+                    IsHitTestVisible = false,
+                    // 用 RenderTransformOrigin 让缩放绕自身中心
+                    // （ScaleTransform.CenterX 的单位是像素，之前踩过这个坑）
+                    RenderTransformOrigin = new Point(0.5, 0.5)
+                };
+                var scale = new ScaleTransform(0.35, 0.35);
+                ripple.RenderTransform = scale;
+                Canvas.SetLeft(ripple, p.X - 12);
+                Canvas.SetTop(ripple, p.Y - 12);
+
+                // 防止狂点导致子元素无限增长（只保留柔光 + 最近 10 个波纹）
+                while (NavBarFxLayer.Children.Count > 11)
+                {
+                    NavBarFxLayer.Children.RemoveAt(1);
+                }
+                NavBarFxLayer.Children.Add(ripple);
+
+                var dur = TimeSpan.FromMilliseconds(520);
+                var ease = new System.Windows.Media.Animation.CubicEase
+                {
+                    EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
+                };
+                var fade = new System.Windows.Media.Animation.DoubleAnimation(0.55, 0.0, dur) { EasingFunction = ease };
+                fade.Completed += (s, a) =>
+                {
+                    try { NavBarFxLayer.Children.Remove(ripple); } catch { }
+                };
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(0.35, 4.2, dur) { EasingFunction = ease });
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty,
+                    new System.Windows.Media.Animation.DoubleAnimation(0.35, 4.2, dur) { EasingFunction = ease });
+                ripple.BeginAnimation(UIElement.OpacityProperty, fade);
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Debug("[NavBar] 点击波纹失败: " + ex.Message);
+            }
+        }
+
         private void SliderContentOpacity_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)        {
             if (TextContentOpacityValue != null)
             {
