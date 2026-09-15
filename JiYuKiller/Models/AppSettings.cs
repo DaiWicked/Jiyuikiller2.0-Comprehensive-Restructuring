@@ -120,7 +120,7 @@ namespace JiYuKiller.Models
         public bool NavBarLiquidGlassForceOnTier0 { get; set; } = false;
 
         // === 版本信息 ===
-        public string Version { get; set; } = "QD_V2.7_JiYuRebuild_JustLikeThis";
+        public string Version { get; set; } = "QD_V2.9_JiYuRebuild_MeantToBe";
 
         // === 用户协议 ===
         public bool Argeed { get; set; } = false;
