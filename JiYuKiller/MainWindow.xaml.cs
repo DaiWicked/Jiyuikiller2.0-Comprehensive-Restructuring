@@ -90,8 +90,8 @@ namespace JiYuKiller
             GlassClipRoot.SizeChanged += (s, e) => UpdateGlassClip();
             this.Loaded += (s, e) => UpdateGlassClip();
             // 底栏玻璃效果挂接
-            NavBarClipRoot.SizeChanged += (s, e) => UpdateNavBarGlass();
-            this.Loaded += (s, e) => UpdateNavBarGlass();
+            NavBarClipRoot.SizeChanged += (s, e) => { UpdateNavBarClip(); UpdateNavBarBackdrop(); UpdateNavBarTextTheme(); };
+            this.Loaded += (s, e) => { UpdateNavBarClip(); UpdateNavBarBackdrop(); UpdateNavBarTextTheme(); };
 
             // 初始化毛玻璃效果管理器（窗口加载后）
             this.Loaded += MainWindow_Loaded;
@@ -357,75 +357,206 @@ namespace JiYuKiller
         }
 
         // ========== 底栏玻璃效果 ==========
-        private Effects.GlassyEffect _navBarEffect;
+        // ========== 底栏玻璃效果（快照裁切方案，无着色器，避免色差偏色） ==========
+        // 底栏背景用VisualBrush，不需要缓存字段
 
-        /// <summary>初始化底栏专用（更弱）的着色器，只需一次</summary>
+        /// <summary>初始化：BlurEffect，无着色器</summary>
         private void InitNavBarGlass()
         {
             try
             {
-                _navBarEffect = new Effects.GlassyEffect();
-                if (_navBarEffect.IsShaderLoaded)
+                NavBarGlass.Effect = new System.Windows.Media.Effects.BlurEffect
                 {
-                    NavBarGlass.Effect = _navBarEffect;
-                    Services.Logger.Instance.Info("[NavBar] 底栏 GlassyEffect 已应用");
-                }
-                else
-                {
-                    NavBarGlass.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 6 };
-                    _navBarEffect = null;
-                    Services.Logger.Instance.Warn("[NavBar] 着色器不可用，底栏降级为 BlurEffect");
-                }
+                    Radius = 5,
+                    KernelType = System.Windows.Media.Effects.KernelType.Gaussian
+                };
+                Services.Logger.Instance.Info("[NavBar] 底栏玻璃已启用（快照裁切 + BlurEffect，无着色器）");
+                Services.Logger.Instance.Info("[NavBar] 渲染层级 Tier = " + (System.Windows.Media.RenderCapability.Tier >> 16));
             }
             catch (Exception ex)
             {
                 Services.Logger.Instance.Error("[NavBar] 底栏玻璃初始化失败", ex);
                 NavBarGlass.Effect = null;
-                _navBarEffect = null;
             }
         }
 
-        /// <summary>每次布局变化更新：Viewbox（取背景的底栏区域）+ 着色器几何参数 + 圆角Clip</summary>
-        private void UpdateNavBarGlass()
+        /// <summary>更新底栏背景：VisualBrush取主程序背景（BackdropContainer）的底栏区域</summary>
+        private void UpdateNavBarBackdrop()
         {
             if (NavBarGlassBrush == null || NavBarGlass == null || BackdropContainer == null) return;
-
             double w = NavBarGlass.ActualWidth;
             double h = NavBarGlass.ActualHeight;
             if (w <= 0 || h <= 0) return;
 
             try
             {
-                // 1) 底栏在BackdropContainer坐标系中的矩形（关键：不设Viewbox会被拉伸）
+                // 底栏在BackdropContainer坐标系中的矩形（与主窗口GlassyLayer同一套换算）
                 Point p = NavBarGlass.TranslatePoint(new Point(0, 0), BackdropContainer);
                 NavBarGlassBrush.ViewboxUnits = System.Windows.Media.BrushMappingMode.Absolute;
                 NavBarGlassBrush.Viewbox = new System.Windows.Rect(p.X, p.Y, w, h);
-
-                // 2) 底栏自用着色器的几何参数
-                if (_navBarEffect != null)
-                {
-                    _navBarEffect.TextureSize = new Point(w, h);
-                    _navBarEffect.GlassCenter = new Point(w * 0.5, h * 0.5);
-                    _navBarEffect.GlassSize = new Point(w, h);
-                    _navBarEffect.BlurIntensity = 0.1;   // 主窗口0.2的一半，更弱
-                }
-
-                // 3) 底栏圆角裁剪（半径23 = 外圆角24 - 描边1，同心）
-                var geo = NavBarClipRoot.Clip as System.Windows.Media.RectangleGeometry;
-                if (geo == null)
-                {
-                    geo = new System.Windows.Media.RectangleGeometry();
-                    NavBarClipRoot.Clip = geo;
-                }
-                geo.Rect = new System.Windows.Rect(0, 0, NavBarClipRoot.ActualWidth, NavBarClipRoot.ActualHeight);
-                geo.RadiusX = 23;
-                geo.RadiusY = 23;
             }
             catch (Exception ex)
             {
-                Services.Logger.Instance.Debug("[NavBar] 更新底栏玻璃失败: " + ex.Message);
+                Services.Logger.Instance.Debug("[NavBar] 更新底栏背景失败: " + ex.Message);
             }
         }
+
+        /// <summary>只更新底栏圆角裁剪（几何操作，极廉价）</summary>
+        private void UpdateNavBarClip()
+        {
+            if (NavBarClipRoot == null) return;
+            double w = NavBarClipRoot.ActualWidth, h = NavBarClipRoot.ActualHeight;
+            if (w <= 0 || h <= 0) return;
+
+            var geo = NavBarClipRoot.Clip as System.Windows.Media.RectangleGeometry;
+            if (geo == null)
+            {
+                geo = new System.Windows.Media.RectangleGeometry();
+                NavBarClipRoot.Clip = geo;
+            }
+            geo.Rect = new System.Windows.Rect(0, 0, w, h);
+            geo.RadiusX = 23;
+            geo.RadiusY = 23;
+        }
+
+        // ==================== 底栏文字颜色自适应 ====================
+        // 阈值推导：浅字(#F2F5F8)与深字(#1A1A22)等对比度点在背景相对亮度≈0.19
+        //          → gamma空间≈0.47；本套scrim平均压暗≈31% → 原始背景阈值≈0.68
+        // 迟滞带0.68/0.62：避免临界值附近来回闪烁
+        private const double NavLumaToDark = 0.68;
+        private const double NavLumaToLight = 0.62;
+
+        private bool _navUseDarkText = false;
+        private byte[] _navLumaBuffer;
+        private System.Windows.Media.SolidColorBrush _navFgBrush;
+        private System.Windows.Media.GradientStop _navIndTop, _navIndBottom;
+
+        /// <summary>只执行一次：抓取资源引用（必须在InitializeComponent之后）</summary>
+        private void InitNavBarTextTheme()
+        {
+            try
+            {
+                var res = System.Windows.Application.Current.Resources;
+                if (res.Contains("NavForegroundBrush"))
+                {
+                    var frozen = res["NavForegroundBrush"] as System.Windows.Media.SolidColorBrush;
+                    if (frozen != null)
+                    {
+                        _navFgBrush = frozen.Clone();
+                        res["NavForegroundBrush"] = _navFgBrush;
+                    }
+                }
+
+                var lg = NavIndicator != null ? NavIndicator.Background as System.Windows.Media.LinearGradientBrush : null;
+                if (lg != null && lg.GradientStops.Count >= 2)
+                {
+                    _navIndTop = lg.GradientStops[0].Clone();
+                    _navIndBottom = lg.GradientStops[1].Clone();
+                    lg.GradientStops[0] = _navIndTop;
+                    lg.GradientStops[1] = _navIndBottom;
+                }
+
+                var snap = Services.ScreenCaptureHelper.FullScreenSnapshot;
+                if (snap != null)
+                    Services.Logger.Instance.Info("[NavBar] 截图格式: " + snap.Format + ", " + snap.PixelWidth + "x" + snap.PixelHeight);
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("[NavBar] 文字主题初始化失败", ex);
+            }
+        }
+
+        /// <summary>从已冻结的桌面截图求底栏区域平均luma（Rec.601，0~1），零分配</summary>
+        private bool TryComputeNavBarLuma(out double luma)
+        {
+            luma = 1.0;
+            var snap = Services.ScreenCaptureHelper.FullScreenSnapshot;
+            if (snap == null || NavBarGlass == null) return false;
+            if (NavBarGlass.ActualWidth <= 0 || NavBarGlass.ActualHeight <= 0) return false;
+
+            try
+            {
+                System.Windows.Point onScreen = this.PointToScreen(NavBarGlass.TranslatePoint(new System.Windows.Point(0, 0), this));
+                int x = (int)System.Math.Round(onScreen.X - Services.ScreenCaptureHelper.VirtualScreenX);
+                int y = (int)System.Math.Round(onScreen.Y - Services.ScreenCaptureHelper.VirtualScreenY);
+                int w = (int)System.Math.Round(NavBarGlass.ActualWidth);
+                int h = (int)System.Math.Round(NavBarGlass.ActualHeight);
+
+                x = System.Math.Max(0, System.Math.Min(x, snap.PixelWidth - 1));
+                y = System.Math.Max(0, System.Math.Min(y, snap.PixelHeight - 1));
+                w = System.Math.Max(1, System.Math.Min(w, snap.PixelWidth - x));
+                h = System.Math.Max(1, System.Math.Min(h, snap.PixelHeight - y));
+
+                int bytesPerPixel = (snap.Format.BitsPerPixel + 7) / 8;
+                int stride = w * bytesPerPixel;
+                int need = stride * h;
+                if (_navLumaBuffer == null || _navLumaBuffer.Length < need)
+                    _navLumaBuffer = new byte[need];
+
+                snap.CopyPixels(new System.Windows.Int32Rect(x, y, w, h), _navLumaBuffer, stride, 0);
+
+                int step = (w * h > 40000) ? 2 : 1;
+                long sum = 0; int count = 0;
+                for (int row = 0; row < h; row += step)
+                {
+                    int rowOff = row * stride;
+                    for (int col = 0; col < w; col += step)
+                    {
+                        int i = rowOff + col * bytesPerPixel;
+                        byte b = _navLumaBuffer[i];
+                        byte g = _navLumaBuffer[i + 1];
+                        byte r = _navLumaBuffer[i + 2];
+                        sum += (77 * r + 150 * g + 29 * b) >> 8;
+                        count++;
+                    }
+                }
+                if (count == 0) return false;
+                luma = (sum / (double)count) / 255.0;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Debug("[NavBar] 亮度计算失败: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>按亮度切换底栏文字/指示器配色（迟滞+180ms平滑过渡）</summary>
+        private void UpdateNavBarTextTheme()
+        {
+            double luma;
+            if (!TryComputeNavBarLuma(out luma)) return;
+
+            bool wantDark = _navUseDarkText ? (luma > NavLumaToLight) : (luma > NavLumaToDark);
+            if (wantDark == _navUseDarkText) return;
+            _navUseDarkText = wantDark;
+
+            System.Windows.Media.Color fg = wantDark
+                ? System.Windows.Media.Color.FromRgb(0x1A, 0x1A, 0x22)
+                : System.Windows.Media.Color.FromRgb(0xF2, 0xF5, 0xF8);
+            System.Windows.Media.Color indTop = wantDark
+                ? System.Windows.Media.Color.FromArgb(0x30, 0x00, 0x00, 0x00)
+                : System.Windows.Media.Color.FromArgb(0x5A, 0xFF, 0xFF, 0xFF);
+            System.Windows.Media.Color indBottom = wantDark
+                ? System.Windows.Media.Color.FromArgb(0x18, 0x00, 0x00, 0x00)
+                : System.Windows.Media.Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF);
+
+            var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+            System.TimeSpan dur = System.TimeSpan.FromMilliseconds(180);
+
+            if (_navFgBrush != null)
+                _navFgBrush.BeginAnimation(System.Windows.Media.SolidColorBrush.ColorProperty,
+                    new System.Windows.Media.Animation.ColorAnimation(fg, dur) { EasingFunction = ease });
+            if (_navIndTop != null)
+                _navIndTop.BeginAnimation(System.Windows.Media.GradientStop.ColorProperty,
+                    new System.Windows.Media.Animation.ColorAnimation(indTop, dur) { EasingFunction = ease });
+            if (_navIndBottom != null)
+                _navIndBottom.BeginAnimation(System.Windows.Media.GradientStop.ColorProperty,
+                    new System.Windows.Media.Animation.ColorAnimation(indBottom, dur) { EasingFunction = ease });
+
+            Services.Logger.Instance.Debug($"[NavBar] 文字配色切换 -> {(wantDark ? "深色" : "浅色")} (luma={luma:F3})");
+        }
+
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
@@ -441,8 +572,11 @@ namespace JiYuKiller
                     Services.Logger.Instance.Debug($"毛玻璃模糊强度已同步: {SliderBlurIntensity.Value:F2}");
                 }
                 InitWallpaper();
+                // 桌面截图刷新时同步底栏背景
+                _glassyManager.BackdropUpdated += () => { UpdateNavBarBackdrop(); UpdateNavBarTextTheme(); };
                 // 初始化底栏玻璃效果（必须在UpdateNavBarGlass之前）
                 InitNavBarGlass();
+                InitNavBarTextTheme();
                 InitNoiseLayer();
             }
             catch (Exception ex)
@@ -661,9 +795,10 @@ namespace JiYuKiller
 
         private void SliderOuterGlow_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            // [已禁用] OuterGlow层已删除（BlurEffect导致圆角黑色角），保留滑块UI但不生效
-            Services.Logger.Instance.Debug($"外层光晕滑块事件触发(已禁用): NewValue={e.NewValue:F2}");
-
+            if (OuterGlow != null)
+            {
+                OuterGlow.Opacity = e.NewValue;
+            }
             if (TextOuterGlowValue != null)
             {
                 TextOuterGlowValue.Text = string.Format("{0}%", (int)(e.NewValue * 100));
@@ -672,9 +807,10 @@ namespace JiYuKiller
 
         private void SliderInnerGlow_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            // [已禁用] InnerGlow层已删除（BlurEffect导致圆角黑色角），保留滑块UI但不生效
-            Services.Logger.Instance.Debug($"中层光晕滑块事件触发(已禁用): NewValue={e.NewValue:F2}");
-
+            if (InnerGlow != null)
+            {
+                InnerGlow.Opacity = e.NewValue;
+            }
             if (TextInnerGlowValue != null)
             {
                 TextInnerGlowValue.Text = string.Format("{0}%", (int)(e.NewValue * 100));

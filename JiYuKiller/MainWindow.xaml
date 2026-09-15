@@ -27,6 +27,18 @@
                 <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.3" Color="#000000" />
             </Border.Effect>
         </Border>
+        <!-- 外层光晕虚化（模拟玻璃边缘光线散射） -->
+        <Border x:Name="OuterGlow" Margin="16" CornerRadius="24" Background="#60C8E8FF" Opacity="0.05" IsHitTestVisible="False">
+            <Border.Effect>
+                <BlurEffect Radius="28" />
+            </Border.Effect>
+        </Border>
+        <!-- 中层柔和光晕 -->
+        <Border x:Name="InnerGlow" Margin="13" CornerRadius="20" Background="#40FFFFFF" Opacity="0.05" IsHitTestVisible="False">
+            <Border.Effect>
+                <BlurEffect Radius="16" />
+            </Border.Effect>
+        </Border>
         <!-- 外层玻璃容器（对角渐变边框, 描边留在这里不被裁剪） -->
         <Border x:Name="GlassContainer" CornerRadius="16" Margin="8" BorderThickness="1">
             <Border.BorderBrush>
@@ -1130,10 +1142,10 @@
 
             <!-- 底部悬浮导航栏（3层：投影 / 玻璃主体(弱折射) / 渐变描边） -->
             <Grid Grid.Row="2" Margin="10,0,10,20" HorizontalAlignment="Stretch" Height="66">
-                <!-- 层1: 投影（必须给Background，Effect才有alpha遮罩；alpha=1肉眼不可见） -->
+                <!-- 层1: 投影（调柔，避免圆角外侧黑色残余） -->
                 <Border CornerRadius="24" Margin="0,3,0,0" Background="#01000000" IsHitTestVisible="False">
                     <Border.Effect>
-                        <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.28" Color="#1A1A22" />
+                        <DropShadowEffect BlurRadius="30" ShadowDepth="2" Opacity="0.18" Color="#1A1A22" />
                     </Border.Effect>
                 </Border>
                 <!-- 层2: 玻璃主体（外层负责描边，不裁剪） -->
@@ -1148,8 +1160,8 @@
                     </Border.BorderBrush>
                     <!-- 圆角裁剪根：Clip由C#按尺寸更新，半径=23（外圆角24-描边1，同心） -->
                     <Grid x:Name="NavBarClipRoot" ClipToBounds="True">
-                        <!-- 2a: 折射背景（VisualBrush只取底栏区域 + 独立的弱GlassyEffect） -->
-                        <Border x:Name="NavBarGlass" IsHitTestVisible="False">
+                        <!-- 2a: 背景（VisualBrush取主程序背景底栏区域 + BlurEffect，无着色器，避免色差偏色） -->
+                        <Border x:Name="NavBarGlass" Margin="-10" IsHitTestVisible="False">
                             <Border.Background>
                                 <VisualBrush x:Name="NavBarGlassBrush"
                                              Visual="{Binding ElementName=BackdropContainer}"
@@ -1157,6 +1169,9 @@
                                              ViewboxUnits="Absolute"
                                              Viewbox="0,0,1,1" />
                             </Border.Background>
+                            <Border.Effect>
+                                <BlurEffect Radius="5" KernelType="Gaussian" />
+                            </Border.Effect>
                         </Border>
                         <!-- 2b: 中性遮罩（替代原来的白色渐变；保证任何背景下文字可读） -->
                         <Border x:Name="NavBarScrim" IsHitTestVisible="False">
@@ -1186,8 +1201,8 @@
                                         Height="44" CornerRadius="18" Width="60" IsHitTestVisible="False">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#5AFFFFFF" Offset="0" />
-                                            <GradientStop Color="#30FFFFFF" Offset="1" />
+                                            <GradientStop Offset="0" Color="{Binding Source={StaticResource NavIndicatorBrushTop}, Path=Color}" />
+                                            <GradientStop Offset="1" Color="{Binding Source={StaticResource NavIndicatorBrushBottom}, Path=Color}" />
                                         </LinearGradientBrush>
                                     </Border.Background>
                                     <Border.BorderBrush>

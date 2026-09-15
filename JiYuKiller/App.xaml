@@ -5,6 +5,10 @@
     <Application.Resources>
         <!-- 鍏ㄥ眬 Liquid Glass 鏍峰紡 -->
         <ResourceDictionary>
+            <!-- 底栏文字/指示器可动画画刷（颜色随背景亮度自适应） -->
+            <SolidColorBrush x:Key="NavForegroundBrush" Color="#FFF2F5F8" />
+            <SolidColorBrush x:Key="NavIndicatorBrushTop" Color="#5AFFFFFF" />
+            <SolidColorBrush x:Key="NavIndicatorBrushBottom" Color="#30FFFFFF" />
             <!-- 棰滆壊鍙橀噺 -->
             <Color x:Key="GlassBgColor">#B8FFFFFF</Color>
             <Color x:Key="GlassBorderColor">#80FFFFFF</Color>
@@ -128,7 +132,7 @@
 
             <!-- 瀵艰埅鏍忔恫鎬佺幓鐠冩寜閽牱寮忥紙鍔ㄧ敾浣滅敤鍦ㄦ暣涓狦rid, 鏁翠綋缂╂斁, 涓嶅彈BlurEffect褰卞搷锛?-->
             <Style x:Key="NavGlassButton" TargetType="Button">
-                <Setter Property="Foreground" Value="#FFF2F5F8" />
+                <Setter Property="Foreground" Value="{DynamicResource NavForegroundBrush}" />
                 <Setter Property="FontSize" Value="13" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="Cursor" Value="Hand" />

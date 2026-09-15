@@ -17,6 +17,9 @@ namespace JiYuKiller.Effects
     /// </summary>
     public class GlassyWindowManager : IDisposable
     {
+        /// <summary>桌面截图/区域更新时触发（用于底栏等子区域同步背景）</summary>
+        public event Action BackdropUpdated;
+
         private const int SwHide = 0;
         private const int SwShowNoActivate = 4;
 
@@ -315,6 +318,7 @@ namespace JiYuKiller.Effects
 
             _backdropBrush.Viewbox = new Rect(x, y, width, height);
             Services.Logger.Instance.Debug($"毛玻璃背景已更新: 区域=({x},{y},{width}x{height}), 截图尺寸={snapshot.PixelWidth}x{snapshot.PixelHeight}");
+            BackdropUpdated?.Invoke();
         }
 
         /// <summary>
