@@ -51,18 +51,31 @@ namespace JiYuKiller.Services
             if (string.IsNullOrEmpty(longPath)) return longPath;
             try
             {
-                StringBuilder sb = new StringBuilder(260);
+                StringBuilder sb = new StringBuilder(1024);
                 int result = GetShortPathName(longPath, sb, sb.Capacity);
                 if (result > 0 && result < sb.Capacity)
                 {
                     string shortPath = sb.ToString();
-                    if (!string.IsNullOrEmpty(shortPath) && File.Exists(shortPath))
+                    if (!string.IsNullOrEmpty(shortPath))
                     {
-                        Logger.Instance.Debug($"[TeacherSim] 短路径转换: {longPath} -> {shortPath}");
+                        Logger.Instance.Info($"[TeacherSim] 短路径转换成功: {longPath} -> {shortPath}");
                         return shortPath;
                     }
                 }
-                Logger.Instance.Warn($"[TeacherSim] 短路径转换失败({result}), 使用原路径: {longPath}");
+                // result > capacity 表示缓冲区不够，需要重试
+                if (result >= sb.Capacity)
+                {
+                    StringBuilder sb2 = new StringBuilder(result + 1);
+                    int result2 = GetShortPathName(longPath, sb2, sb2.Capacity);
+                    if (result2 > 0 && result2 < sb2.Capacity)
+                    {
+                        string shortPath = sb2.ToString();
+                        Logger.Instance.Info($"[TeacherSim] 短路径转换成功(重试): {longPath} -> {shortPath}");
+                        return shortPath;
+                    }
+                }
+                int err = Marshal.GetLastWin32Error();
+                Logger.Instance.Warn($"[TeacherSim] 短路径转换失败(result={result}, err={err}), 使用原路径: {longPath}");
             }
             catch (Exception ex)
             {
@@ -129,6 +142,10 @@ namespace JiYuKiller.Services
 
                     // 设置环境变量
                     psi.EnvironmentVariables["TEACHER_CHANNEL"] = Channel.ToString();
+                    // 强制Python使用UTF-8文件系统编码（解决Win7下PyInstaller init_fs_encoding崩溃）
+                    psi.EnvironmentVariables["PYTHONUTF8"] = "1";
+                    psi.EnvironmentVariables["PYTHONLEGACYWINDOWSFSENCODING"] = "0";
+                    psi.EnvironmentVariables["PYTHONIOENCODING"] = "utf-8";
 
                     _process = new Process();
                     _process.StartInfo = psi;
