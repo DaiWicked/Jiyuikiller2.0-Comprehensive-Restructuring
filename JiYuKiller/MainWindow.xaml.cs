@@ -423,8 +423,8 @@ namespace JiYuKiller
         // 阈值推导：浅字(#F2F5F8)与深字(#1A1A22)等对比度点在背景相对亮度≈0.19
         //          → gamma空间≈0.47；本套scrim平均压暗≈31% → 原始背景阈值≈0.68
         // 迟滞带0.68/0.62：避免临界值附近来回闪烁
-        private const double NavLumaToDark = 0.68;
-        private const double NavLumaToLight = 0.62;
+        private const double NavLumaToDark = 0.42;   // 漏算WallpaperLayer默认白色28%+WhiteOverlay 27.8%，原0.68有误
+        private const double NavLumaToLight = 0.36;  // 迟滞下限
 
         private bool _navUseDarkText = false;
         private byte[] _navLumaBuffer;
@@ -437,28 +437,42 @@ namespace JiYuKiller
             try
             {
                 var res = System.Windows.Application.Current.Resources;
+
+                // 文字画刷：冻结则Clone出可变副本
+                System.Windows.Media.SolidColorBrush brush = null;
                 if (res.Contains("NavForegroundBrush"))
+                    brush = res["NavForegroundBrush"] as System.Windows.Media.SolidColorBrush;
+
+                if (brush == null)
                 {
-                    var frozen = res["NavForegroundBrush"] as System.Windows.Media.SolidColorBrush;
-                    if (frozen != null)
+                    brush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF2, 0xF5, 0xF8));
+                }
+                else if (brush.IsFrozen)
+                {
+                    brush = brush.Clone();
+                }
+                res["NavForegroundBrush"] = brush;
+                _navFgBrush = brush;
+
+                // 滑动指示器渐变：同理
+                if (NavIndicator != null)
+                {
+                    var lg = NavIndicator.Background as System.Windows.Media.LinearGradientBrush;
+                    if (lg != null && lg.GradientStops.Count >= 2)
                     {
-                        _navFgBrush = frozen.Clone();
-                        res["NavForegroundBrush"] = _navFgBrush;
+                        if (lg.IsFrozen)
+                        {
+                            lg = lg.Clone();
+                            NavIndicator.Background = lg;
+                        }
+                        _navIndTop = lg.GradientStops[0];
+                        _navIndBottom = lg.GradientStops[1];
                     }
                 }
 
-                var lg = NavIndicator != null ? NavIndicator.Background as System.Windows.Media.LinearGradientBrush : null;
-                if (lg != null && lg.GradientStops.Count >= 2)
-                {
-                    _navIndTop = lg.GradientStops[0].Clone();
-                    _navIndBottom = lg.GradientStops[1].Clone();
-                    lg.GradientStops[0] = _navIndTop;
-                    lg.GradientStops[1] = _navIndBottom;
-                }
-
-                var snap = Services.ScreenCaptureHelper.FullScreenSnapshot;
-                if (snap != null)
-                    Services.Logger.Instance.Info("[NavBar] 截图格式: " + snap.Format + ", " + snap.PixelWidth + "x" + snap.PixelHeight);
+                Services.Logger.Instance.Info(
+                    $"[NavBar] 文字主题初始化: fg冻结={_navFgBrush.IsFrozen}, " +
+                    $"指示器={(_navIndTop != null ? "已取得" : "未取得")}");
             }
             catch (Exception ex)
             {
@@ -529,7 +543,6 @@ namespace JiYuKiller
 
             bool wantDark = _navUseDarkText ? (luma > NavLumaToLight) : (luma > NavLumaToDark);
             if (wantDark == _navUseDarkText) return;
-            _navUseDarkText = wantDark;
 
             System.Windows.Media.Color fg = wantDark
                 ? System.Windows.Media.Color.FromRgb(0x1A, 0x1A, 0x22)
@@ -544,17 +557,59 @@ namespace JiYuKiller
             var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
             System.TimeSpan dur = System.TimeSpan.FromMilliseconds(180);
 
+            // 文字：动画失败退回直接赋值
+            bool fgOk = false;
             if (_navFgBrush != null)
-                _navFgBrush.BeginAnimation(System.Windows.Media.SolidColorBrush.ColorProperty,
-                    new System.Windows.Media.Animation.ColorAnimation(fg, dur) { EasingFunction = ease });
-            if (_navIndTop != null)
-                _navIndTop.BeginAnimation(System.Windows.Media.GradientStop.ColorProperty,
-                    new System.Windows.Media.Animation.ColorAnimation(indTop, dur) { EasingFunction = ease });
-            if (_navIndBottom != null)
-                _navIndBottom.BeginAnimation(System.Windows.Media.GradientStop.ColorProperty,
-                    new System.Windows.Media.Animation.ColorAnimation(indBottom, dur) { EasingFunction = ease });
+            {
+                try
+                {
+                    _navFgBrush.BeginAnimation(System.Windows.Media.SolidColorBrush.ColorProperty,
+                        new System.Windows.Media.Animation.ColorAnimation(fg, dur) { EasingFunction = ease });
+                    fgOk = true;
+                }
+                catch (Exception ex)
+                {
+                    Services.Logger.Instance.Warn("[NavBar] 文字动画失败，退回直接赋值: " + ex.Message);
+                    try
+                    {
+                        if (!_navFgBrush.IsFrozen) { _navFgBrush.Color = fg; fgOk = true; }
+                    }
+                    catch (Exception ex2)
+                    {
+                        Services.Logger.Instance.Error("[NavBar] 文字配色赋值失败", ex2);
+                    }
+                }
+            }
 
-            Services.Logger.Instance.Debug($"[NavBar] 文字配色切换 -> {(wantDark ? "深色" : "浅色")} (luma={luma:F3})");
+            // 指示器两个GradientStop，各自独立try
+            try
+            {
+                if (_navIndTop != null)
+                    _navIndTop.BeginAnimation(System.Windows.Media.GradientStop.ColorProperty,
+                        new System.Windows.Media.Animation.ColorAnimation(indTop, dur) { EasingFunction = ease });
+            }
+            catch (Exception ex) { Services.Logger.Instance.Warn("[NavBar] 指示器上色失败: " + ex.Message); }
+
+            try
+            {
+                if (_navIndBottom != null)
+                    _navIndBottom.BeginAnimation(System.Windows.Media.GradientStop.ColorProperty,
+                        new System.Windows.Media.Animation.ColorAnimation(indBottom, dur) { EasingFunction = ease });
+            }
+            catch (Exception ex) { Services.Logger.Instance.Warn("[NavBar] 指示器下色失败: " + ex.Message); }
+
+            // 只有真正切成功才推进状态；失败保持原值，下次刷新自动重试
+            if (fgOk)
+            {
+                _navUseDarkText = wantDark;
+                Services.Logger.Instance.Debug(
+                    $"[NavBar] 文字配色切换 -> {(wantDark ? "深色" : "浅色")} (luma={luma:F3})");
+            }
+            else
+            {
+                Services.Logger.Instance.Warn(
+                    $"[NavBar] 本次配色未生效，保持原状态待下次重试 (luma={luma:F3}, wantDark={wantDark})");
+            }
         }
 
 
