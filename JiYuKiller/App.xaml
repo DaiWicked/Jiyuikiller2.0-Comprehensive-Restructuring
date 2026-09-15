@@ -3,13 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
-        <!-- 鍏ㄥ眬 Liquid Glass 鏍峰紡 -->
+        <!-- 全局 Liquid Glass 样式 -->
         <ResourceDictionary>
-            <!-- 底栏文字/指示器可动画画刷（颜色随背景亮度自适应） -->
+            <!-- ��������/ָʾ���ɶ�����ˢ����ɫ�汳����������Ӧ�� -->
             <SolidColorBrush x:Key="NavForegroundBrush" Color="#FFF2F5F8" />
             <SolidColorBrush x:Key="NavIndicatorBrushTop" Color="#5AFFFFFF" />
             <SolidColorBrush x:Key="NavIndicatorBrushBottom" Color="#30FFFFFF" />
-            <!-- 棰滆壊鍙橀噺 -->
+            <!-- 颜色变量 -->
             <Color x:Key="GlassBgColor">#B8FFFFFF</Color>
             <Color x:Key="GlassBorderColor">#80FFFFFF</Color>
             <Color x:Key="GlassTextColor">#FF0A0A0A</Color>
@@ -17,7 +17,7 @@
             <Color x:Key="GlassSuccessColor">#FF28A745</Color>
             <Color x:Key="GlassDangerColor">#FFFF6B6B</Color>
 
-            <!-- COUI 5绾urface閰嶈壊锛堜粠婧愮爜鎻愬彇: F0F1F2->鐧?>鐧?>E6E6E6->鐧斤級 -->
+            <!-- COUI 5级Surface配色（从源码提取: F0F1F2->�?>�?>E6E6E6->白） -->
             <Color x:Key="SurfaceLevel0Color">#FFF0F1F2</Color>
             <Color x:Key="SurfaceLevel1Color">#FFFFFFFF</Color>
             <Color x:Key="SurfaceLevel2Color">#FFFFFFFF</Color>
@@ -29,7 +29,7 @@
             <SolidColorBrush x:Key="SurfaceLevel3Brush" Color="{StaticResource SurfaceLevel3Color}" />
             <SolidColorBrush x:Key="SurfaceLevel4Brush" Color="{StaticResource SurfaceLevel4Color}" />
 
-            <!-- 鐜荤拑鑳屾櫙鐢诲埛 -->
+            <!-- 玻璃背景画刷 -->
             <SolidColorBrush x:Key="GlassBackgroundBrush" Color="{StaticResource GlassBgColor}" />
             <SolidColorBrush x:Key="GlassBorderBrush" Color="{StaticResource GlassBorderColor}" />
             <SolidColorBrush x:Key="GlassTextBrush" Color="{StaticResource GlassTextColor}" />
@@ -37,8 +37,8 @@
             <SolidColorBrush x:Key="GlassSuccessBrush" Color="{StaticResource GlassSuccessColor}" />
             <SolidColorBrush x:Key="GlassDangerBrush" Color="{StaticResource GlassDangerColor}" />
 
-            <!-- 鐜荤拑鎸夐挳鏍峰紡锛堝€熼壌COUI: Sink鎸夊帇缂╂斁 + 鐘舵€佸眰瑕嗙洊 + Storyboard鍔ㄧ敾锛?-->
-            <!-- 娉ㄦ剰: 涓嶅姩鐢昏儗鏅壊, 鍙€氳繃鐘舵€佸眰鍙犲姞鏆楄壊, 淇濈暀鎸夐挳鍘熷鑳屾櫙鑹?-->
+            <!-- 玻璃按钮样式（��鉴COUI: Sink按压缩放 + 状��层覆盖 + Storyboard动画�?-->
+            <!-- 注意: 不动画背景色, 只��过状��层叠加暗色, 保留按钮原始背景�?-->
             <Style x:Key="GlassButton" TargetType="Button">
                 <Setter Property="Background" Value="{StaticResource GlassPrimaryBrush}" />
                 <Setter Property="Foreground" Value="White" />
@@ -57,7 +57,7 @@
                                         <TranslateTransform x:Name="btnTranslate" Y="0" />
                                     </TransformGroup>
                                 </Grid.RenderTransform>
-                                <!-- 涓昏儗鏅眰 -->
+                                <!-- 主背景层 -->
                                 <Border x:Name="border"
                                         Background="{TemplateBinding Background}"
                                         BorderBrush="{TemplateBinding BorderBrush}"
@@ -66,11 +66,11 @@
                                         Padding="{TemplateBinding Padding}">
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
-                                <!-- 鐘舵€佸眰锛圕OUI: 鎮仠8%榛? 鎸夊帇12%榛戯級 -->
+                                <!-- 状��层（COUI: 悬停8%�? 按压12%黑） -->
                                 <Border x:Name="stateLayer" CornerRadius="8" Background="#00000000" IsHitTestVisible="False" />
                             </Grid>
                             <ControlTemplate.Triggers>
-                                <!-- 鎮仠: 涓婄Щ1px + 鐘舵€佸眰8%榛?-->
+                                <!-- 悬停: 上移1px + 状��层8%�?-->
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Trigger.EnterActions>
                                         <BeginStoryboard>
@@ -89,7 +89,7 @@
                                         </BeginStoryboard>
                                     </Trigger.ExitActions>
                                 </Trigger>
-                                <!-- 鎸夊帇: 缂╂斁0.92 + 鐘舵€佸眰12%榛?+ 鍥炲脊 -->
+                                <!-- 按压: 缩放0.92 + 状��层12%�?+ 回弹 -->
                                 <Trigger Property="IsPressed" Value="True">
                                     <Trigger.EnterActions>
                                         <BeginStoryboard>
@@ -130,7 +130,7 @@
                 </Setter>
             </Style>
 
-            <!-- 瀵艰埅鏍忔恫鎬佺幓鐠冩寜閽牱寮忥紙鍔ㄧ敾浣滅敤鍦ㄦ暣涓狦rid, 鏁翠綋缂╂斁, 涓嶅彈BlurEffect褰卞搷锛?-->
+            <!-- 导航栏液态玻璃按钮样式（动画作用在整个Grid, 整体缩放, 不受BlurEffect影响�?-->
             <Style x:Key="NavGlassButton" TargetType="Button">
                 <Setter Property="Foreground" Value="{DynamicResource NavForegroundBrush}" />
                 <Setter Property="FontSize" Value="13" />
@@ -146,21 +146,21 @@
                                         <TranslateTransform x:Name="navTranslate" Y="0" />
                                     </TransformGroup>
                                 </Grid.RenderTransform>
-                                <!-- 楂樻柉妯＄硦鐜荤拑鑳屾櫙灞?-->
+                                <!-- 高斯模糊玻璃背景�?-->
                                 <Border x:Name="glassBg" Background="#28FFFFFF" CornerRadius="16">
                                     <Border.Effect>
                                         <BlurEffect Radius="6" />
                                     </Border.Effect>
                                 </Border>
-                                <!-- 杈圭紭楂樺厜 -->
+                                <!-- 边缘高光 -->
                                 <Border x:Name="glassBorder" CornerRadius="16" BorderThickness="1" BorderBrush="#40FFFFFF" IsHitTestVisible="False" />
-                                <!-- 鐘舵€佸眰 -->
+                                <!-- 状��层 -->
                                 <Border x:Name="navStateLayer" CornerRadius="16" Background="#00000000" IsHitTestVisible="False" />
-                                <!-- 鏂囧瓧灞?-->
+                                <!-- 文字�?-->
                                 <ContentPresenter x:Name="content" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
                             </Grid>
                             <ControlTemplate.Triggers>
-                                <!-- 鎮仠 -->
+                                <!-- 悬停 -->
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Trigger.EnterActions>
                                         <BeginStoryboard>
@@ -183,7 +183,7 @@
                                         </BeginStoryboard>
                                     </Trigger.ExitActions>
                                 </Trigger>
-                                <!-- 鎸夊帇 -->
+                                <!-- 按压 -->
                                 <Trigger Property="IsPressed" Value="True">
                                     <Trigger.EnterActions>
                                         <BeginStoryboard>
@@ -226,7 +226,7 @@
                 </Setter>
             </Style>
 
-            <!-- 閫忔槑RepeatButton鏍峰紡锛圫lider杞ㄩ亾鐐瑰嚮鐢紝涓嶆樉绀鸿瑙夛級 -->
+            <!-- 透明RepeatButton样式（Slider轨道点击用，不显示视觉） -->
             <Style x:Key="SliderRepeatButtonTransparent" TargetType="RepeatButton">
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Template">
@@ -238,7 +238,7 @@
                 </Setter>
             </Style>
 
-            <!-- 鐜荤拑婊戝潡鏍峰紡锛堝€熼壌COUI: Thumb鎮仠鏀惧ぇ1.1, 鎷栧姩鏀惧ぇ1.25, 甯﹂槾褰憋級 -->
+            <!-- 玻璃滑块样式（��鉴COUI: Thumb悬停放大1.1, 拖动放大1.25, 带阴影） -->
             <Style x:Key="GlassSlider" TargetType="Slider">
                 <Setter Property="Foreground" Value="{StaticResource GlassPrimaryBrush}" />
                 <Setter Property="Background" Value="#20000000" />
@@ -247,9 +247,9 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="Slider">
                             <Grid>
-                                <!-- 杞ㄩ亾鑳屾櫙 -->
+                                <!-- 轨道背景 -->
                                 <Border x:Name="TrackBackground" Height="4" CornerRadius="2" Background="#30000000" VerticalAlignment="Center" />
-                                <!-- 宸插～鍏呴儴鍒?-->
+                                <!-- 已填充部�?-->
                                 <Border x:Name="TrackFill" Height="4" CornerRadius="2" Background="{TemplateBinding Foreground}" VerticalAlignment="Center" HorizontalAlignment="Left" Width="0" />
                                 <!-- Thumb -->
                                 <Track x:Name="PART_Track">
@@ -322,7 +322,7 @@
                 </Setter>
             </Style>
 
-            <!-- 鐜荤拑寮€鍏虫牱寮忥紙鍊熼壌COUI Switch: 婊戝潡婊戝姩鍔ㄧ敾锛?-->
+            <!-- 玻璃弢�关样式（借鉴COUI Switch: 滑块滑动动画�?-->
             <Style x:Key="GlassSwitch" TargetType="CheckBox">
                 <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />
                 <Setter Property="FontSize" Value="14" />
@@ -335,13 +335,13 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <!-- 寮€鍏宠建閬?-->
+                                <!-- 弢�关轨�?-->
                                 <Border x:Name="track" Width="44" Height="24" CornerRadius="12" Background="#40000000" VerticalAlignment="Center">
                                     <Border.RenderTransform>
                                         <TranslateTransform x:Name="knob" X="2" Y="0" />
                                     </Border.RenderTransform>
                                 </Border>
-                                <!-- 寮€鍏虫粦鍧?-->
+                                <!-- 弢�关滑�?-->
                                 <Ellipse x:Name="knobCircle" Width="20" Height="20" Fill="White" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0,0,0">
                                     <Ellipse.RenderTransform>
                                         <TranslateTransform x:Name="knobTrans" X="0" Y="0" />
@@ -377,7 +377,7 @@
                 </Setter>
             </Style>
 
-            <!-- 鐜荤拑澶嶉€夋鏍峰紡 -->
+            <!-- 玻璃复��框样式 -->
             <Style x:Key="GlassCheckBox" TargetType="CheckBox">
                 <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />
                 <Setter Property="FontSize" Value="14" />
@@ -385,7 +385,7 @@
                 <Setter Property="Cursor" Value="Hand" />
             </Style>
 
-            <!-- 鐜荤拑杈撳叆妗嗘牱寮?-->
+            <!-- 玻璃输入框样�?-->
             <Style x:Key="GlassTextBox" TargetType="TextBox">
                 <Setter Property="Background" Value="#A6FFFFFF" />
                 <Setter Property="BorderBrush" Value="#1F000000" />
