@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -747,6 +747,12 @@ namespace JiYuKiller.Services
                 Logger.Instance.Warn("[Driver] 删除注册表服务键失败: " + ex.Message);
             }
 
+            // 枚举键(HKLM\SYSTEM\CurrentControlSet\Enum\Root\LEGACY_xxx)：
+            // 这个键由系统在服务首次加载时创建，其 ACL 把写/删权限留给 SYSTEM，
+            // 即使以管理员运行也常常拿不到 —— Win7 上实测必然失败(错误: 不允许所请求的注册表访问权)，
+            // Win10 上则通常能删掉。参考实现(RegHlp.cpp)对这一项的失败同样当作无害处理。
+            // 它只是残留记录，不影响下次加载驱动(关键的是上面的 services\ 键)，
+            // 所以这里只记 Debug，不再用 WARN 以免每次卸载都刷一条看起来像出错的消息。
             try
             {
                 using (var root = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
@@ -761,7 +767,8 @@ namespace JiYuKiller.Services
             }
             catch (Exception ex)
             {
-                Logger.Instance.Warn("[Driver] 删除注册表枚举键失败(通常无碍): " + ex.Message);
+                // 已确认无害: services\ 键已删除，驱动下次仍可正常加载。
+                Logger.Instance.Debug("[Driver] 注册表枚举键未能删除(受 ACL 保护, 无害): " + ex.Message);
             }
         }
 
