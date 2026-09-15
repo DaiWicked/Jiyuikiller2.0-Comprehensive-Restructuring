@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -39,6 +40,37 @@ namespace JiYuKiller.Services
         /// <summary>是否运行中</summary>
         public bool IsRunning => _isRunning && _process != null && !_process.HasExited;
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetShortPathName(string lpszLongPath, StringBuilder lpszShortPath, int cchBuffer);
+
+        /// <summary>
+        /// 将长路径（含中文）转换为8.3短路径（纯ASCII），解决PyInstaller在Win7中文路径下崩溃的问题
+        /// </summary>
+        private static string GetShortPathSafe(string longPath)
+        {
+            if (string.IsNullOrEmpty(longPath)) return longPath;
+            try
+            {
+                StringBuilder sb = new StringBuilder(260);
+                int result = GetShortPathName(longPath, sb, sb.Capacity);
+                if (result > 0 && result < sb.Capacity)
+                {
+                    string shortPath = sb.ToString();
+                    if (!string.IsNullOrEmpty(shortPath) && File.Exists(shortPath))
+                    {
+                        Logger.Instance.Debug($"[TeacherSim] 短路径转换: {longPath} -> {shortPath}");
+                        return shortPath;
+                    }
+                }
+                Logger.Instance.Warn($"[TeacherSim] 短路径转换失败({result}), 使用原路径: {longPath}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Warn($"[TeacherSim] 短路径转换异常: {ex.Message}, 使用原路径");
+            }
+            return longPath;
+        }
+
         /// <summary>
         /// 启动teacher_sim.exe
         /// </summary>
@@ -69,6 +101,10 @@ namespace JiYuKiller.Services
                     Logger.Instance.Info($"[TeacherSim] 文件验证: {ExePath}, 大小: {fi.Length} bytes");
                     OnLogOutput?.Invoke($"[系统] 正在启动 teacher_sim.exe ({fi.Length / 1024 / 1024}MB)...");
 
+                    // 转换为8.3短路径（解决Win7中文路径下PyInstaller bootloader内存越界崩溃）
+                    string exePathShort = GetShortPathSafe(ExePath);
+                    string workDirShort = GetShortPathSafe(workDir);
+
                     // 清理桌面旧日志（teacher_sim.py硬编码日志到桌面）
                     string desktopLogPath = GetLogPath();
                     if (File.Exists(desktopLogPath))
@@ -79,8 +115,8 @@ namespace JiYuKiller.Services
 
                     ProcessStartInfo psi = new ProcessStartInfo
                     {
-                        FileName = ExePath,
-                        WorkingDirectory = workDir,
+                        FileName = exePathShort,
+                        WorkingDirectory = workDirShort,
                         UseShellExecute = false,
                         RedirectStandardInput = true,
                         RedirectStandardOutput = true,
@@ -124,7 +160,7 @@ namespace JiYuKiller.Services
                         Logger.Instance.Info($"[TeacherSim] 进程退出，退出码: {_process.ExitCode}");
                     };
 
-                    Logger.Instance.Info($"[TeacherSim] 启动 teacher_sim.exe, 频道: {Channel}, 工作目录: {workDir}");
+                    Logger.Instance.Info($"[TeacherSim] 启动 teacher_sim.exe, 频道: {Channel}, 工作目录: {workDirShort} (原路径: {workDir})");
                     bool started = _process.Start();
 
                     // 开始异步读取stdout/stderr

@@ -245,12 +245,25 @@ namespace JiYuKiller.Services
             return true;
         }
 
-        private const int DecodeWidth = 640;
-        private const int DecodeHeight = 480;
+        // 解码参数根据系统位数动态选择（32位性能受限用低分辨率，64位直接输出目标分辨率省去缩放）
+        private const int DecodeWidth32 = 640;
+        private const int DecodeHeight32 = 480;
+        private const int DecodeFps32 = 15;
+        private const int DecodeWidth64 = 1024;
+        private const int DecodeHeight64 = 768;
+        private const int DecodeFps64 = 20;
 
         private void VideoDecodeLoop(string ffmpegPath, string videoPath)
         {
-            int srcFrameSize = DecodeWidth * DecodeHeight * 3 / 2;
+            // 根据系统位数选择解码参数
+            bool is64Bit = Environment.Is64BitOperatingSystem;
+            int decodeWidth = is64Bit ? DecodeWidth64 : DecodeWidth32;
+            int decodeHeight = is64Bit ? DecodeHeight64 : DecodeHeight32;
+            int decodeFps = is64Bit ? DecodeFps64 : DecodeFps32;
+            bool needScale = (decodeWidth != DefaultWidth || decodeHeight != DefaultHeight);
+            Log($"视频解码参数: {(is64Bit ? "64位" : "32位")} {decodeWidth}x{decodeHeight}@{decodeFps}fps, 需要缩放: {needScale}");
+
+            int srcFrameSize = decodeWidth * decodeHeight * 3 / 2;
             byte[] srcYuv = new byte[srcFrameSize];
             byte[] dstYuv = new byte[DefaultWidth * DefaultHeight * 3 / 2];
             int frameCount = 0;
@@ -262,8 +275,7 @@ namespace JiYuKiller.Services
                     ProcessStartInfo psi = new ProcessStartInfo
                     {
                         FileName = ffmpegPath,
-                        // rawvideo YUV420P 320x240，无编码开销，性能最好
-                        Arguments = $"-stream_loop -1 -i \"{videoPath}\" -s {DecodeWidth}x{DecodeHeight} -pix_fmt yuv420p -r 15 -f rawvideo -",
+                        Arguments = $"-stream_loop -1 -i \"{videoPath}\" -s {decodeWidth}x{decodeHeight} -pix_fmt yuv420p -r {decodeFps} -f rawvideo -",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
@@ -290,8 +302,16 @@ namespace JiYuKiller.Services
 
                         if (read >= srcFrameSize && _videoRunning)
                         {
-                            // YUV420P最近邻缩放到1024x768，并交换U/V(I420->YV12)
-                            ScaleYUV420ToYV12(srcYuv, DecodeWidth, DecodeHeight, dstYuv, DefaultWidth, DefaultHeight);
+                            if (needScale)
+                            {
+                                // 32位: YUV420P最近邻缩放到1024x768，并交换U/V(I420->YV12)
+                                ScaleYUV420ToYV12(srcYuv, decodeWidth, decodeHeight, dstYuv, DefaultWidth, DefaultHeight);
+                            }
+                            else
+                            {
+                                // 64位: 解码尺寸=目标尺寸，只需交换U/V平面(I420->YV12)，省去缩放开销
+                                ConvertI420ToYV12(srcYuv, dstYuv, DefaultWidth, DefaultHeight);
+                            }
                             try
                             {
                                 File.WriteAllBytes(YuvPath, dstYuv);
@@ -303,7 +323,7 @@ namespace JiYuKiller.Services
                             {
                                 Log("写入YUV失败: " + ex.Message);
                             }
-                            // 不Sleep，由ffmpeg的-r 15控制帧率
+                            // 不Sleep，由ffmpeg的-r参数控制帧率
                         }
                         else
                         {
@@ -324,6 +344,20 @@ namespace JiYuKiller.Services
                 }
             }
             Log("视频解码线程已退出，共播放 " + frameCount + " 帧");
+        }
+
+        /// <summary>
+        /// I420直接转YV12（仅交换U/V平面，不缩放），用于64位系统解码尺寸=目标尺寸的情况
+        /// </summary>
+        private static void ConvertI420ToYV12(byte[] src, byte[] dst, int width, int height)
+        {
+            int ySize = width * height;
+            int uvSize = ySize / 4;
+            // Y平面直接复制
+            Buffer.BlockCopy(src, 0, dst, 0, ySize);
+            // I420: Y + U + V  ->  YV12: Y + V + U
+            Buffer.BlockCopy(src, ySize + uvSize, dst, ySize, uvSize);       // V -> 目标U位置
+            Buffer.BlockCopy(src, ySize, dst, ySize + uvSize, uvSize);       // U -> 目标V位置
         }
 
         /// <summary>
