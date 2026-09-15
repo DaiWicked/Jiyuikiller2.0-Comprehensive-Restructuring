@@ -27,18 +27,6 @@
                 <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.3" Color="#000000" />
             </Border.Effect>
         </Border>
-        <!-- 外层光晕虚化（模拟玻璃边缘光线散射） -->
-        <Border x:Name="OuterGlow" Margin="16" CornerRadius="24" Background="#60C8E8FF" Opacity="0.05" IsHitTestVisible="False">
-            <Border.Effect>
-                <BlurEffect Radius="28" />
-            </Border.Effect>
-        </Border>
-        <!-- 中层柔和光晕 -->
-        <Border x:Name="InnerGlow" Margin="13" CornerRadius="20" Background="#40FFFFFF" Opacity="0.05" IsHitTestVisible="False">
-            <Border.Effect>
-                <BlurEffect Radius="16" />
-            </Border.Effect>
-        </Border>
         <!-- 外层玻璃容器（对角渐变边框, 描边留在这里不被裁剪） -->
         <Border x:Name="GlassContainer" CornerRadius="16" Margin="8" BorderThickness="1">
             <Border.BorderBrush>
@@ -1023,30 +1011,6 @@
                                             </Grid.ColumnDefinitions>
                                             <Slider x:Name="SliderContentOpacity" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0.05" Maximum="1" Value="0.25" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderContentOpacity_ValueChanged" />
                                             <TextBlock x:Name="TextContentOpacityValue" Grid.Column="1" Text="25%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
-                                        </Grid>
-                                    </StackPanel>
-
-                                    <StackPanel Margin="0,0,0,8">
-                                        <TextBlock Text="外层光晕透明度" FontSize="12" Foreground="#FF2A2A2A" Margin="0,0,0,4" />
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderOuterGlow" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.05" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderOuterGlow_ValueChanged" />
-                                            <TextBlock x:Name="TextOuterGlowValue" Grid.Column="1" Text="5%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
-                                        </Grid>
-                                    </StackPanel>
-
-                                    <StackPanel Margin="0,0,0,8">
-                                        <TextBlock Text="中层光晕透明度" FontSize="12" Foreground="#FF2A2A2A" Margin="0,0,0,4" />
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Slider x:Name="SliderInnerGlow" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.05" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderInnerGlow_ValueChanged" />
-                                            <TextBlock x:Name="TextInnerGlowValue" Grid.Column="1" Text="5%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
 

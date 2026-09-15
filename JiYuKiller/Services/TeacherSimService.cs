@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -40,49 +39,11 @@ namespace JiYuKiller.Services
         /// <summary>是否运行中</summary>
         public bool IsRunning => _isRunning && _process != null && !_process.HasExited;
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern int GetShortPathName(string lpszLongPath, StringBuilder lpszShortPath, int cchBuffer);
+        /// <summary>是否跳过网络碰撞检测（用户确认继续后设为true）</summary>
+        public bool SkipCollisionCheck { get; set; } = false;
 
-        /// <summary>
-        /// 将长路径（含中文）转换为8.3短路径（纯ASCII），解决PyInstaller在Win7中文路径下崩溃的问题
-        /// </summary>
-        private static string GetShortPathSafe(string longPath)
-        {
-            if (string.IsNullOrEmpty(longPath)) return longPath;
-            try
-            {
-                StringBuilder sb = new StringBuilder(1024);
-                int result = GetShortPathName(longPath, sb, sb.Capacity);
-                if (result > 0 && result < sb.Capacity)
-                {
-                    string shortPath = sb.ToString();
-                    if (!string.IsNullOrEmpty(shortPath))
-                    {
-                        Logger.Instance.Info($"[TeacherSim] 短路径转换成功: {longPath} -> {shortPath}");
-                        return shortPath;
-                    }
-                }
-                // result > capacity 表示缓冲区不够，需要重试
-                if (result >= sb.Capacity)
-                {
-                    StringBuilder sb2 = new StringBuilder(result + 1);
-                    int result2 = GetShortPathName(longPath, sb2, sb2.Capacity);
-                    if (result2 > 0 && result2 < sb2.Capacity)
-                    {
-                        string shortPath = sb2.ToString();
-                        Logger.Instance.Info($"[TeacherSim] 短路径转换成功(重试): {longPath} -> {shortPath}");
-                        return shortPath;
-                    }
-                }
-                int err = Marshal.GetLastWin32Error();
-                Logger.Instance.Warn($"[TeacherSim] 短路径转换失败(result={result}, err={err}), 使用原路径: {longPath}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.Warn($"[TeacherSim] 短路径转换异常: {ex.Message}, 使用原路径");
-            }
-            return longPath;
-        }
+        /// <summary>检测到网络碰撞时触发（参数为冲突描述）</summary>
+        public event Action<string> OnCollisionDetected;
 
         /// <summary>
         /// 启动teacher_sim.exe
@@ -114,10 +75,6 @@ namespace JiYuKiller.Services
                     Logger.Instance.Info($"[TeacherSim] 文件验证: {ExePath}, 大小: {fi.Length} bytes");
                     OnLogOutput?.Invoke($"[系统] 正在启动 teacher_sim.exe ({fi.Length / 1024 / 1024}MB)...");
 
-                    // 转换为8.3短路径（解决Win7中文路径下PyInstaller bootloader内存越界崩溃）
-                    string exePathShort = GetShortPathSafe(ExePath);
-                    string workDirShort = GetShortPathSafe(workDir);
-
                     // 清理桌面旧日志（teacher_sim.py硬编码日志到桌面）
                     string desktopLogPath = GetLogPath();
                     if (File.Exists(desktopLogPath))
@@ -128,8 +85,8 @@ namespace JiYuKiller.Services
 
                     ProcessStartInfo psi = new ProcessStartInfo
                     {
-                        FileName = exePathShort,
-                        WorkingDirectory = workDirShort,
+                        FileName = ExePath,
+                        WorkingDirectory = workDir,
                         UseShellExecute = false,
                         RedirectStandardInput = true,
                         RedirectStandardOutput = true,
@@ -140,24 +97,32 @@ namespace JiYuKiller.Services
                         StandardErrorEncoding = Encoding.GetEncoding("GB2312")
                     };
 
+                    // 用户确认继续时，跳过碰撞检测避免循环弹窗
+                    if (SkipCollisionCheck)
+                    {
+                        psi.Arguments = "--skip-collision";
+                    }
+
                     // 设置环境变量
                     psi.EnvironmentVariables["TEACHER_CHANNEL"] = Channel.ToString();
-                    // 强制Python使用UTF-8文件系统编码（解决Win7下PyInstaller init_fs_encoding崩溃）
-                    psi.EnvironmentVariables["PYTHONUTF8"] = "1";
-                    psi.EnvironmentVariables["PYTHONLEGACYWINDOWSFSENCODING"] = "0";
-                    psi.EnvironmentVariables["PYTHONIOENCODING"] = "utf-8";
 
                     _process = new Process();
                     _process.StartInfo = psi;
                     _process.EnableRaisingEvents = true;
 
                     // 接收stdout输出（teacher_sim的print输出到stdout）
+                    System.Collections.Generic.List<string> collisionLines = new System.Collections.Generic.List<string>();
                     _process.OutputDataReceived += (s, e) =>
                     {
                         if (!string.IsNullOrEmpty(e.Data))
                         {
                             Logger.Instance.Debug($"[TeacherSim] stdout: {e.Data}");
                             OnLogOutput?.Invoke(e.Data);
+                            // 收集碰撞检测相关输出
+                            if (e.Data.Contains("[Collision]") || e.Data.Contains("[警告] 检测到网络冲突"))
+                            {
+                                lock (collisionLines) { collisionLines.Add(e.Data); }
+                            }
                         }
                     };
                     _process.ErrorDataReceived += (s, e) =>
@@ -177,14 +142,14 @@ namespace JiYuKiller.Services
                         Logger.Instance.Info($"[TeacherSim] 进程退出，退出码: {_process.ExitCode}");
                     };
 
-                    Logger.Instance.Info($"[TeacherSim] 启动 teacher_sim.exe, 频道: {Channel}, 工作目录: {workDirShort} (原路径: {workDir})");
+                    Logger.Instance.Info($"[TeacherSim] 启动 teacher_sim.exe, 频道: {Channel}, 工作目录: {workDir}");
                     bool started = _process.Start();
 
                     // 开始异步读取stdout/stderr
                     _process.BeginOutputReadLine();
                     _process.BeginErrorReadLine();
 
-                    // 等待2秒检查进程是否还在运行
+                    // 等待2秒检查进程是否还在运行，同时收集碰撞检测输出
                     Thread.Sleep(2000);
                     if (_process.HasExited)
                     {
@@ -193,6 +158,23 @@ namespace JiYuKiller.Services
                         _isRunning = false;
                         OnStateChanged?.Invoke(false);
                         return false;
+                    }
+
+                    // 检查是否检测到网络碰撞
+                    lock (collisionLines)
+                    {
+                        if (collisionLines.Count > 0 && !SkipCollisionCheck)
+                        {
+                            string collisionInfo = string.Join("\n", collisionLines);
+                            Logger.Instance.Warn($"[TeacherSim] 检测到网络碰撞: {collisionInfo}");
+                            // 停止进程
+                            try { _process.Kill(); } catch { }
+                            _isRunning = false;
+                            OnStateChanged?.Invoke(false);
+                            // 触发碰撞事件，由UI层决定是否跳过检测重新启动
+                            OnCollisionDetected?.Invoke(collisionInfo);
+                            return false;
+                        }
                     }
 
                     _isRunning = true;
