@@ -86,6 +86,13 @@ namespace JiYuKiller
             // 应用 Liquid Glass 效果
             ApplyLiquidGlass();
 
+            // 圆角Clip：裁GlassClipRoot（内层），描边留在GlassContainer外层不被裁
+            GlassClipRoot.SizeChanged += (s, e) => UpdateGlassClip();
+            this.Loaded += (s, e) => UpdateGlassClip();
+            // 底栏玻璃效果挂接
+            NavBarClipRoot.SizeChanged += (s, e) => UpdateNavBarGlass();
+            this.Loaded += (s, e) => UpdateNavBarGlass();
+
             // 初始化毛玻璃效果管理器（窗口加载后）
             this.Loaded += MainWindow_Loaded;
 
@@ -321,6 +328,105 @@ namespace JiYuKiller
             Services.Logger.Instance.Debug($"Liquid Glass: value={value:F2}, whiteAlpha={whiteAlpha}, wallpaperOpacity={wallpaperOpacity:F2}");
         }
 
+        /// <summary>
+        /// 给GlassContainer加真正的圆角裁剪（RectangleGeometry）。
+        /// 修复AllowsTransparency窗口四角变黑问题：
+        /// ClipToBounds只裁矩形、CornerRadius不裁子元素，
+        /// 而Effect(GlassyEffect/DropShadowEffect)的输出会铺满元素矩形，
+        /// 因此必须在祖先容器上用圆角RectangleGeometry裁整棵子树。
+        /// </summary>
+        private void UpdateGlassClip()
+        {
+            if (GlassClipRoot == null) return;
+
+            double w = GlassClipRoot.ActualWidth;
+            double h = GlassClipRoot.ActualHeight;
+            if (w <= 0 || h <= 0) return;
+
+            var geo = GlassClipRoot.Clip as System.Windows.Media.RectangleGeometry;
+            if (geo == null)
+            {
+                geo = new System.Windows.Media.RectangleGeometry();
+                GlassClipRoot.Clip = geo;
+            }
+            geo.Rect = new System.Windows.Rect(0, 0, w, h);
+            geo.RadiusX = 15;   // 外圆角16 - 描边1，同心
+            geo.RadiusY = 15;
+
+            Services.Logger.Instance.Debug($"[圆角Clip] 已应用到GlassClipRoot: {w:F0}x{h:F0}, Radius=15");
+        }
+
+        // ========== 底栏玻璃效果 ==========
+        private Effects.GlassyEffect _navBarEffect;
+
+        /// <summary>初始化底栏专用（更弱）的着色器，只需一次</summary>
+        private void InitNavBarGlass()
+        {
+            try
+            {
+                _navBarEffect = new Effects.GlassyEffect();
+                if (_navBarEffect.IsShaderLoaded)
+                {
+                    NavBarGlass.Effect = _navBarEffect;
+                    Services.Logger.Instance.Info("[NavBar] 底栏 GlassyEffect 已应用");
+                }
+                else
+                {
+                    NavBarGlass.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 6 };
+                    _navBarEffect = null;
+                    Services.Logger.Instance.Warn("[NavBar] 着色器不可用，底栏降级为 BlurEffect");
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("[NavBar] 底栏玻璃初始化失败", ex);
+                NavBarGlass.Effect = null;
+                _navBarEffect = null;
+            }
+        }
+
+        /// <summary>每次布局变化更新：Viewbox（取背景的底栏区域）+ 着色器几何参数 + 圆角Clip</summary>
+        private void UpdateNavBarGlass()
+        {
+            if (NavBarGlassBrush == null || NavBarGlass == null || BackdropContainer == null) return;
+
+            double w = NavBarGlass.ActualWidth;
+            double h = NavBarGlass.ActualHeight;
+            if (w <= 0 || h <= 0) return;
+
+            try
+            {
+                // 1) 底栏在BackdropContainer坐标系中的矩形（关键：不设Viewbox会被拉伸）
+                Point p = NavBarGlass.TranslatePoint(new Point(0, 0), BackdropContainer);
+                NavBarGlassBrush.ViewboxUnits = System.Windows.Media.BrushMappingMode.Absolute;
+                NavBarGlassBrush.Viewbox = new System.Windows.Rect(p.X, p.Y, w, h);
+
+                // 2) 底栏自用着色器的几何参数
+                if (_navBarEffect != null)
+                {
+                    _navBarEffect.TextureSize = new Point(w, h);
+                    _navBarEffect.GlassCenter = new Point(w * 0.5, h * 0.5);
+                    _navBarEffect.GlassSize = new Point(w, h);
+                    _navBarEffect.BlurIntensity = 0.1;   // 主窗口0.2的一半，更弱
+                }
+
+                // 3) 底栏圆角裁剪（半径23 = 外圆角24 - 描边1，同心）
+                var geo = NavBarClipRoot.Clip as System.Windows.Media.RectangleGeometry;
+                if (geo == null)
+                {
+                    geo = new System.Windows.Media.RectangleGeometry();
+                    NavBarClipRoot.Clip = geo;
+                }
+                geo.Rect = new System.Windows.Rect(0, 0, NavBarClipRoot.ActualWidth, NavBarClipRoot.ActualHeight);
+                geo.RadiusX = 23;
+                geo.RadiusY = 23;
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Debug("[NavBar] 更新底栏玻璃失败: " + ex.Message);
+            }
+        }
+
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.Info("窗口加载完成，初始化毛玻璃效果管理器");
@@ -335,6 +441,8 @@ namespace JiYuKiller
                     Services.Logger.Instance.Debug($"毛玻璃模糊强度已同步: {SliderBlurIntensity.Value:F2}");
                 }
                 InitWallpaper();
+                // 初始化底栏玻璃效果（必须在UpdateNavBarGlass之前）
+                InitNavBarGlass();
                 InitNoiseLayer();
             }
             catch (Exception ex)
@@ -553,35 +661,23 @@ namespace JiYuKiller
 
         private void SliderOuterGlow_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            Services.Logger.Instance.Debug($"外层光晕滑块事件触发: NewValue={e.NewValue:F2}, OuterGlow null={OuterGlow == null}");
+            // [已禁用] OuterGlow层已删除（BlurEffect导致圆角黑色角），保留滑块UI但不生效
+            Services.Logger.Instance.Debug($"外层光晕滑块事件触发(已禁用): NewValue={e.NewValue:F2}");
 
             if (TextOuterGlowValue != null)
             {
                 TextOuterGlowValue.Text = string.Format("{0}%", (int)(e.NewValue * 100));
             }
-
-            if (OuterGlow != null)
-            {
-                double oldOpacity = OuterGlow.Opacity;
-                OuterGlow.Opacity = e.NewValue;
-                Services.Logger.Instance.Debug($"外层光晕透明度: {oldOpacity:F2} -> {e.NewValue:F2}");
-            }
         }
 
         private void SliderInnerGlow_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            Services.Logger.Instance.Debug($"中层光晕滑块事件触发: NewValue={e.NewValue:F2}, InnerGlow null={InnerGlow == null}");
+            // [已禁用] InnerGlow层已删除（BlurEffect导致圆角黑色角），保留滑块UI但不生效
+            Services.Logger.Instance.Debug($"中层光晕滑块事件触发(已禁用): NewValue={e.NewValue:F2}");
 
             if (TextInnerGlowValue != null)
             {
                 TextInnerGlowValue.Text = string.Format("{0}%", (int)(e.NewValue * 100));
-            }
-
-            if (InnerGlow != null)
-            {
-                double oldOpacity = InnerGlow.Opacity;
-                InnerGlow.Opacity = e.NewValue;
-                Services.Logger.Instance.Debug($"中层光晕透明度: {oldOpacity:F2} -> {e.NewValue:F2}");
             }
         }
 
