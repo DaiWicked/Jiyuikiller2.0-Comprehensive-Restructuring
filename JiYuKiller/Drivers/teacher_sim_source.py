@@ -3099,7 +3099,134 @@ def command_loop():
             print(f'[命令] 未知命令：{cmd}，输入 help 查看帮助')
 
 
+# -------------------- 网络碰撞检测 --------------------
+
+def _check_single_instance():
+    """同机器单实例：文件锁，防止同一台机器运行多个teacher_sim"""
+    lock_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) or os.getcwd(), 'teacher_sim.lock')
+    try:
+        if os.path.exists(lock_path):
+            with open(lock_path, 'r') as f:
+                old_pid = f.read().strip()
+            if old_pid and old_pid.isdigit():
+                try:
+                    import ctypes
+                    kernel32 = ctypes.windll.kernel32
+                    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+                    h = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, int(old_pid))
+                    if h:
+                        kernel32.CloseHandle(h)
+                        print(f'[Collision] 同机器已存在 teacher_sim 实例 (PID={old_pid})，拒绝启动')
+                        logger.warning('[Collision] 同机器已存在实例 PID=%s，退出', old_pid)
+                        return False
+                except Exception:
+                    pass
+            os.remove(lock_path)
+        with open(lock_path, 'w') as f:
+            f.write(str(os.getpid()))
+        return True
+    except Exception as e:
+        logger.warning('[Collision] 单实例检测失败: %s', e)
+        return True
+
+
+def _check_port_occupied():
+    """检测教师端端口是否已被占用"""
+    occupied = []
+    for test_port, name in [(PORT, '主端口'), (SPORT, '会话端口')]:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind(('', test_port))
+            s.close()
+        except OSError:
+            occupied.append((test_port, name))
+    if occupied:
+        for p, n in occupied:
+            print(f'[Collision] 端口 {p} ({n}) 已被占用，局域网内可能已有教师端运行')
+            logger.warning('[Collision] 端口 %d (%s) 已被占用', p, n)
+        return True
+    return False
+
+
+def _probe_lan_teachers(timeout=0.8):
+    """发送教师宣告探测包，监听局域网内是否有其他教师端响应"""
+    try:
+        probe_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        probe_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        probe_sock.settimeout(timeout)
+        probe_sock.bind(('', PORT))
+        try:
+            probe_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
+                                   struct.pack('4s4s', socket.inet_aton(MCAST), socket.inet_aton(ip)))
+        except Exception:
+            pass
+        try:
+            probe_pkt = nanc()
+            for target, tport in MAIN_ANNOUNCE_TARGETS:
+                try:
+                    probe_sock.sendto(probe_pkt, (target, tport))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        found_teachers = set()
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                remaining = deadline - time.time()
+                if remaining <= 0:
+                    break
+                probe_sock.settimeout(remaining)
+                data, addr = probe_sock.recvfrom(2048)
+                if len(data) >= 4:
+                    magic = struct.unpack_from('<I', data, 0)[0]
+                    if magic in (0x434E414E, 0x434E4143, 0x434E4F4F):
+                        if addr[0] != ip and addr[0] not in found_teachers:
+                            found_teachers.add(addr[0])
+            except socket.timeout:
+                break
+            except Exception:
+                break
+        probe_sock.close()
+        if found_teachers:
+            for t_ip in found_teachers:
+                print(f'[Collision] 检测到局域网内其他教师端: {t_ip}')
+                logger.warning('[Collision] 检测到其他教师端 IP=%s', t_ip)
+            print(f'[Collision] 共检测到 {len(found_teachers)} 个其他教师端，同时运行可能导致学生端无法连接')
+            return True
+        return False
+    except Exception as e:
+        logger.debug('[Collision] 局域网探测失败: %s', e)
+        return False
+
+
+def run_collision_check():
+    """启动前网络碰撞检测"""
+    print('[系统] 正在进行网络碰撞检测...')
+    if not _check_single_instance():
+        print('[系统] 因同机器已存在实例，启动终止')
+        return False
+    port_occupied = _check_port_occupied()
+    lan_conflict = _probe_lan_teachers()
+    if port_occupied or lan_conflict:
+        print('[警告] 检测到网络冲突，继续运行可能导致学生端无法连接或网络风暴')
+        print('[警告] 建议：确认局域网内只有一个教师端后再启动')
+        logger.warning('[Collision] 检测到网络冲突 port_occupied=%s lan_conflict=%s',
+                       port_occupied, lan_conflict)
+    else:
+        print('[系统] 网络碰撞检测通过，未发现其他教师端')
+    return True
+
+
 # -------------------- 启动 --------------------
+
+# 支持 --skip-collision 参数：用户确认继续时跳过检测
+_skip_collision = "--skip-collision" in sys.argv
+if not _skip_collision and not run_collision_check():
+    sys.exit(1)
+elif _skip_collision:
+    print("[系统] 已跳过网络碰撞检测（用户确认继续）")
 
 spawn_log_window()
 logger.info('启动 4 个后台线程')
@@ -3115,4 +3242,12 @@ for sip in list(remote_views):
     stop_remote_view(sip, notify=False)
 for sip in list(remote_controls):
     stop_remote_control(sip, notify=False)
+try:
+    lock_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) or os.getcwd(), 'teacher_sim.lock')
+    if os.path.exists(lock_path):
+        with open(lock_path, 'r') as f:
+            if f.read().strip() == str(os.getpid()):
+                os.remove(lock_path)
+except Exception:
+    pass
 logger.info('程序退出。students=%s, previews=%s', list(students.keys()), list(previews.keys()))
