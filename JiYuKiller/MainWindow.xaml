@@ -1,4 +1,4 @@
-﻿<Window x:Class="JiYuKiller.MainWindow"
+<Window x:Class="JiYuKiller.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:effects="clr-namespace:JiYuKiller.Effects"
@@ -1024,6 +1024,31 @@
                                 </StackPanel>
                             </Border>
 
+                            <!-- 底栏液态玻璃（折射） -->
+                            <Border Background="#20000000" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="底栏液态玻璃" FontSize="14" FontWeight="Bold" Foreground="#FF0A0A0A" Margin="0,0,0,4" />
+                                    <TextBlock Text="让底栏像玻璃一样折射背后的画面：边缘内容被向内弯折放大（水滴感），并带极淡的彩边。中心区域不受影响。" FontSize="11" Foreground="#FF555555" TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                                    <CheckBox x:Name="CheckNavBarLiquidGlass" Content="启用液态玻璃折射" Style="{StaticResource GlassCheckBox}" Checked="NavLensSetting_Changed" Unchecked="NavLensSetting_Changed" Margin="0,0,0,6" />
+
+                                    <StackPanel Margin="0,0,0,6">
+                                        <TextBlock Text="折射强度" FontSize="12" Foreground="#FF2A2A2A" Margin="0,0,0,4" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Slider x:Name="SliderNavLensStrength" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="0" Maximum="1" Value="0.35" TickFrequency="0.05" IsSnapToTickEnabled="False" ValueChanged="SliderNavLensStrength_ValueChanged" />
+                                            <TextBlock x:Name="TextNavLensValue" Grid.Column="1" Text="35%" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <CheckBox x:Name="CheckNavLensOnTier0" Content="在软件渲染(Tier 0)下也强制启用" Style="{StaticResource GlassCheckBox}" Checked="NavLensSetting_Changed" Unchecked="NavLensSetting_Changed" />
+                                    <TextBlock x:Name="TextNavLensStatus" Text="" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
                             
                             <!-- 自定义壁纸 -->
                             <Border Background="#20000000" CornerRadius="8" Padding="12" Margin="0,0,0,12">
@@ -1134,18 +1159,28 @@
                     </Border.BorderBrush>
                     <!-- 圆角裁剪根：Clip由C#按尺寸更新，半径=23（外圆角24-描边1，同心） -->
                     <Grid x:Name="NavBarClipRoot" ClipToBounds="True">
-                        <!-- 2a: 背景（VisualBrush取主程序背景底栏区域 + BlurEffect，无着色器，避免色差偏色） -->
-                        <Border x:Name="NavBarGlass" Margin="-10" IsHitTestVisible="False">
-                            <Border.Background>
-                                <VisualBrush x:Name="NavBarGlassBrush"
-                                             Visual="{Binding ElementName=BackdropContainer}"
-                                             Stretch="Fill"
-                                             ViewboxUnits="Absolute"
-                                             Viewbox="0,0,1,1" />
-                            </Border.Background>
+                        <!-- 2a-1: 液态玻璃折射层（外层挂 NavBarLensEffect，内层做模糊）
+                             嵌套的原因：WPF 的 Effect 只能挂一个，父元素挂 shader 时它的 Input
+                             采样里正好包含"子元素已模糊"的结果，这样就不必在 ps_2_0 里自己写高斯核。
+                             Margin=-24 是为了让采样范围超出底栏本身 —— 真正的边缘折射必须能采到
+                             "玻璃形状之外"的背景像素，否则偏移只会夹边、看着很假。 -->
+                        <Border x:Name="NavBarLens" Margin="-24" IsHitTestVisible="False">
                             <Border.Effect>
-                                <BlurEffect Radius="5" KernelType="Gaussian" />
+                                <effects:NavBarLensEffect x:Name="NavBarLensFx" />
                             </Border.Effect>
+                            <!-- 2a-2: 背景（VisualBrush取主程序背景底栏区域 + BlurEffect） -->
+                            <Border x:Name="NavBarGlass">
+                                <Border.Background>
+                                    <VisualBrush x:Name="NavBarGlassBrush"
+                                                 Visual="{Binding ElementName=BackdropContainer}"
+                                                 Stretch="Fill"
+                                                 ViewboxUnits="Absolute"
+                                                 Viewbox="0,0,1,1" />
+                                </Border.Background>
+                                <Border.Effect>
+                                    <BlurEffect Radius="5" KernelType="Gaussian" />
+                                </Border.Effect>
+                            </Border>
                         </Border>
                         <!-- 2b: 中性遮罩（替代原来的白色渐变；保证任何背景下文字可读） -->
                         <Border x:Name="NavBarScrim" IsHitTestVisible="False">

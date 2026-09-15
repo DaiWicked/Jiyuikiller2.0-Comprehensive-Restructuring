@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -123,9 +123,14 @@
     <Compile Include="Services\DllInjectService.cs" />
     <Compile Include="Effects\GlassyEffect.cs" />
     <Compile Include="Effects\GlassyWindowManager.cs" />
+    <Compile Include="Effects\NavBarLensEffect.cs" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Effects\GlassyEffect.ps" />
+    <Resource Include="Effects\NavBarLens.ps" />
+    <!-- 着色器源码随仓库保存，便于以后重新编译:
+         fxc /T ps_2_0 /E main /Fo NavBarLens.ps NavBarLens.hlsl -->
+    <None Include="Effects\NavBarLens.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

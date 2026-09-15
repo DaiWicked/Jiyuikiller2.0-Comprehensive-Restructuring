@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Xml.Serialization;
 
@@ -105,6 +105,19 @@ namespace JiYuKiller.Models
 
         /// <summary>壁纸透明度 (0-100)</summary>
         public int WallpaperOpacity { get; set; } = 80;
+
+        // === 底栏液态玻璃（折射）===
+        /// <summary>启用底栏液态玻璃折射效果</summary>
+        public bool NavBarLiquidGlass { get; set; } = true;
+
+        /// <summary>液态玻璃强度 0~1（控制向内折射量，即"水滴放大"的幅度）</summary>
+        public double NavBarLiquidGlassStrength { get; set; } = 0.5;
+
+        /// <summary>
+        /// 在渲染层级 Tier=0（纯软件渲染：老机器 / 无 D3D 的虚拟机）上也强制启用。
+        /// 默认 false —— 软件渲染下逐像素着色器可能拖慢拖动窗口。
+        /// </summary>
+        public bool NavBarLiquidGlassForceOnTier0 { get; set; } = false;
 
         // === 版本信息 ===
         public string Version { get; set; } = "QD_V2.7_JiYuRebuild_JustLikeThis";
