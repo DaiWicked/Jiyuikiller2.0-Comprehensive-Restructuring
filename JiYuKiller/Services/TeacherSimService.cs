@@ -99,10 +99,10 @@ namespace JiYuKiller.Services
                         StandardErrorEncoding = Encoding.GetEncoding("GB2312")
                     };
 
-                    // 用户确认继续时，跳过碰撞检测避免循环弹窗
+                    // 用户确认继续时，用--force-start直接启动（碰撞检测已通过）
                     if (SkipCollisionCheck)
                     {
-                        psi.Arguments = "--skip-collision";
+                        psi.Arguments = "--force-start";
                     }
 
                     // 设置环境变量
@@ -113,19 +113,28 @@ namespace JiYuKiller.Services
                     _process.EnableRaisingEvents = true;
 
                     // 接收stdout输出（teacher_sim的print输出到stdout）
-                    System.Collections.Generic.List<string> collisionLines = new System.Collections.Generic.List<string>();
+                    System.Collections.Generic.List<string> collisionWaitLines = new System.Collections.Generic.List<string>();
+                    bool collisionWaitDetected = false;
                     _process.OutputDataReceived += (s, e) =>
                     {
                         if (!string.IsNullOrEmpty(e.Data))
                         {
                             Logger.Instance.Debug($"[TeacherSim] stdout: {e.Data}");
                             OnLogOutput?.Invoke(e.Data);
-                            // 实时检测碰撞：收到[Collision]立即收集
-                            if (e.Data.Contains("[Collision]") || e.Data.Contains("[警告] 检测到网络冲突"))
+                            // 两阶段启动：teacher_sim检测到真实教师端时输出[CollisionWait]
+                            // 然后3秒后退出，主程序弹窗让用户选择是否用--force-start重启
+                            if (e.Data.Contains("[CollisionWait]"))
                             {
-                                lock (collisionLines) { collisionLines.Add(e.Data); }
+                                lock (collisionWaitLines) { collisionWaitLines.Add(e.Data); }
+                                collisionWaitDetected = true;
                             }
-                            // 收到"教师端已启动"说明碰撞检测已通过（或被跳过），可以认为启动成功
+                            // 相同程序用户冲突：teacher_sim直接退出，输出[Collision]
+                            if (e.Data.Contains("[Collision] 检测到相同程序用户") || e.Data.Contains("[Collision] 同机器已存在"))
+                            {
+                                lock (collisionWaitLines) { collisionWaitLines.Add(e.Data); }
+                                collisionWaitDetected = true;
+                            }
+                            // 收到"教师端已启动"说明启动成功
                             if (e.Data.Contains("教师端已启动") && !_collisionHandled)
                             {
                                 _collisionHandled = true;
@@ -156,35 +165,42 @@ namespace JiYuKiller.Services
                     _process.BeginOutputReadLine();
                     _process.BeginErrorReadLine();
 
-                    // 等待进程初始化（PyInstaller解压需要时间），最多等15秒
-                    // 期间持续监听stdout：收到[Collision]则触发事件，收到"教师端已启动"则成功
+                    // 等待进程初始化（PyInstaller解压需要时间）+ 碰撞检测（2秒静默监听）
+                    // 最多等20秒：15秒解压 + 2秒检测 + 3秒CollisionWait
                     int waited = 0;
-                                        while (waited < 15000 && !_process.HasExited && !_collisionHandled)
+                    while (waited < 20000 && !_process.HasExited && !_collisionHandled)
                     {
                         Thread.Sleep(500);
                         waited += 500;
-                        lock (collisionLines)
+                        if (collisionWaitDetected && !SkipCollisionCheck)
                         {
-                            if (collisionLines.Count > 0 && !SkipCollisionCheck)
-                            {
-                                // 检测到碰撞，再等1秒收集完整信息后触发
-                                Thread.Sleep(1000);
-                                string collisionInfo = string.Join("\n", collisionLines);
-                                Logger.Instance.Warn($"[TeacherSim] 检测到网络碰撞: {collisionInfo}");
-                                try { _process.Kill(); } catch { }
-                                _isRunning = false;
-                                _collisionHandled = true;
-                                OnStateChanged?.Invoke(false);
-                                OnCollisionDetected?.Invoke(collisionInfo);
-                                return false;
-                            }
+                            // 检测到碰撞，等teacher_sim自己退出（CollisionWait等3秒，same_app直接退出）
+                            Thread.Sleep(2000);
+                            string collisionInfo = string.Join("\n", collisionWaitLines);
+                            Logger.Instance.Warn($"[TeacherSim] 检测到网络碰撞: {collisionInfo}");
+                            try { if (!_process.HasExited) _process.Kill(); } catch { }
+                            _isRunning = false;
+                            _collisionHandled = true;
+                            OnStateChanged?.Invoke(false);
+                            OnCollisionDetected?.Invoke(collisionInfo);
+                            return false;
                         }
                     }
 
                     if (_process.HasExited)
                     {
-                        Logger.Instance.Error($"[TeacherSim] 进程启动后退出，退出码: {_process.ExitCode}");
-                        OnLogOutput?.Invoke($"[错误] teacher_sim.exe 启动失败，退出码: {_process.ExitCode}");
+                        // 区分正常退出（碰撞检测后主动退出）和异常退出
+                        if (collisionWaitDetected)
+                        {
+                            string collisionInfo = string.Join("\n", collisionWaitLines);
+                            Logger.Instance.Warn($"[TeacherSim] 碰撞检测后退出: {collisionInfo}");
+                            OnCollisionDetected?.Invoke(collisionInfo);
+                        }
+                        else
+                        {
+                            Logger.Instance.Error($"[TeacherSim] 进程启动后退出，退出码: {_process.ExitCode}");
+                            OnLogOutput?.Invoke($"[错误] teacher_sim.exe 启动失败，退出码: {_process.ExitCode}");
+                        }
                         _isRunning = false;
                         OnStateChanged?.Invoke(false);
                         return false;
