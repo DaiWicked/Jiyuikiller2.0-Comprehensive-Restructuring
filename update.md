@@ -47,6 +47,9 @@
 - **热键注册失败改为界面可见提示**：`高级设置 → 快捷键` 卡片新增一行红色提示（默认隐藏），用 `Marshal.GetLastWin32Error()` 区分"被其它程序占用(1409)"与其它错误码，并补 `SetLastError = true`；日志同步升为 WARN
   - **实测发现**：`Ctrl+Alt+F` 在测试机上一直被占用（1409），即"紧急全屏"从未生效而旧代码只写 INFO —— 这类"静默失效"现在会直接显示给用户
 
+- **修复：底栏折射方向反了（观感「凹」→「凸」）**：`NavBarLens.hlsl` 原为 `offsetUV = -dir * ...`（**向内**取样），边缘显示的是玻璃内侧内容，看着像凹坑；改为 `+dir`（**向外**取样），边缘把玻璃外侧的背景卷进轮廓并压缩，才像凸起的水滴。依据参考实现 `liquid-glass-js-main/container.js:408,423`（外法线 + `textureCoord +=`，即向外取）
+- **修坑：`fxc` 不接受 UTF-8 BOM**：`.hlsl` 此前被 BOM 统一扫过，导致文档里那条 `fxc ... NavBarLens.hlsl` 直接报 `X3000 Illegal character (1,1)`、编译产物根本没更新（改动「看似无效」的隐形原因）。`NavBarLens.hlsl` 现刻意**不带 BOM**，并在文件头注明
+
 ### 其他
 - **量化自检**：调试页命令 `navlens [强度]`，或环境变量 `JYKILLER_NAVLENS_SELFTEST=1` 启动 → 打印中心/边缘差异与逐通道位移，并导出对比 PNG；另有隔离单测脚本 `tools/NavBarLens-unit-test.ps1`
 - **编码**：全项目源文件补齐 UTF-8 BOM（此前因用 GBK 保存导致中文注释/日志字符串成片损坏，乱码已清零）
