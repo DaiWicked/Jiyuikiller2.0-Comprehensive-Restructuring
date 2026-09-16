@@ -91,6 +91,15 @@ namespace JiYuKiller
             this.Loaded += (s, e) => UpdateGlassClip();
             // 底栏玻璃效果挂接
             NavBarClipRoot.SizeChanged += (s, e) => { UpdateNavBarClip(); UpdateNavBarBackdrop(); UpdateNavBarLensParams(); UpdateNavBarTextTheme(); };
+            // 指示器"嵌套玻璃"：位移动画每一帧、以及宽度变化时都要重算采样区域
+            if (NavIndicatorTransform != null)
+            {
+                NavIndicatorTransform.Changed += (s, e) => UpdateNavIndicatorBackdrop();
+            }
+            if (NavIndicator != null)
+            {
+                NavIndicator.SizeChanged += (s, e) => UpdateNavIndicatorBackdrop();
+            }
             this.Loaded += (s, e) => { UpdateNavBarClip(); UpdateNavBarBackdrop(); UpdateNavBarTextTheme(); };
 
             // 初始化毛玻璃效果管理器（窗口加载后）
@@ -527,6 +536,7 @@ namespace JiYuKiller
                 Point p = NavBarGlass.TranslatePoint(new Point(0, 0), BackdropContainer);
                 NavBarGlassBrush.ViewboxUnits = System.Windows.Media.BrushMappingMode.Absolute;
                 NavBarGlassBrush.Viewbox = new System.Windows.Rect(p.X, p.Y, w, h);
+                UpdateNavIndicatorBackdrop();
             }
             catch (Exception ex)
             {
@@ -534,6 +544,30 @@ namespace JiYuKiller
             }
         }
 
+        /// <summary>
+        /// 更新指示器的"嵌套玻璃"采样区域。
+        /// 指示器会左右滑动、宽度也随按钮变化，所以必须在动画过程中持续更新 Viewbox；
+        /// 否则背后的内容会跟着指示器一起走 —— 那就成了贴纸，不是玻璃。
+        /// </summary>
+        private void UpdateNavIndicatorBackdrop()
+        {
+            if (NavIndicatorBrush == null || NavIndicator == null || BackdropContainer == null) return;
+
+            try
+            {
+                double w = NavIndicator.ActualWidth;
+                double h = NavIndicator.ActualHeight;
+                if (w <= 0 || h <= 0) return;
+
+                Point p = NavIndicator.TranslatePoint(new Point(0, 0), BackdropContainer);
+                NavIndicatorBrush.ViewboxUnits = System.Windows.Media.BrushMappingMode.Absolute;
+                NavIndicatorBrush.Viewbox = new System.Windows.Rect(p.X, p.Y, w, h);
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Debug("[NavBar] 更新指示器背景失败: " + ex.Message);
+            }
+        }
         /// <summary>
         /// 更新底栏圆角几何（几何操作，极廉价）。
         /// 描边(Path)与裁剪(Clip)用同一个生成器算出，保证拐角处完全对齐；
@@ -816,6 +850,7 @@ namespace JiYuKiller
                 // 初始化底栏玻璃效果（必须在UpdateNavBarGlass之前）
                 InitNavBarGlass();
                 InitNavBarTextTheme();
+            UpdateNavIndicatorBackdrop();
                 InitNoiseLayer();
             }
             catch (Exception ex)
