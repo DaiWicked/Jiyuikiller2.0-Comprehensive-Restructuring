@@ -35,6 +35,14 @@ namespace JiYuKiller
         private readonly Services.ScreenshotService _screenshotService = new Services.ScreenshotService();
         private readonly Services.RealtimeReplaceService _realtimeService = new Services.RealtimeReplaceService();
         private string _chatTargetIP = "";
+
+        // ===== 底栏指针柔光：跟手但带一点惯性 =====
+        // 直接赋值会让反光"啪"地跳到鼠标上，像手电筒；真实玻璃反光有惯性。
+        // 用 MouseMove 里一次线性插值模拟（约 3~4 帧收敛，不建动画时钟、不加 timer）。
+        private const double NavSpecularLag = 0.35;
+        private double _navSpecularX = 0;
+        private double _navSpecularY = 0;
+        private bool _navSpecularInit = false;
         private int _chatTargetSeat = 0;
 
         // Win32 API
@@ -1126,15 +1134,27 @@ namespace JiYuKiller
 
         // ===== 底栏液态动态效果：指针跟随柔光 + 点击波纹（纯 WPF，无着色器开销）=====
 
-        /// <summary>指针在底栏上移动：柔光团跟随鼠标（直接赋值，不做动画，避免每次移动都新建动画时钟）</summary>
+        /// <summary>指针在底栏上移动：柔光团带惯性跟随鼠标（线性插值，不建动画时钟）</summary>
         private void NavBarClipRoot_MouseMove(object sender, MouseEventArgs e)
         {
             if (NavBarSpecularTransform == null || NavBarFxLayer == null) return;
             try
             {
                 Point p = e.GetPosition(NavBarFxLayer);
-                NavBarSpecularTransform.X = p.X;
-                NavBarSpecularTransform.Y = p.Y;
+
+                // 首次移动直接就位，避免从 (0,0) 滑过来
+                if (!_navSpecularInit)
+                {
+                    _navSpecularX = p.X;
+                    _navSpecularY = p.Y;
+                    _navSpecularInit = true;
+                }
+
+                _navSpecularX += (p.X - _navSpecularX) * NavSpecularLag;
+                _navSpecularY += (p.Y - _navSpecularY) * NavSpecularLag;
+
+                NavBarSpecularTransform.X = _navSpecularX;
+                NavBarSpecularTransform.Y = _navSpecularY;
             }
             catch (Exception ex)
             {
@@ -1149,6 +1169,8 @@ namespace JiYuKiller
 
         private void NavBarClipRoot_MouseLeave(object sender, MouseEventArgs e)
         {
+            // 复位惯性状态：再次进入时柔光直接在指针处出现，而不是从上次离开的位置滑过来
+            _navSpecularInit = false;
             FadeNavBarSpecular(0.0);
         }
 
@@ -1181,22 +1203,29 @@ namespace JiYuKiller
             {
                 Point p = e.GetPosition(NavBarFxLayer);
 
+                // 波纹几何：直径从 12px 扩散到 76px。
+                // 注意不要用 ScaleTransform 做这件事 —— 缩放会连 StrokeThickness 一起放大，
+                // 2px 描边在终点会变成约 8.4px，环越扩越"肥"，看起来是一团糊光而不是水波。
+                // 改成动画 Width/Height + Canvas.Left/Top，描边恒定 2px；终点 76px 也避免在
+                // 64px 高的底栏里被裁得太狠。
+                const double startDiameter = 12;
+                const double endDiameter = 76;
+                var dur = TimeSpan.FromMilliseconds(430);
+
                 var ripple = new System.Windows.Shapes.Ellipse
                 {
-                    Width = 24,
-                    Height = 24,
+                    Width = startDiameter,
+                    Height = startDiameter,
                     StrokeThickness = 2,
                     Stroke = new SolidColorBrush(Color.FromArgb(0x60, 0xFF, 0xFF, 0xFF)),
                     Fill = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
-                    IsHitTestVisible = false,
-                    // 用 RenderTransformOrigin 让缩放绕自身中心
-                    // （ScaleTransform.CenterX 的单位是像素，之前踩过这个坑）
-                    RenderTransformOrigin = new Point(0.5, 0.5)
+                    IsHitTestVisible = false
                 };
-                var scale = new ScaleTransform(0.35, 0.35);
-                ripple.RenderTransform = scale;
-                Canvas.SetLeft(ripple, p.X - 12);
-                Canvas.SetTop(ripple, p.Y - 12);
+
+                double left0 = p.X - startDiameter / 2, top0 = p.Y - startDiameter / 2;
+                double left1 = p.X - endDiameter / 2, top1 = p.Y - endDiameter / 2;
+                Canvas.SetLeft(ripple, left0);
+                Canvas.SetTop(ripple, top0);
 
                 // 防止狂点导致子元素无限增长（只保留柔光 + 最近 10 个波纹）
                 while (NavBarFxLayer.Children.Count > 11)
@@ -1205,7 +1234,6 @@ namespace JiYuKiller
                 }
                 NavBarFxLayer.Children.Add(ripple);
 
-                var dur = TimeSpan.FromMilliseconds(520);
                 var ease = new System.Windows.Media.Animation.CubicEase
                 {
                     EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
@@ -1215,10 +1243,16 @@ namespace JiYuKiller
                 {
                     try { NavBarFxLayer.Children.Remove(ripple); } catch { }
                 };
-                scale.BeginAnimation(ScaleTransform.ScaleXProperty,
-                    new System.Windows.Media.Animation.DoubleAnimation(0.35, 4.2, dur) { EasingFunction = ease });
-                scale.BeginAnimation(ScaleTransform.ScaleYProperty,
-                    new System.Windows.Media.Animation.DoubleAnimation(0.35, 4.2, dur) { EasingFunction = ease });
+                // 直接对元素 BeginAnimation：Canvas.Left/Top 虽是附加属性，但依然是 DP，可以挂动画
+                // （WPF 的 Timeline 上没有 TargetProperty —— 那是 Silverlight 的写法，编译不过）
+                var dW = new System.Windows.Media.Animation.DoubleAnimation(startDiameter, endDiameter, dur) { EasingFunction = ease };
+                var dH = new System.Windows.Media.Animation.DoubleAnimation(startDiameter, endDiameter, dur) { EasingFunction = ease };
+                var dL = new System.Windows.Media.Animation.DoubleAnimation(left0, left1, dur) { EasingFunction = ease };
+                var dT = new System.Windows.Media.Animation.DoubleAnimation(top0, top1, dur) { EasingFunction = ease };
+                ripple.BeginAnimation(FrameworkElement.WidthProperty, dW);
+                ripple.BeginAnimation(FrameworkElement.HeightProperty, dH);
+                ripple.BeginAnimation(Canvas.LeftProperty, dL);
+                ripple.BeginAnimation(Canvas.TopProperty, dT);
                 ripple.BeginAnimation(UIElement.OpacityProperty, fade);
             }
             catch (Exception ex)
