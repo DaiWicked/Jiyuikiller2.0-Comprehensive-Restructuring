@@ -3314,6 +3314,17 @@ def run_collision_check():
 
 # -------------------- 启动（两阶段） --------------------
 
+def _thread_wrapper(func, name):
+    """后台线程异常捕获包装，确保线程崩溃时写入日志"""
+    def wrapper():
+        try:
+            func()
+        except Exception as e:
+            logger.critical('[线程崩溃] %s: %s', name, e, exc_info=True)
+            print(f'[线程崩溃] {name}: {e}', file=sys.stderr)
+    return wrapper
+
+
 def _main():
     """主启动函数，全局异常捕获确保崩溃时写入日志"""
     # 执行两阶段碰撞检测
@@ -3355,10 +3366,10 @@ def _main():
 
     spawn_log_window()
     logger.info('启动 4 个后台线程 (collision_type=%s)', _collision_type)
-    threading.Thread(target=broadcast, name='broadcast', daemon=True).start()
-    threading.Thread(target=session_anno, name='session_anno', daemon=True).start()
-    threading.Thread(target=session_recv, name='session_recv', daemon=True).start()
-    threading.Thread(target=main_recv, name='main_recv', daemon=True).start()
+    threading.Thread(target=_thread_wrapper(broadcast, 'broadcast'), name='broadcast', daemon=True).start()
+    threading.Thread(target=_thread_wrapper(session_anno, 'session_anno'), name='session_anno', daemon=True).start()
+    threading.Thread(target=_thread_wrapper(session_recv, 'session_recv'), name='session_recv', daemon=True).start()
+    threading.Thread(target=_thread_wrapper(main_recv, 'main_recv'), name='main_recv', daemon=True).start()
 
     command_loop()
 
