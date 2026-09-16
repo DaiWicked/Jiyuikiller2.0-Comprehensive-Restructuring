@@ -153,6 +153,16 @@ i.chaoxing_Error_*.txt
 # teacher_sim日志
 teacher_sim.log
 
+# teacher_sim运行时生成的学生档案目录
+teacher_sim/students/
+*/teacher_sim/students/
+JiYuKiller/Drivers/teacher_sim/students/
+
+# 截图替换/实时替换调试日志
+avcodec_probe.log
+dll_load.log
+gb_debug.log
+
 # ==========================================
 # 截图替换运行时生成文件
 # ==========================================

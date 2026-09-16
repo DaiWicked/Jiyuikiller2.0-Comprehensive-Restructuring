@@ -1,4 +1,63 @@
 ﻿
+## QD_V2.9 更新 - teacher_sim网络碰撞检测 + 底栏折射优化（2026-09-17）
+
+### teacher_sim 网络碰撞检测（新增，防网络风暴）
+- **背景**：机房多人同时使用teacher_sim导致学生端谁也连不上教师端，造成网络风暴
+- **单实例检查**：锁文件+PID验证（`OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)`），同机器只能运行一个teacher_sim
+- **静默监听5秒**：启动前只监听不发包，绑定47050专属端口发TSHB心跳（16字节：魔数+PID+启动时间戳）
+- **冲突分级处理**：
+  - 47050收到其他TSHB心跳 → 相同程序用户 → PID选举（小的留下，大的直接退出）
+  - 4705收到非本机IP包 → 真实教师端 → 控制台输出警告，`input()`等待用户输入yes/no
+  - 无冲突 → 直接启动
+- **心跳线程全运行期间持续**：不仅等待输入期间，正常运行后也持续发47050心跳，确保第二个实例能检测到第一个实例
+- **控制台交互**：用户否决主程序弹窗方案，改为teacher_sim控制台yes/no交互
+- **修复历程**：NANC探测包干扰学生端→改静默监听；3秒太短漏检→延长到5秒；exit(0)导致主程序收不到回调→保持运行；输入yes后停止心跳→改为全运行期间持续
+
+### 底栏液态玻璃折射优化（deepseek）
+- **折射方向修正**：凹→凸（`offsetUV = -dir`→`+dir`），边缘把外侧背景卷进轮廓，才像凸起的水滴
+- **圆角加料**：NavBarLens.hlsl新增c8/c9寄存器，CornerBoostPx/CornerFalloff依赖属性
+- **删除无效投影层**：`Background="#01000000"`+`DropShadowEffect`实测差值为0，属死代码；GlassContainer的Margin 8→0，玻璃铺满窗口，消除8px全透明margin
+- **底栏多色偏色确认修复**：自写NavBarLens.hlsl（圆角SDF+边缘因子），中心区逐像素差严格为0；NavBarScrim中性遮罩不再叠白；文字配色Freezable冻结问题已修复
+- **折射强度默认**：0.5→0.35，彩边收敛成一层薄冷色
+
+### 快捷键可编辑（deepseek）
+- 快捷键两个控件TextBlock→TextBox，可直接按组合键修改
+- 新增HotKeyBox_PreviewKeyDown/HotKeyToText，免重启重注册
+- 热键注册失败改为界面可见红色提示，用`Marshal.GetLastWin32Error()`区分"被占用(1409)"与其他错误
+
+### 内容卡片底色统一（deepseek）
+- 新增GlassCardBrush（白渐变`#3AFFFFFF→#1FFFFFFF`）/GlassCardBorderBrush（1px `#33FFFFFF`）
+- 30处卡片由`#26000000`/`#20000000`/`#10000000`统一替换
+- 次级文字整体压深一档（`#666666→#404040`等），页面内容根节点加白色投影提升可读性
+
+### 注入"假成功"修复（deepseek，严重）
+- 远程线程内部异常时`GetExitCodeThread`返回异常码（如0xC0000005），旧判据只拦`==0`，报成注入成功
+- 修法：注入成功判据改为目标进程模块枚举（Toolhelp32），只有模块确实出现在模块表里才算成功
+- 等待时间5s→15s，注入前先查模块，已加载则跳过
+
+### 清理死代码（deepseek）
+- App.xaml删18个死资源（含51行GlassSwitch样式块）
+- AppSettings删4项死设置：MonitorJiYuProcess/InjectMasterHelper/InjectProcHelper64/InjectMode
+- ForceInstallInCurrentDir由死设置变为真正生效
+
+### LICENSE与第三方声明（deepseek）
+- 新增LICENSE（MIT，版权Daitangxin/DaiWicked）
+- 新增THIRD-PARTY-NOTICES.md（8个第三方组件：许可/来源/我们改了什么）
+- third_party/目录（6个txt许可原文）
+- README补致谢/许可/构建说明/免责声明/自检钩子表
+
+### Win7 teacher_sim兼容性（已放弃，回滚）
+- 尝试5种方案均失败：Pillow降级、关闭UPX、PyInstaller 4.x、onedir模式、PYTHONUTF8=1
+- 根因：`sys.executable`内存被破坏（乱码中可见SYSTEMDRIVE=C:、路径片段），疑似Win7+Python3.9+PyInstaller深层兼容性问题
+- 回滚到18e4c54版本（Win10稳定版），Win7暂不支持
+
+### 已知限制
+- teacher_sim仅支持极域4.0协议学生端，6.0学生端登录有UNKNOWN包（协议逆向难度高，暂不做）
+- Win7上teacher_sim.exe启动后崩溃（0xC0000005），已放弃修复
+- 关闭allowMonitor后极域可能崩溃（原作者已知问题，32位Win10尤甚）
+
+---
+
 ## QD_V2.9 正式版 - 液态玻璃底栏 + 驱动/注入判据修正
 
 ### 版本信息
