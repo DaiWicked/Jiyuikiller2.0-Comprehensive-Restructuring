@@ -189,6 +189,11 @@ namespace JiYuKiller.Services
 
                     if (_process.HasExited)
                     {
+                        // PyInstaller onefile的stdout有缓冲，进程退出后输出才陆续到达
+                        // 等待异步输出读取完成（最多2秒），再判断是否碰撞
+                        try { _process.WaitForExit(2000); } catch { }
+                        Thread.Sleep(300);
+
                         // 区分正常退出（碰撞检测后主动退出）和异常退出
                         if (collisionWaitDetected)
                         {

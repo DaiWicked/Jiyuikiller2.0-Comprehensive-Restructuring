@@ -3203,6 +3203,7 @@ def _silent_listen_and_detect(timeout=3.0):
                         same_app_pids.append(other_pid)
                         logger.info('[Collision] 检测到相同程序用户: IP=%s PID=%d', addr[0], other_pid)
                         print(f'[Collision] 检测到相同程序用户: {addr[0]} (PID={other_pid})')
+                        sys.stdout.flush()
             except socket.timeout:
                 pass
             except Exception as e:
@@ -3276,6 +3277,7 @@ def run_collision_check():
     if has_real_teacher:
         info = '检测到局域网内教师端活动，同时运行可能导致学生端无法连接'
         print(f'[Collision] {info}')
+        sys.stdout.flush()
         logger.warning('[Collision] %s', info)
         return True, 'real_teacher', info
 
@@ -3311,9 +3313,10 @@ else:
         # 主程序检测到[CollisionWait]后弹窗，用户选继续则用--force-start重启
         print(f"[CollisionWait] {_collision_info}")
         print("[CollisionWait] 等待用户选择...（主程序将弹窗）")
-        # 保持运行3秒等待主程序读取输出，然后退出
+        sys.stdout.flush()
+        # 保持运行1秒让主程序读取输出，然后退出
         # 主程序会用--force-start重新启动一个新实例
-        time.sleep(3)
+        time.sleep(1)
         sys.exit(0)
 
 spawn_log_window()
