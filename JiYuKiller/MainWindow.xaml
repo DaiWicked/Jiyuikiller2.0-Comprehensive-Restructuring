@@ -1046,6 +1046,18 @@
                                         </Grid>
                                     </StackPanel>
 
+<CheckBox x:Name="CheckNavSquircle" Content="圆角使用超椭圆(squircle，更顺滑)" Style="{StaticResource GlassCheckBox}" Checked="NavLensSetting_Changed" Unchecked="NavLensSetting_Changed" Margin="0,0,0,6" />
+                                    <StackPanel Margin="0,0,0,6">
+                                        <TextBlock Text="圆角顺滑度（1.0=接近正圆弧，2.0=拐角最软）" FontSize="12" Foreground="#FF2A2A2A" Margin="0,0,0,4" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Slider x:Name="SliderSquircleExt" Grid.Column="0" Style="{StaticResource GlassSlider}" Minimum="1" Maximum="2" Value="1.2819" TickFrequency="0.1" IsSnapToTickEnabled="False" ValueChanged="SliderSquircleExt_ValueChanged" />
+                                            <TextBlock x:Name="TextSquircleExtValue" Grid.Column="1" Text="1.28" FontSize="12" Foreground="#FF2A2A2A" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </StackPanel>
                                     <CheckBox x:Name="CheckNavLensOnTier0" Content="在软件渲染(Tier 0)下也强制启用" Style="{StaticResource GlassCheckBox}" Checked="NavLensSetting_Changed" Unchecked="NavLensSetting_Changed" />
                                     <TextBlock x:Name="TextNavLensStatus" Text="" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" Margin="0,4,0,0" />
                                 </StackPanel>
@@ -1149,19 +1161,24 @@
                         <DropShadowEffect BlurRadius="30" ShadowDepth="2" Opacity="0.18" Color="#1A1A22" />
                     </Border.Effect>
                 </Border>
-                <!-- 层2: 玻璃主体（外层负责描边，不裁剪） -->
-                <Border x:Name="NavBarFrame" CornerRadius="24" BorderThickness="1">
-                    <Border.BorderBrush>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#B0FFFFFF" Offset="0" />
-                            <GradientStop Color="#50FFFFFF" Offset="0.35" />
-                            <GradientStop Color="#22FFFFFF" Offset="0.7" />
-                            <GradientStop Color="#66A8C0D8" Offset="1" />
-                        </LinearGradientBrush>
-                    </Border.BorderBrush>
-                    <!-- 圆角裁剪根：Clip由C#按尺寸更新，半径=23（外圆角24-描边1，同心） -->
+                <!-- 层2: 玻璃主体
+                     描边与裁剪共用同一套"超椭圆"几何（由 C# 生成），这样拐角处完全对齐；
+                     如果把描边留在 Border 上（圆角是正圆弧），超椭圆的裁剪会盖住弧线，
+                     四角会出现"描边被吃掉"的接缝 —— 所以这里用 Path 描边 + Grid 裁剪。 -->
+                <Grid>
+                    <Path x:Name="NavBarFramePath" Fill="{x:Null}" StrokeThickness="1" IsHitTestVisible="False">
+                        <Path.Stroke>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#B0FFFFFF" Offset="0" />
+                                <GradientStop Color="#50FFFFFF" Offset="0.35" />
+                                <GradientStop Color="#22FFFFFF" Offset="0.7" />
+                                <GradientStop Color="#66A8C0D8" Offset="1" />
+                            </LinearGradientBrush>
+                        </Path.Stroke>
+                    </Path>
+                    <!-- 裁剪根：Clip 由 C# 按尺寸生成（超椭圆），比外层小 1px（描边宽度） -->
                     <!-- 鼠标事件只用于"指针跟随柔光"和"点击波纹"，不设置 e.Handled，不影响按钮点击 -->
-                    <Grid x:Name="NavBarClipRoot" ClipToBounds="True"
+                    <Grid x:Name="NavBarClipRoot" Margin="1" ClipToBounds="True"
                           MouseMove="NavBarClipRoot_MouseMove"
                           MouseEnter="NavBarClipRoot_MouseEnter"
                           MouseLeave="NavBarClipRoot_MouseLeave"
@@ -1266,7 +1283,7 @@
                             </Grid>
                         </ScrollViewer>
                     </Grid>
-                </Border>
+                </Grid>
             </Grid>
                 </Grid>
             </Border>

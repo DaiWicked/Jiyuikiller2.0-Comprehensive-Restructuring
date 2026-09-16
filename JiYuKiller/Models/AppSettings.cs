@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Xml.Serialization;
 
@@ -107,6 +107,12 @@ namespace JiYuKiller.Models
         public int WallpaperOpacity { get; set; } = 80;
 
         // === 底栏液态玻璃（折射）===
+        /// <summary>底栏圆角用超椭圆(squircle)而非正圆弧；false 则退化为普通圆角矩形</summary>
+        public bool NavBarSquircle { get; set; } = true;
+
+        /// <summary>超椭圆顺滑度 1.0~2.0（1.28≈COUI 默认，越接近 2 拐角越"软"）</summary>
+        public double NavBarSquircleExtension { get; set; } = 1.2819;
+
         /// <summary>启用底栏液态玻璃折射效果</summary>
         public bool NavBarLiquidGlass { get; set; } = true;
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
@@ -266,6 +266,9 @@ namespace JiYuKiller
             // 底栏液态玻璃（_isInitializing 为真时事件回调会直接返回，不会误判为用户操作）
             if (CheckNavBarLiquidGlass != null) CheckNavBarLiquidGlass.IsChecked = _settings.NavBarLiquidGlass;
             if (CheckNavLensOnTier0 != null) CheckNavLensOnTier0.IsChecked = _settings.NavBarLiquidGlassForceOnTier0;
+            if (CheckNavSquircle != null) CheckNavSquircle.IsChecked = _settings.NavBarSquircle;
+            if (SliderSquircleExt != null) SliderSquircleExt.Value = _settings.NavBarSquircleExtension;
+            if (TextSquircleExtValue != null) TextSquircleExtValue.Text = _settings.NavBarSquircleExtension.ToString("F2");
             if (SliderNavLensStrength != null) SliderNavLensStrength.Value = _settings.NavBarLiquidGlassStrength;
             if (TextNavLensValue != null) TextNavLensValue.Text = string.Format("{0}%", (int)(_settings.NavBarLiquidGlassStrength * 100));
 
@@ -298,6 +301,8 @@ namespace JiYuKiller
             // 底栏液态玻璃（这两个控件的事件也会写，这里统一再收一次，保证保存按钮生效）
             if (CheckNavBarLiquidGlass != null) _settings.NavBarLiquidGlass = CheckNavBarLiquidGlass.IsChecked ?? false;
             if (CheckNavLensOnTier0 != null) _settings.NavBarLiquidGlassForceOnTier0 = CheckNavLensOnTier0.IsChecked ?? false;
+            if (CheckNavSquircle != null) _settings.NavBarSquircle = CheckNavSquircle.IsChecked ?? true;
+            if (SliderSquircleExt != null) _settings.NavBarSquircleExtension = SliderSquircleExt.Value;
             if (SliderNavLensStrength != null) _settings.NavBarLiquidGlassStrength = SliderNavLensStrength.Value;
 
             _settings.Save();
@@ -529,22 +534,32 @@ namespace JiYuKiller
             }
         }
 
-        /// <summary>只更新底栏圆角裁剪（几何操作，极廉价）</summary>
+        /// <summary>
+        /// 更新底栏圆角几何（几何操作，极廉价）。
+        /// 描边(Path)与裁剪(Clip)用同一个生成器算出，保证拐角处完全对齐；
+        /// 是否使用"超椭圆"由设置决定（false 则退化为普通圆角矩形）。
+        /// </summary>
         private void UpdateNavBarClip()
         {
             if (NavBarClipRoot == null) return;
             double w = NavBarClipRoot.ActualWidth, h = NavBarClipRoot.ActualHeight;
             if (w <= 0 || h <= 0) return;
 
-            var geo = NavBarClipRoot.Clip as System.Windows.Media.RectangleGeometry;
-            if (geo == null)
+            bool squircle = _settings == null || _settings.NavBarSquircle;
+            double ext = _settings != null ? _settings.NavBarSquircleExtension : 1.2819;
+
+            // 内层裁剪：半径 23（外圆角 24 - 描边 1，同心）
+            NavBarClipRoot.Clip = Effects.SquircleGeometry.Create(w, h, 23.0, squircle, ext);
+
+            // 外层描边：与外层同尺寸（比裁剪根大 1px），半径 24
+            if (NavBarFramePath != null)
             {
-                geo = new System.Windows.Media.RectangleGeometry();
-                NavBarClipRoot.Clip = geo;
+                double fw = NavBarFramePath.ActualWidth, fh = NavBarFramePath.ActualHeight;
+                if (fw > 0 && fh > 0)
+                {
+                    NavBarFramePath.Data = Effects.SquircleGeometry.Create(fw, fh, 24.0, squircle, ext);
+                }
             }
-            geo.Rect = new System.Windows.Rect(0, 0, w, h);
-            geo.RadiusX = 23;
-            geo.RadiusY = 23;
         }
 
         // ==================== 底栏文字颜色自适应 ====================
@@ -1006,6 +1021,20 @@ namespace JiYuKiller
             Services.Logger.Instance.Debug(string.Format("液态玻璃强度调整: {0:F2}", e.NewValue));
         }
 
+        /// <summary>顺滑度滑块：实时重建圆角几何</summary>
+        private void SliderSquircleExt_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (TextSquircleExtValue != null)
+            {
+                TextSquircleExtValue.Text = e.NewValue.ToString("F2");
+            }
+            if (_settings == null) return;
+
+            _settings.NavBarSquircleExtension = e.NewValue;
+            UpdateNavBarClip();
+            Services.Logger.Instance.Debug(string.Format("圆角顺滑度调整: {0:F2}", e.NewValue));
+        }
+
         /// <summary>开关 / Tier0 强制开关：重新挂载或摘除折射层</summary>
         private void NavLensSetting_Changed(object sender, RoutedEventArgs e)
         {
@@ -1013,13 +1042,15 @@ namespace JiYuKiller
 
             _settings.NavBarLiquidGlass = CheckNavBarLiquidGlass.IsChecked ?? false;
             _settings.NavBarLiquidGlassForceOnTier0 = CheckNavLensOnTier0.IsChecked ?? false;
+            _settings.NavBarSquircle = CheckNavSquircle != null ? (CheckNavSquircle.IsChecked ?? true) : true;
 
+            UpdateNavBarClip();   // 圆角风格变化要立刻重建几何（裁剪 + 描边共用同一套）
             ApplyNavBarLens(_settings.NavBarLiquidGlass, "用户设置");
             UpdateNavLensStatusText();
             Services.Logger.Instance.Info(string.Format(
-                "液态玻璃设置变更: 启用={0}, Tier0强制={1}, 强度={2:F2}",
+                "液态玻璃设置变更: 启用={0}, Tier0强制={1}, 强度={2:F2}, 超椭圆={3}",
                 _settings.NavBarLiquidGlass, _settings.NavBarLiquidGlassForceOnTier0,
-                _settings.NavBarLiquidGlassStrength));
+                _settings.NavBarLiquidGlassStrength, _settings.NavBarSquircle));
         }
 
         /// <summary>把当前生效状态写到界面上，避免"点了开关却不知道为什么没效果"</summary>
