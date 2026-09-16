@@ -303,6 +303,7 @@ namespace JiYuKiller
             if (TextSquircleExtValue != null) TextSquircleExtValue.Text = _settings.NavBarSquircleExtension.ToString("F2");
             if (SliderNavLensStrength != null) SliderNavLensStrength.Value = _settings.NavBarLiquidGlassStrength;
             if (TextNavLensValue != null) TextNavLensValue.Text = string.Format("{0}%", (int)(_settings.NavBarLiquidGlassStrength * 100));
+            ApplyHotKeysToUI();
 
             VersionText.Text = _settings.Version;
             AboutVersion.Text = _settings.Version;
@@ -337,8 +338,30 @@ namespace JiYuKiller
             if (SliderSquircleExt != null) _settings.NavBarSquircleExtension = SliderSquircleExt.Value;
             if (SliderNavLensStrength != null) _settings.NavBarLiquidGlassStrength = SliderNavLensStrength.Value;
 
+            // 快捷键：读回界面上的打包值（Tag），变化时立刻重新注册，不用重启
+            int oldFake = _settings.HotKeyFakeFull, oldHide = _settings.HotKeyShowHide;
+            if (TextHotKeyFakeFull != null && TextHotKeyFakeFull.Tag is int) _settings.HotKeyFakeFull = (int)TextHotKeyFakeFull.Tag;
+            if (TextHotKeyShowHide != null && TextHotKeyShowHide.Tag is int) _settings.HotKeyShowHide = (int)TextHotKeyShowHide.Tag;
+            bool hotKeyChanged = _settings.HotKeyFakeFull != oldFake || _settings.HotKeyShowHide != oldHide;
+
             _settings.Save();
             _controller.UpdateSettings(_settings);
+
+            if (hotKeyChanged)
+            {
+                try
+                {
+                    UnregisterGlobalHotKeys();
+                    RegisterGlobalHotKeys();
+                    Services.Logger.Instance.Info(string.Format(
+                        "[HotKey] 快捷键已更新: 紧急全屏={0}, 显示/隐藏={1}",
+                        HotKeyToText(_settings.HotKeyFakeFull), HotKeyToText(_settings.HotKeyShowHide)));
+                }
+                catch (Exception ex)
+                {
+                    Services.Logger.Instance.Warn("[HotKey] 重新注册失败: " + ex.Message);
+                }
+            }
 
             Services.Logger.Instance.Info("设置已从 UI 保存");
         }
@@ -1270,16 +1293,21 @@ namespace JiYuKiller
             {
                 Point p = e.GetPosition(NavBarFxLayer);
 
+                // 垂直方向只跟 35% 并整体上偏 6px：真实光源来自上方，柔光该落在玻璃上半部，
+                // 而不是跟着鼠标在 64px 高的底栏里上下晃（那看起来像探照灯而不是反光）。
+                double barH = NavBarFxLayer.ActualHeight;
+                double targetY = 6.0 + (p.Y - barH * 0.5) * 0.35;
+
                 // 首次移动直接就位，避免从 (0,0) 滑过来
                 if (!_navSpecularInit)
                 {
                     _navSpecularX = p.X;
-                    _navSpecularY = p.Y;
+                    _navSpecularY = targetY;
                     _navSpecularInit = true;
                 }
 
                 _navSpecularX += (p.X - _navSpecularX) * NavSpecularLag;
-                _navSpecularY += (p.Y - _navSpecularY) * NavSpecularLag;
+                _navSpecularY += (targetY - _navSpecularY) * NavSpecularLag;
 
                 NavBarSpecularTransform.X = _navSpecularX;
                 NavBarSpecularTransform.Y = _navSpecularY;
@@ -2799,17 +2827,24 @@ namespace JiYuKiller
 
             IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
 
-            // 紧急全屏: Ctrl+Alt+F (VK_F = 0x46)
-            bool result1 = RegisterHotKey(hwnd, HOTKEY_FAKEFULL, MOD_CONTROL | MOD_ALT, 0x46);
+            // 快捷键现在可配置：编码沿用设置里既有的方式（高字节修饰键 / 低字节虚拟键码），
+            // 与 Win32 RegisterHotKey 的 MOD_* 常量一致 —— WPF 的 ModifierKeys 枚举值恰好就等于 MOD_*。
+            int pack1 = (_settings != null && _settings.HotKeyFakeFull != 0) ? _settings.HotKeyFakeFull : 1606;
+            int pack2 = (_settings != null && _settings.HotKeyShowHide != 0) ? _settings.HotKeyShowHide : 1604;
+            uint mod1 = (uint)((pack1 >> 8) & 0xF); uint vk1 = (uint)(pack1 & 0xFF);
+            uint mod2 = (uint)((pack2 >> 8) & 0xF); uint vk2 = (uint)(pack2 & 0xFF);
+
+            bool result1 = vk1 != 0 && RegisterHotKey(hwnd, HOTKEY_FAKEFULL, mod1, vk1);
             int err1 = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-            Services.Logger.Instance.Info("[HotKey] 注册紧急全屏 Ctrl+Alt+F: " + (result1 ? "成功" : "失败"));
+            Services.Logger.Instance.Info("[HotKey] 注册紧急全屏 " + HotKeyToText(pack1) + ": " + (vk1 == 0 ? "未设置, 跳过" : (result1 ? "成功" : "失败")));
 
-            // 显示/隐藏窗口: Ctrl+Alt+H (VK_H = 0x48)
-            bool result2 = RegisterHotKey(hwnd, HOTKEY_SHOWHIDE, MOD_CONTROL | MOD_ALT, 0x48);
+            bool result2 = vk2 != 0 && RegisterHotKey(hwnd, HOTKEY_SHOWHIDE, mod2, vk2);
             int err2 = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-            Services.Logger.Instance.Info("[HotKey] 注册显示/隐藏 Ctrl+Alt+H: " + (result2 ? "成功" : "失败"));
+            Services.Logger.Instance.Info("[HotKey] 注册显示/隐藏窗口 " + HotKeyToText(pack2) + ": " + (vk2 == 0 ? "未设置, 跳过" : (result2 ? "成功" : "失败")));
 
-            ReportHotKeyWarning(result1, err1, "Ctrl+Alt+F（紧急全屏）", result2, err2, "Ctrl+Alt+H（显示/隐藏窗口）");
+            // vk==0 表示用户故意留空，不该报"注册失败"
+            ReportHotKeyWarning(vk1 == 0 || result1, err1, HotKeyToText(pack1) + "（紧急全屏）",
+                                vk2 == 0 || result2, err2, HotKeyToText(pack2) + "（显示/隐藏窗口）");
         }
 
         /// <summary>
@@ -2843,6 +2878,93 @@ namespace JiYuKiller
         {
             string reason = (err == 1409) ? "已被其它程序占用" : (err == 0 ? "原因未知" : "系统错误码 " + err);
             return $"{name} 注册失败（{reason}）";
+        }
+
+        /// <summary>打包的快捷键编码 -> 可读文本（高字节修饰键 / 低字节虚拟键码）</summary>
+        private static string HotKeyToText(int packed)
+        {
+            int vk = packed & 0xFF;
+            if (vk == 0) return "未设置";
+
+            int mods = (packed >> 8) & 0xF;
+            var sb = new System.Text.StringBuilder();
+            if ((mods & MOD_CONTROL) != 0) sb.Append("Ctrl+");
+            if ((mods & MOD_ALT) != 0) sb.Append("Alt+");
+            if ((mods & MOD_SHIFT) != 0) sb.Append("Shift+");
+            if ((mods & 0x8) != 0) sb.Append("Win+");
+
+            sb.Append(HotKeyKeyName(KeyInterop.KeyFromVirtualKey(vk)));
+            return sb.ToString();
+        }
+
+        private static string HotKeyKeyName(Key k)
+        {
+            if (k >= Key.D0 && k <= Key.D9) return ((char)('0' + (k - Key.D0))).ToString();
+            if (k >= Key.NumPad0 && k <= Key.NumPad9) return "小键盘" + (k - Key.NumPad0);
+            return k.ToString();
+        }
+
+        /// <summary>把设置里的快捷键显示到输入框（Tag 存打包值，保存时读回）</summary>
+        private void ApplyHotKeysToUI()
+        {
+            if (_settings == null) return;
+            if (TextHotKeyFakeFull != null)
+            {
+                TextHotKeyFakeFull.Tag = _settings.HotKeyFakeFull;
+                TextHotKeyFakeFull.Text = HotKeyToText(_settings.HotKeyFakeFull);
+            }
+            if (TextHotKeyShowHide != null)
+            {
+                TextHotKeyShowHide.Tag = _settings.HotKeyShowHide;
+                TextHotKeyShowHide.Text = HotKeyToText(_settings.HotKeyShowHide);
+            }
+        }
+
+        /// <summary>
+        /// 快捷键输入框：点进去后直接按下组合键即可。
+        /// 必须带修饰键 —— 不带修饰键的全局热键会把那个键从所有程序手里抢走。
+        /// </summary>
+        private void HotKeyBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            e.Handled = true;   // 不要让它变成普通文本输入
+            try
+            {
+                Key key = (e.Key == Key.System) ? e.SystemKey : e.Key;
+
+                // 只按修饰键本身（或 Esc）不算一个完整组合
+                if (key == Key.LeftCtrl || key == Key.RightCtrl || key == Key.LeftAlt || key == Key.RightAlt ||
+                    key == Key.LeftShift || key == Key.RightShift || key == Key.LWin || key == Key.RWin ||
+                    key == Key.None || key == Key.Escape)
+                {
+                    return;
+                }
+
+                int mods = (int)Keyboard.Modifiers & 0xF;
+                if (mods == 0)
+                {
+                    TextHotKeyWarn.Text = "快捷键必须包含 Ctrl / Alt / Shift / Win 中的至少一个修饰键。";
+                    TextHotKeyWarn.Visibility = Visibility.Visible;
+                    return;
+                }
+
+                int vk = KeyInterop.VirtualKeyFromKey(key);
+                if (vk <= 0) return;
+
+                var box = sender as System.Windows.Controls.TextBox;
+                if (box == null) return;
+
+                int packed = (mods << 8) | (vk & 0xFF);
+                box.Tag = packed;
+                box.Text = HotKeyToText(packed);
+
+                TextHotKeyWarn.Text = "";
+                TextHotKeyWarn.Visibility = Visibility.Collapsed;
+                Services.Logger.Instance.Info("[HotKey] 界面选择了新快捷键: " + box.Text + "（点保存设置后立刻生效）");
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Debug("[HotKey] 捕获快捷键失败: " + ex.Message);
+            }
         }
 
         private void UnregisterGlobalHotKeys()
