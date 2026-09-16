@@ -436,6 +436,7 @@ namespace JiYuKiller
                     wantLens = false;
                 }
                 ApplyNavBarLens(wantLens, tier == 0 ? "Tier0 默认关闭" : "设置允许");
+                UpdateNavButtonBackdrops();   // 折射开关状态变了，按钮磨砂要跟着挂/摘
             }
             catch (Exception ex)
             {
@@ -614,6 +615,15 @@ namespace JiYuKiller
         {
             if (BackdropContainer == null || NavStackPanel == null) return;
 
+            // 只在底栏折射层真的在跑时才铺按钮磨砂：这一层是"叠在折射玻璃上的嵌套玻璃"，
+            // 折射被关掉时（Tier 0 软件渲染 / 用户关掉开关）再叠一层会让按钮和底栏质感分家（按钮像贴纸）；
+            // 而且软件渲染下每个模糊层都走 CPU，11 个按钮各一个模糊会明显拖慢合成。
+            if (!navLensActive)
+            {
+                DetachNavButtonBackdrops();
+                return;
+            }
+
             try
             {
                 foreach (object child in NavStackPanel.Children)
@@ -652,6 +662,29 @@ namespace JiYuKiller
             {
                 Services.Logger.Instance.Debug("[NavBar] 更新按钮磨砂背景失败: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// 摘掉按钮磨砂层：折射关闭时让按钮与底栏质感保持一致，
+        /// 同时省掉软件渲染(Tier 0)下 11 个按钮各一份 CPU 模糊的开销。
+        /// </summary>
+        private void DetachNavButtonBackdrops()
+        {
+            if (_navBtnGlassBrushes.Count == 0) return;
+
+            foreach (var kv in _navBtnGlassBrushes)
+            {
+                try
+                {
+                    var btn = kv.Key;
+                    var host = (btn.Template != null)
+                        ? btn.Template.FindName("glassBlur", btn) as System.Windows.Controls.Border
+                        : null;
+                    if (host != null) host.Background = null;
+                }
+                catch { }
+            }
+            _navBtnGlassBrushes.Clear();
         }
         /// <summary>
         /// 更新底栏圆角几何（几何操作，极廉价）。
@@ -1168,6 +1201,7 @@ namespace JiYuKiller
 
             UpdateNavBarClip();   // 圆角风格变化要立刻重建几何（裁剪 + 描边共用同一套）
             ApplyNavBarLens(_settings.NavBarLiquidGlass, "用户设置");
+            UpdateNavButtonBackdrops();   // 折射开关状态变了，按钮磨砂要跟着挂/摘
             UpdateNavLensStatusText();
             Services.Logger.Instance.Info(string.Format(
                 "液态玻璃设置变更: 启用={0}, Tier0强制={1}, 强度={2:F2}, 超椭圆={3}",
