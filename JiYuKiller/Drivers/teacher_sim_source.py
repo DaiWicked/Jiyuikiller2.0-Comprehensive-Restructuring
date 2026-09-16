@@ -3107,6 +3107,35 @@ def command_loop():
 _HEARTBEAT_MAGIC = b'TSHB'
 
 
+def _check_single_instance():
+    """同机器单实例：文件锁，防止同一台机器运行多个teacher_sim"""
+    lock_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) or os.getcwd(), 'teacher_sim.lock')
+    try:
+        if os.path.exists(lock_path):
+            with open(lock_path, 'r') as f:
+                old_pid = f.read().strip()
+            if old_pid and old_pid.isdigit():
+                try:
+                    import ctypes
+                    kernel32 = ctypes.windll.kernel32
+                    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+                    h = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, int(old_pid))
+                    if h:
+                        kernel32.CloseHandle(h)
+                        print(f'[Collision] 同机器已存在 teacher_sim 实例 (PID={old_pid})，拒绝启动')
+                        logger.warning('[Collision] 同机器已存在实例 PID=%s，退出', old_pid)
+                        return False
+                except Exception:
+                    pass
+            os.remove(lock_path)
+        with open(lock_path, 'w') as f:
+            f.write(str(os.getpid()))
+        return True
+    except Exception as e:
+        logger.warning('[Collision] 单实例检测失败: %s', e)
+        return True
+
+
 def _send_heartbeat(det_sock, my_pid, start_ts):
     """在专属端口发送心跳包，用于相同程序用户互相发现"""
     try:
