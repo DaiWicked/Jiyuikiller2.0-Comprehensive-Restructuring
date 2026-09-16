@@ -3152,7 +3152,7 @@ def _send_heartbeat(det_sock, my_pid, start_ts):
         logger.debug('[Collision] 发送心跳失败: %s', e)
 
 
-def _silent_listen_and_detect(timeout=3.0):
+def _silent_listen_and_detect(timeout=5.0):
     """
     静默监听阶段：
     - 监听4705端口（极域协议），检测是否有真实教师端或其他teacher_sim在发包
@@ -3179,6 +3179,7 @@ def _silent_listen_and_detect(timeout=3.0):
         det_sock = None
 
     print('[系统] 正在进行网络碰撞检测（静默监听 %.0f 秒）...' % timeout)
+    logger.info('[Collision] 开始静默监听 %.0f 秒，本机IP=%s', timeout, ip)
 
     deadline = time.time() + timeout
     last_heartbeat = 0
@@ -3251,7 +3252,7 @@ def run_collision_check():
         return False, 'single_instance', '同机器已存在teacher_sim实例'
 
     # 阶段2：静默监听+专属心跳
-    has_real_teacher, same_app_pids = _silent_listen_and_detect(timeout=3.0)
+    has_real_teacher, same_app_pids = _silent_listen_and_detect(timeout=5.0)
 
     my_pid = os.getpid()
 
