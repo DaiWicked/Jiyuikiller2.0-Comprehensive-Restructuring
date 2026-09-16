@@ -3152,6 +3152,30 @@ def _send_heartbeat(det_sock, my_pid, start_ts):
         logger.debug('[Collision] 发送心跳失败: %s', e)
 
 
+def _heartbeat_loop(stop_event):
+    """后台线程：持续发送47050心跳，供其他teacher_sim实例发现本实例"""
+    my_pid = os.getpid()
+    start_ts = time.time()
+    det_sock = None
+    try:
+        det_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        det_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        det_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        det_sock.bind(('', DETECT_PORT))
+        logger.info('[Collision] 心跳线程已启动，持续发送47050心跳')
+    except Exception as e:
+        logger.warning('[Collision] 心跳线程端口绑定失败: %s', e)
+        return
+    while not stop_event.is_set():
+        _send_heartbeat(det_sock, my_pid, start_ts)
+        stop_event.wait(0.3)
+    try:
+        det_sock.close()
+    except Exception:
+        pass
+    logger.info('[Collision] 心跳线程已停止')
+
+
 def _silent_listen_and_detect(timeout=5.0):
     """
     静默监听阶段：
@@ -3298,15 +3322,21 @@ if not _should_start:
     sys.exit(1)
 if _collision_type == 'real_teacher':
     # 检测到真实教师端 → 控制台提示，等待用户输入yes/no
+    # 等待期间持续发送47050心跳，让其他teacher_sim实例能发现本实例
+    _heartbeat_stop = threading.Event()
+    _heartbeat_thread = threading.Thread(target=_heartbeat_loop, args=(_heartbeat_stop,), daemon=True)
+    _heartbeat_thread.start()
     print(f"[警告] 检测到局域网内教师端活动: {_collision_info}")
     print("[警告] 同时运行可能导致学生端无法连接或网络风暴")
     print("[输入] 输入 yes 继续启动，输入 no 取消启动")
     sys.stdout.flush()
-    logger.warning('[Collision] 检测到真实教师端，等待用户输入yes/no')
+    logger.warning('[Collision] 检测到真实教师端，等待用户输入yes/no（心跳持续发送中）')
     try:
         choice = input().strip().lower()
     except (EOFError, KeyboardInterrupt):
         choice = 'no'
+    _heartbeat_stop.set()
+    _heartbeat_thread.join(timeout=1)
     if choice != 'yes':
         print("[系统] 用户取消启动")
         logger.info('[Collision] 用户输入 %s，取消启动', choice)
