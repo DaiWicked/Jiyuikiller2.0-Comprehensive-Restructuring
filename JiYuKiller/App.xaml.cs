@@ -22,6 +22,11 @@ namespace JiYuKiller
             // DebugMode为false时不启用日志，不生成日志文件
 
             Services.Logger.Instance.Info("应用程序启动");
+
+            // 释放目录策略（对应上游 ForceInstallInCurrentDir）：勾了就释放到 exe 所在目录。
+            // 必须在 ExtractAll 之前设置 —— 首次释放就在下面这几行发生，顺序反了策略对本次释放不生效。
+            Services.EmbeddedResourceService.ForceInstallInCurrentDir = settings.ForceInstallInCurrentDir;
+            Services.Logger.Instance.Info("[启动] 释放目录策略: " + (settings.ForceInstallInCurrentDir ? "当前目录(exe 所在目录)" : "用户目录 %LOCALAPPDATA%"));
             if (!Services.EmbeddedResourceService.ExtractAll())
             {
                 Services.Logger.Instance.Warn("[启动] 嵌入资源未全部释放成功, 驱动/DLL 相关功能可能不可用");
@@ -34,6 +39,7 @@ namespace JiYuKiller
             Services.Logger.Instance.Info($"64位系统: {Environment.Is64BitOperatingSystem}");
             Services.Logger.Instance.Info($"64位进程: {Environment.Is64BitProcess}");
             Services.Logger.Instance.Info($"调试模式: {settings.DebugMode}");
+
 
             // 自检钩子: JYKILLER_FORCE_SOFTWARE_RENDER=1 强制软件渲染(= Win7 无 D3D 的 Tier 0)
             // 用途: 在快机器上复现老机器/虚拟机的观感问题(模糊、着色器回退、合成差异)。

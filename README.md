@@ -5,6 +5,8 @@
 <p>该项目源于作者zsyn666的fork进行二改</p>
 <p>合并了来自于作者BengbuGuards的MythwareToolkit作为子功能</p>
 <p>合并了来自于作者weilycoder的Jiyu_replay_attack作为子功能</p>
+<p>合并了来自于作者yunsjxh的Third-party-JiYu-Teacher-Endpoint作为子功能</p>
+<p>界面参考：COUI（超椭圆/样式思路）、WPF-Liquid-Glass-Effect（着色器来源）、liquid-glass-js（折射配方）</p>
 
 
 
@@ -72,8 +74,6 @@
 - [BengbuGuards](https://github.com/weilycoder/Jiyu_replay_attack)
 - [dragosniamtu](https://github.com/dragosniamtu/WPF-Liquid-Glass-Effect) (液态玻璃效果)
 
-## 许可
-
 ## 致谢
 
 - 原作者 [imengyu](https://github.com/imengyu)（快乐的梦鱼）开发了 JiYu Trainer
@@ -84,4 +84,40 @@
 
 ## 许可
 
-[MIT License](https://github.com/zsyn666/JiYuTrainer_Next/blob/master/LICENSE) (free, open source)
+本项目以 **MIT License** 发布，见 [LICENSE](LICENSE)。
+
+上游与第三方组件的许可、来源与改动说明见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)，许可原文在 [third_party/](third_party/)：
+上游 JiYuTrainer（MIT）、WPF-Liquid-Glass-Effect（MIT）、COUI（Apache-2.0）、liquid-glass-js（MIT）、Jiyu_replay_attack（MIT）、Third-party-JiYu-Teacher-Endpoint（MIT）。
+
+## 构建
+
+- 环境：**Visual Studio 2019/2022 + .NET Framework 4.7.2 开发工具包**，目标框架 `net472`；**必须编译为 x86**（驱动与 DLL 注入是 32 位）。
+- 命令行构建（用 VS 自带的 MSBuild）：
+
+  ```
+  MSBuild.exe JiYuKiller\JiYuKiller.csproj /p:Configuration=Release
+  ```
+
+  ⚠ **不要传 `/p:Platform=x86`** —— 本项目用的是 `AnyCPU` 配置名 + `PlatformTarget=x86` 绑定，传了会报"未设置 OutputPath"。
+- **像素着色器**：`JiYuKiller\Effects\*.ps` 由同名 `.hlsl` 编译而来，改了 `.hlsl` 必须重编，否则改动**完全无效且不报错**：
+
+  ```
+  fxc /T ps_2_0 /E main /Fo NavBarLens.ps NavBarLens.hlsl
+  ```
+
+  ⚠ **`.hlsl` 不能带 UTF-8 BOM**：`fxc` 会把 BOM 当非法字符，直接报 `X3000: Illegal character (1,1)`。
+- **源文件编码**：除 `.hlsl` 外，所有 `.cs` / `.xaml` 统一 **UTF-8 with BOM**（历史上曾因 GBK 保存导致中文注释与日志字符串成片乱码）。
+
+## 免责声明
+
+本项目仅供**学习与技术研究**使用：用于了解 Windows 内核驱动通信、DLL 注入与模块枚举、屏幕捕获，以及 WPF 自定义着色器与玻璃拟态渲染的实现方式。
+
+请勿用于违反学校或单位规定、侵犯他人权益的用途。使用本软件产生的一切后果由使用者自行承担；若你所在环境不允许此类操作，请立即停止使用并删除本软件。
+
+## 开发用自检钩子
+
+| 环境变量 | 作用 |
+|---|---|
+| `JYKILLER_START_PAGE=<页面名>` | 指定启动页（`quick`/`settings`/`custom`/`advanced`/`games`…），便于截图核对各页面 |
+| `JYKILLER_NAVLENS_SELFTEST=1` | 启动即执行底栏折射自检并导出对比 PNG |
+| `JYKILLER_FORCE_SOFTWARE_RENDER=1` | 强制软件渲染，用于复现无 3D 的老机器/虚拟机（注意 `RenderCapability.Tier` 仍会报硬件层级） |

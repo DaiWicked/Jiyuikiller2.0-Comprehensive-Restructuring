@@ -4,7 +4,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
-        <!-- 全局 Liquid Glass 样式 -->
+        <!-- 全局资源字典：配色变量 → 内容卡片画刷 → 控件样式（玻璃按钮 / 导航按钮 / 滑块 / 复选框 / 文本框）
+             ★ 写进 Application.Resources 的 Freezable 会被 WPF 自动冻结（SealIfSealable）：
+               需要动画的画刷必须 Clone() 后只作元素本地值，绝不要塞回这个字典。 -->
         <ResourceDictionary>
             <!-- 导航栏前景色/指示器画刷，随底栏背景明暗自适应 -->
             <SolidColorBrush x:Key="NavForegroundBrush" Color="#FFF2F5F8" />
@@ -12,31 +14,14 @@
             <SolidColorBrush x:Key="NavIndicatorBrushBottom" Color="#30FFFFFF" />
             <!-- 颜色变量 -->
             <Color x:Key="GlassBgColor">#B8FFFFFF</Color>
-            <Color x:Key="GlassBorderColor">#80FFFFFF</Color>
             <Color x:Key="GlassTextColor">#FF0A0A0A</Color>
             <Color x:Key="GlassPrimaryColor">#FF37B0FF</Color>
-            <Color x:Key="GlassSuccessColor">#FF28A745</Color>
-            <Color x:Key="GlassDangerColor">#FFFF6B6B</Color>
 
             <!-- COUI 5级Surface配色（从源码提取: F0F1F2 -> 白 -> 白 -> E6E6E6 -> 白） -->
-            <Color x:Key="SurfaceLevel0Color">#FFF0F1F2</Color>
-            <Color x:Key="SurfaceLevel1Color">#FFFFFFFF</Color>
-            <Color x:Key="SurfaceLevel2Color">#FFFFFFFF</Color>
-            <Color x:Key="SurfaceLevel3Color">#FFE6E6E6</Color>
-            <Color x:Key="SurfaceLevel4Color">#FFFFFFFF</Color>
-            <SolidColorBrush x:Key="SurfaceLevel0Brush" Color="{StaticResource SurfaceLevel0Color}" />
-            <SolidColorBrush x:Key="SurfaceLevel1Brush" Color="{StaticResource SurfaceLevel1Color}" />
-            <SolidColorBrush x:Key="SurfaceLevel2Brush" Color="{StaticResource SurfaceLevel2Color}" />
-            <SolidColorBrush x:Key="SurfaceLevel3Brush" Color="{StaticResource SurfaceLevel3Color}" />
-            <SolidColorBrush x:Key="SurfaceLevel4Brush" Color="{StaticResource SurfaceLevel4Color}" />
 
             <!-- 玻璃背景画刷 -->
-            <SolidColorBrush x:Key="GlassBackgroundBrush" Color="{StaticResource GlassBgColor}" />
-            <SolidColorBrush x:Key="GlassBorderBrush" Color="{StaticResource GlassBorderColor}" />
             <SolidColorBrush x:Key="GlassTextBrush" Color="{StaticResource GlassTextColor}" />
             <SolidColorBrush x:Key="GlassPrimaryBrush" Color="{StaticResource GlassPrimaryColor}" />
-            <SolidColorBrush x:Key="GlassSuccessBrush" Color="{StaticResource GlassSuccessColor}" />
-            <SolidColorBrush x:Key="GlassDangerBrush" Color="{StaticResource GlassDangerColor}" />
 
             <!-- 内容卡片统一底色
                  深色文字必须落在浅底上才读得出来，而此前"快捷栏"卡片是白渐变、"设置/高级设置"卡片是
@@ -356,57 +341,6 @@
                 </Setter>
             </Style>
 
-            <!-- 玻璃开关样式（借鉴COUI Switch: 滑块滑动动画） -->
-            <Style x:Key="GlassSwitch" TargetType="CheckBox">
-                <Setter Property="Foreground" Value="{StaticResource GlassTextBrush}" />
-                <Setter Property="FontSize" Value="14" />
-                <Setter Property="Cursor" Value="Hand" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="CheckBox">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <!-- 开关轨道 -->
-                                <Border x:Name="track" Width="44" Height="24" CornerRadius="12" Background="#40000000" VerticalAlignment="Center">
-                                    <!-- 开关滑块 -->
-                                    <Ellipse x:Name="knobCircle" Width="20" Height="20" Fill="White" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0,0,0">
-                                        <Ellipse.RenderTransform>
-                                            <TranslateTransform x:Name="knobTrans" X="0" Y="0" />
-                                        </Ellipse.RenderTransform>
-                                        <Ellipse.Effect>
-                                            <DropShadowEffect Color="#40000000" BlurRadius="3" ShadowDepth="1" />
-                                        </Ellipse.Effect>
-                                    </Ellipse>
-                                </Border>
-                                <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" />
-                            </Grid>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Trigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <ColorAnimation Storyboard.TargetName="track" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#FF37B0FF" Duration="0:0:0.2" />
-                                                <DoubleAnimation Storyboard.TargetName="knobTrans" Storyboard.TargetProperty="X" To="20" Duration="0:0:0.2" />
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.EnterActions>
-                                    <Trigger.ExitActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <ColorAnimation Storyboard.TargetName="track" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#40000000" Duration="0:0:0.2" />
-                                                <DoubleAnimation Storyboard.TargetName="knobTrans" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.2" />
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.ExitActions>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
 
             <!-- 玻璃复选框样式 -->
             <Style x:Key="GlassCheckBox" TargetType="CheckBox">

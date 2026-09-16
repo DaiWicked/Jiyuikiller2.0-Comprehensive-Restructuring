@@ -174,7 +174,7 @@ namespace JiYuKiller.Services
 
         private void LogSettings()
         {
-            Logger.Instance.Debug("[JiYuController] 监控进程: " + _settings.MonitorJiYuProcess);
+
             Logger.Instance.Debug("[JiYuController] 禁止运行: " + _settings.BanJiYuRunOp);
             Logger.Instance.Debug("[JiYuController] 允许置顶: " + _settings.AllowGbTop);
             Logger.Instance.Debug("[JiYuController] 禁止结束进程: " + _settings.ProhibitKillProcess);
@@ -185,7 +185,7 @@ namespace JiYuKiller.Services
             Logger.Instance.Debug("[JiYuController] 结束进程模式: " + _settings.KillProcessMode);
             Logger.Instance.Debug("[JiYuController] 禁用驱动: " + _settings.DisableDriver);
             Logger.Instance.Debug("[JiYuController] 自我保护: " + _settings.SelfProtect);
-            Logger.Instance.Debug("[JiYuController] 注入模式: " + _settings.InjectMode);
+
         }
 
         /// <summary>

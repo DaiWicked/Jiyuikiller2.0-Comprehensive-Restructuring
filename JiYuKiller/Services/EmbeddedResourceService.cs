@@ -14,6 +14,25 @@ namespace JiYuKiller.Services
         private static string _tempDir;
         private static readonly object _lock = new object();
 
+        private static bool _forceInstallInCurrentDir = false;
+
+        /// <summary>
+        /// "强制安装在当前目录"（对应上游 ForceInstallInCurrentDir 的语义：程序目录固定不动、
+        /// 上游在 U 盘场景下会把本体复制到 %TEMP% 再启动，勾选此项则不复制）。
+        /// 打开时把释放目录固定为 exe 所在目录（U 盘便携、路径可预期）；exe 目录不可写时自动回退用户目录。
+        /// 由 App.OnStartup 与"保存高级设置"从设置同步进来；赋值会让目录缓存失效。
+        /// </summary>
+        public static bool ForceInstallInCurrentDir
+        {
+            get { return _forceInstallInCurrentDir; }
+            set
+            {
+                if (_forceInstallInCurrentDir == value) return;
+                _forceInstallInCurrentDir = value;
+                _tempDir = null;   // 目录缓存失效，下次重新计算
+            }
+        }
+
         /// <summary>
         /// 释放目录。
         /// 优先 %LOCALAPPDATA%\学习不通 (按用户隔离)，取不到时回退 %TEMP%\学习不通。
@@ -26,6 +45,19 @@ namespace JiYuKiller.Services
             {
                 if (string.IsNullOrEmpty(_tempDir))
                 {
+                    // "强制安装在当前目录"：直接放 exe 旁边（U 盘便携 / 路径可预期）
+                    if (_forceInstallInCurrentDir)
+                    {
+                        string exeDir = AppDomain.CurrentDomain.BaseDirectory;
+                        if (!string.IsNullOrEmpty(exeDir) && IsDirectoryWritable(exeDir))
+                        {
+                            _tempDir = exeDir.TrimEnd(Path.DirectorySeparatorChar);
+                            if (string.IsNullOrEmpty(_tempDir)) _tempDir = exeDir;
+                            return _tempDir;
+                        }
+                        Logger.Instance.Warn("[EmbeddedResource] 已勾选强制安装在当前目录, 但 exe 目录不可写, 回退到用户目录");
+                    }
+
                     string baseDir = null;
                     try
                     {
@@ -45,6 +77,23 @@ namespace JiYuKiller.Services
                 }
                 return _tempDir;
             }
+        }
+
+        /// <summary>探测目录是否可写（建一个临时文件再删掉；不抛异常）</summary>
+        private static bool IsDirectoryWritable(string dir)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return false;
+                string probe = Path.Combine(dir, ".wtest_" + Guid.NewGuid().ToString("N") + ".tmp");
+                using (var fs = new FileStream(probe, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    fs.WriteByte(0);
+                }
+                File.Delete(probe);
+                return true;
+            }
+            catch { return false; }
         }
 
         /// <summary>

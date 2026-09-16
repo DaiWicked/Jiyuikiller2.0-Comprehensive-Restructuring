@@ -12,8 +12,6 @@ namespace JiYuKiller.Models
     public class AppSettings
     {
         // === 极域控制设置 ===
-        /// <summary>监控极域运行进程</summary>
-        public bool MonitorJiYuProcess { get; set; } = true;
 
         /// <summary>禁止极域运行进程</summary>
         public bool BanJiYuRunOp { get; set; } = false;
@@ -69,17 +67,10 @@ namespace JiYuKiller.Models
         /// <summary>强制禁用看门狗</summary>
         public bool ForceDisableWatchDog { get; set; } = false;
 
-        /// <summary>注入MasterHelper</summary>
-        public bool InjectMasterHelper { get; set; } = false;
-
-        /// <summary>注入ProcHelper64</summary>
-        public bool InjectProcHelper64 { get; set; } = false;
 
         /// <summary>结束进程模式: TerminateProcess / NtTerminateProcess / KernelMode</summary>
         public string KillProcessMode { get; set; } = "NtTerminateProcess";
 
-        /// <summary>注入模式: RemoteThread / HookDllStub</summary>
-        public string InjectMode { get; set; } = "RemoteThread";
 
         /// <summary>检查间隔（毫秒，1000-10000）</summary>
         public int CKInterval { get; set; } = 3100;

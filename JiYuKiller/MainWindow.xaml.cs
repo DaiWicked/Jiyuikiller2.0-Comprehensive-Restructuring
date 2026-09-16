@@ -304,7 +304,7 @@ namespace JiYuKiller
                 _isInitializing = true;
             Services.Logger.Instance.FunctionCall("ApplySettingsToUI");
 
-            CheckMonitorProcess.IsChecked = _settings.MonitorJiYuProcess;
+
             CheckBanRunOp.IsChecked = _settings.BanJiYuRunOp;
             CheckAllowTop.IsChecked = _settings.AllowGbTop;
             CheckProhibitKill.IsChecked = _settings.ProhibitKillProcess;
@@ -340,7 +340,7 @@ namespace JiYuKiller
             if (_isInitializing) return;
             Services.Logger.Instance.FunctionCall("SaveSettingsFromUI");
 
-            _settings.MonitorJiYuProcess = CheckMonitorProcess.IsChecked ?? false;
+
             _settings.BanJiYuRunOp = CheckBanRunOp.IsChecked ?? false;
             _settings.AllowGbTop = CheckAllowTop.IsChecked ?? false;
             _settings.ProhibitKillProcess = CheckProhibitKill.IsChecked ?? false;
@@ -1583,7 +1583,7 @@ namespace JiYuKiller
             CheckDoNotShowTrayIcon.IsChecked = _settings.DoNotShowTrayIcon;
             CheckForceInstallInCurrentDir.IsChecked = _settings.ForceInstallInCurrentDir;
             CheckForceDisableWatchDog.IsChecked = _settings.ForceDisableWatchDog;
-            CheckInjectMasterHelper.IsChecked = _settings.InjectMasterHelper;
+
             CheckEnableController.IsChecked = _settings.EnableController;
             TextCKInterval.Text = _settings.CKInterval.ToString();
 
@@ -1595,8 +1595,6 @@ namespace JiYuKiller
                 case "KernelMode": RadioKillKernel.IsChecked = true; break;
             }
 
-            // 注入模式
-            ComboInjectMode.SelectedIndex = _settings.InjectMode == "HookDllStub" ? 1 : 0;
 
             Services.Logger.Instance.Debug("高级设置已加载到 UI");
         }
@@ -1612,8 +1610,11 @@ namespace JiYuKiller
             _settings.DoNotShowVirusWindow = CheckDoNotShowVirusWindow.IsChecked ?? true;
             _settings.DoNotShowTrayIcon = CheckDoNotShowTrayIcon.IsChecked ?? false;
             _settings.ForceInstallInCurrentDir = CheckForceInstallInCurrentDir.IsChecked ?? false;
+            // D3: 立刻同步到释放服务（目录缓存会失效，下次释放按新策略走）；驱动/DLL 已释放的需重启才搬家
+            Services.EmbeddedResourceService.ForceInstallInCurrentDir = _settings.ForceInstallInCurrentDir;
+            Services.Logger.Instance.Info("[高级设置] 释放目录策略: " + (_settings.ForceInstallInCurrentDir ? "当前目录(exe 所在目录)" : "用户目录 %LOCALAPPDATA%"));
             _settings.ForceDisableWatchDog = CheckForceDisableWatchDog.IsChecked ?? false;
-            _settings.InjectMasterHelper = CheckInjectMasterHelper.IsChecked ?? false;
+
             _settings.EnableController = CheckEnableController.IsChecked ?? true;
 
             // 结束进程模式
@@ -1621,8 +1622,6 @@ namespace JiYuKiller
             else if (RadioKillNTP.IsChecked == true) _settings.KillProcessMode = "NtTerminateProcess";
             else if (RadioKillKernel.IsChecked == true) _settings.KillProcessMode = "KernelMode";
 
-            // 注入模式
-            _settings.InjectMode = ComboInjectMode.SelectedIndex == 1 ? "HookDllStub" : "RemoteThread";
 
             // 检查间隔
             int ckInterval;
@@ -1640,7 +1639,7 @@ namespace JiYuKiller
             _settings.Save();
             _controller.UpdateSettings(_settings);
 
-            Services.Logger.Instance.Info($"高级设置已保存: CKInterval={_settings.CKInterval}, KillProcess={_settings.KillProcessMode}, InjectMode={_settings.InjectMode}");
+            Services.Logger.Instance.Info($"高级设置已保存: CKInterval={_settings.CKInterval}, KillProcess={_settings.KillProcessMode}, ");
             System.Windows.MessageBox.Show("高级设置已保存！\n部分设置需要重启软件生效。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
