@@ -35,6 +35,15 @@ namespace JiYuKiller
             Services.Logger.Instance.Info($"64位进程: {Environment.Is64BitProcess}");
             Services.Logger.Instance.Info($"调试模式: {settings.DebugMode}");
 
+            // 自检钩子: JYKILLER_FORCE_SOFTWARE_RENDER=1 强制软件渲染(= Win7 无 D3D 的 Tier 0)
+            // 用途: 在快机器上复现老机器/虚拟机的观感问题(模糊、着色器回退、合成差异)。
+            // 必须在任何窗口创建之前设置，所以放在这里。
+            if (Environment.GetEnvironmentVariable("JYKILLER_FORCE_SOFTWARE_RENDER") == "1")
+            {
+                System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
+                Services.Logger.Instance.Warn("[渲染] 已按环境变量强制软件渲染 (SoftwareOnly / Tier 0)");
+            }
+
             // 用户许可协议检查
             if (!settings.Argeed)
             {
