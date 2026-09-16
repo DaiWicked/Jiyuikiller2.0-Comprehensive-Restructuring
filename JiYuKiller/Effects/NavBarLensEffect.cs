@@ -62,6 +62,16 @@ namespace JiYuKiller.Effects
             DependencyProperty.Register("Strength", typeof(double), typeof(NavBarLensEffect),
                 new UIPropertyMetadata(1.0, PixelShaderConstantCallback(7)));
 
+        /// <summary>圆角处"额外"折射量（像素）—— 参考实现的 cornerBoost，让底栏两端鼓起来</summary>
+        public static readonly DependencyProperty CornerBoostPxProperty =
+            DependencyProperty.Register("CornerBoostPx", typeof(double), typeof(NavBarLensEffect),
+                new UIPropertyMetadata(0.0, PixelShaderConstantCallback(8)));
+
+        /// <summary>圆角影响范围（像素）：离角这么远衰减到约 37%</summary>
+        public static readonly DependencyProperty CornerFalloffProperty =
+            DependencyProperty.Register("CornerFalloff", typeof(double), typeof(NavBarLensEffect),
+                new UIPropertyMetadata(20.0, PixelShaderConstantCallback(9)));
+
         /// <summary>
         /// 着色器是否真的加载成功。
         /// 注意：与 GlassyEffect.cs 一样，这里只反映"资源是否可解析"，
@@ -88,6 +98,8 @@ namespace JiYuKiller.Effects
                 UpdateShaderValue(AberrationPxProperty);
                 UpdateShaderValue(RimBoostProperty);
                 UpdateShaderValue(StrengthProperty);
+                UpdateShaderValue(CornerBoostPxProperty);
+                UpdateShaderValue(CornerFalloffProperty);
 
                 IsShaderLoaded = true;
             }
@@ -150,6 +162,17 @@ namespace JiYuKiller.Effects
         {
             get { return (double)GetValue(StrengthProperty); }
             set { SetValue(StrengthProperty, value); }
+        }
+        public double CornerBoostPx
+        {
+            get { return (double)GetValue(CornerBoostPxProperty); }
+            set { SetValue(CornerBoostPxProperty, value); }
+        }
+
+        public double CornerFalloff
+        {
+            get { return (double)GetValue(CornerFalloffProperty); }
+            set { SetValue(CornerFalloffProperty, value); }
         }
     }
 }

@@ -43,6 +43,10 @@ namespace JiYuKiller
         private double _navSpecularX = 0;
         private double _navSpecularY = 0;
         private bool _navSpecularInit = false;
+
+        // 底栏每个按钮各自的"磨砂玻璃"采样画刷（每按钮一份，见 UpdateNavButtonBackdrops）
+        private readonly System.Collections.Generic.Dictionary<System.Windows.Controls.Button, System.Windows.Media.VisualBrush> _navBtnGlassBrushes
+            = new System.Collections.Generic.Dictionary<System.Windows.Controls.Button, System.Windows.Media.VisualBrush>();
         private int _chatTargetSeat = 0;
 
         // Win32 API
@@ -108,6 +112,12 @@ namespace JiYuKiller
             {
                 NavIndicator.SizeChanged += (s, e) => UpdateNavIndicatorBackdrop();
             }
+            // 按钮磨砂：底栏横向滚动 / 窗口尺寸变化都要重算采样区域
+            if (NavScrollViewer != null)
+            {
+                NavScrollViewer.ScrollChanged += (s, e) => UpdateNavButtonBackdrops();
+            }
+            this.SizeChanged += (s, e) => UpdateNavButtonBackdrops();
             this.Loaded += (s, e) => { UpdateNavBarClip(); UpdateNavBarBackdrop(); UpdateNavBarTextTheme(); };
 
             // 初始化毛玻璃效果管理器（窗口加载后）
@@ -523,6 +533,13 @@ namespace JiYuKiller
                 // 色散用绝对像素量: 1.2px 的 R/B 分离在边缘才看得出彩边（比例写法只有 0.14px，看不见）
                 NavBarLensFx.AberrationPx = 1.2 * scale;
                 NavBarLensFx.RimBoost = 0.12;
+                // 圆角附加折射（参考实现的 cornerBoost）：按基础折射量的一半给圆角"加料"，
+                // 于是强度滑块整体缩放时，圆角凸起始终与基础折射保持比例
+                NavBarLensFx.CornerBoostPx = NavBarLensFx.RefractStrength * 0.5;
+                NavBarLensFx.CornerFalloff = 20.0 * scale;
+                Services.Logger.Instance.Debug(string.Format(
+                    "[NavBar] 圆角附加折射: 加料={0:F1}px, 影响范围={1:F1}px",
+                    NavBarLensFx.CornerBoostPx, NavBarLensFx.CornerFalloff));
                 NavBarLensFx.Strength = strength > 0 ? 1.0 : 0.0;
 
                 Services.Logger.Instance.Debug(string.Format(
@@ -550,6 +567,7 @@ namespace JiYuKiller
                 NavBarGlassBrush.ViewboxUnits = System.Windows.Media.BrushMappingMode.Absolute;
                 NavBarGlassBrush.Viewbox = new System.Windows.Rect(p.X, p.Y, w, h);
                 UpdateNavIndicatorBackdrop();
+                UpdateNavButtonBackdrops();
             }
             catch (Exception ex)
             {
@@ -579,6 +597,60 @@ namespace JiYuKiller
             catch (Exception ex)
             {
                 Services.Logger.Instance.Debug("[NavBar] 更新指示器背景失败: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 给底栏每个按钮铺一层"它自己的磨砂玻璃"。
+        ///
+        /// 背景：按钮模板里原本就有个 BlurEffect，但它作用在**纯色**背景上 —— 模糊纯色还是纯色，
+        /// 所以除了把胶囊边缘糊软之外没有任何模糊效果（这就是"加了模糊却看不出"的原因）。
+        /// 要让按钮真的比底栏更"霜"，必须让按钮背景去采样桌面原图再模糊。
+        ///
+        /// VisualBrush 由代码 new 出来、而不是写在模板里：模板里的 Freezable 是否按实例克隆并不可靠，
+        /// 万一被共享，所有按钮会互相抢 Viewbox（全部显示同一块背景）。
+        /// </summary>
+        private void UpdateNavButtonBackdrops()
+        {
+            if (BackdropContainer == null || NavStackPanel == null) return;
+
+            try
+            {
+                foreach (object child in NavStackPanel.Children)
+                {
+                    var btn = child as System.Windows.Controls.Button;
+                    if (btn == null) continue;
+
+                    System.Windows.Media.VisualBrush brush;
+                    if (!_navBtnGlassBrushes.TryGetValue(btn, out brush))
+                    {
+                        btn.ApplyTemplate();
+                        var host = (btn.Template != null)
+                            ? btn.Template.FindName("glassBlur", btn) as System.Windows.Controls.Border
+                            : null;
+                        if (host == null) continue;
+
+                        brush = new System.Windows.Media.VisualBrush
+                        {
+                            Visual = BackdropContainer,
+                            Stretch = System.Windows.Media.Stretch.Fill,
+                            ViewboxUnits = System.Windows.Media.BrushMappingMode.Absolute,
+                            Viewbox = new System.Windows.Rect(0, 0, 1, 1)
+                        };
+                        host.Background = brush;
+                        _navBtnGlassBrushes[btn] = brush;
+                    }
+
+                    double w = btn.ActualWidth, h = btn.ActualHeight;
+                    if (w <= 0 || h <= 0) continue;
+
+                    Point p = btn.TranslatePoint(new Point(0, 0), BackdropContainer);
+                    brush.Viewbox = new System.Windows.Rect(p.X, p.Y, w, h);
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Debug("[NavBar] 更新按钮磨砂背景失败: " + ex.Message);
             }
         }
         /// <summary>
@@ -864,6 +936,8 @@ namespace JiYuKiller
                 InitNavBarGlass();
                 InitNavBarTextTheme();
             UpdateNavIndicatorBackdrop();
+                InitNoiseLayer();            UpdateNavIndicatorBackdrop();
+                UpdateNavButtonBackdrops();
                 InitNoiseLayer();
             }
             catch (Exception ex)

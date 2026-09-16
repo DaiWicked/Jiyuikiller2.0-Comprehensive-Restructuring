@@ -28,6 +28,8 @@ float  RefractStrength : register(c4);  // 最大向内位移量（设备像素�
 float  AberrationPx    : register(c5);  // 色散的绝对像素量（R/B 各偏 ±此值）
 float  RimBoost        : register(c6);  // 边缘柔光强度
 float  Strength        : register(c7);  // 总强度倍率（0 = 完全关闭）
+float  CornerBoostPx   : register(c8);  // 圆角处"额外"折射量（像素，已含强度）
+float  CornerFalloff   : register(c9);  // 圆角影响范围（像素）：离角这么远衰减到约 37%
 
 // 圆角矩形有符号距离场：内部为负、外部为正
 float sdRoundBox(float2 p, float2 halfExtent, float radius)
@@ -55,7 +57,15 @@ float4 main(float2 uv : TEXCOORD) : COLOR
     // 视觉上就是"凸起的水滴 / 凸透镜"（外侧内容绕着这块玻璃弯过去）。
     // 反过来写成 -dir（向内取样）会变成"边缘显示内侧内容"，观感是凹下去的坑 —— 已实物对比确认。
     // 依据：参考实现 liquid-glass-js-main/container.js:408,423 用外法线 shapeNormal 且是 textureCoord +=
-    float2 offsetUV = (dir * edge * RefractStrength) / max(TextureSize, float2(1.0, 1.0));
+    // 圆角附加折射（参考 liquid-glass-js-main/container.js:415-416 的 cornerBoost）：
+    // 用"到最近圆角的 L∞ 距离"作权重，越靠角额外折射越多 —— 底栏两端因此鼓得更明显。
+    // 只有基础边缘折射时，两端看起来是"平"的；加上这一笔才有水滴/胶囊的立体感。
+    float2 dEdge = GlassHalf - abs(p);
+    float cornerProx = max(max(dEdge.x, dEdge.y), 0.0);
+    float cornerK = exp(-cornerProx / max(CornerFalloff, 1.0));
+    float refractAmount = RefractStrength + CornerBoostPx * cornerK;
+
+    float2 offsetUV = (dir * edge * refractAmount) / max(TextureSize, float2(1.0, 1.0));
 
     // 色散：R 少偏折、B 多偏折（真实玻璃的色散方向），用"绝对像素量"而不是比例 ——
     // 比例写法(如 ±2%)在 5.6px 位移下只有 0.14px 差，肉眼完全看不到、也无法测量。
