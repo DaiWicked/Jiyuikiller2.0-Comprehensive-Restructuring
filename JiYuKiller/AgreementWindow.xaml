@@ -72,7 +72,7 @@
                         <TextBlock Text="该软件商标与版权受到国际法的保护，任何人不得将本软件用于任何商业用途！您在传播、分发本软件的副本时不得删除本软件的任何所有权声明或商标。" FontSize="12" Foreground="#FF222222" TextWrapping="Wrap" Margin="0,0,0,12" />
 
                         <!-- 同意提示 -->
-                        <TextBlock Text="自您使用本软件起，即表明您同意了该声明。" FontSize="11" Foreground="#FF666666" TextWrapping="Wrap" Margin="0,8,0,0" HorizontalAlignment="Center" />
+                        <TextBlock Text="自您使用本软件起，即表明您同意了该声明。" FontSize="11" Foreground="#FF404040" TextWrapping="Wrap" Margin="0,8,0,0" HorizontalAlignment="Center" />
                     </StackPanel>
                 </ScrollViewer>
 

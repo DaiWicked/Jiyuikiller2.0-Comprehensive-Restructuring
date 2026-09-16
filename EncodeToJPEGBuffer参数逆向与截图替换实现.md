@@ -1,4 +1,4 @@
-# EncodeToJPEGBuffer 参数逆向与截图替换实现
+﻿# EncodeToJPEGBuffer 参数逆向与截图替换实现
 
 ## 概述
 

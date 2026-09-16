@@ -143,7 +143,12 @@ namespace JiYuKiller
             timer.Start();
 
             // 默认显示快捷栏
-            ShowPage("quick");
+            // 自检钩子: JYKILLER_START_PAGE=advanced 可指定启动页, 用于截图核对各页面(无法模拟鼠标点击时)
+            string startPage = Environment.GetEnvironmentVariable("JYKILLER_START_PAGE");
+            string[] knownPages = { "quick", "settings", "custom", "udpattack", "chat", "screenshot", "teachersim", "games", "help", "debug", "about", "aboutme", "advanced" };
+            startPage = string.IsNullOrWhiteSpace(startPage) ? "quick" : startPage.Trim().ToLowerInvariant();
+            if (Array.IndexOf(knownPages, startPage) < 0) startPage = "quick";
+            ShowPage(startPage);
             UpdateJiYuStatus();
 
             Services.Logger.Instance.WindowEvent("MainWindow", "构造函数完成");

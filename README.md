@@ -1,4 +1,4 @@
-# Jiyuikiller2.0-Comprehensive-Restructuring
+﻿# Jiyuikiller2.0-Comprehensive-Restructuring
 
 <p>基于 [JiYu Trainer](https://github.com/imengyu/JiYuTrainer) 的 fork</p>
 <p>本项目原作者已经停止更新</p>

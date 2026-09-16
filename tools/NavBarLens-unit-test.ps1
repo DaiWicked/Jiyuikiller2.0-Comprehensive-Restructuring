@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $ps38 = "C:\Users\Administrator\Desktop\Jiyuikiller2.0-Comprehensive-Restructuring\JiYuKiller\Effects\NavBarLens.ps"
 Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
 Add-Type -ReferencedAssemblies PresentationCore,PresentationFramework,WindowsBase -TypeDefinition @'
