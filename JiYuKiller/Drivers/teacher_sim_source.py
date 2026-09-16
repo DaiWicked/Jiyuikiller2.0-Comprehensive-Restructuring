@@ -3314,85 +3314,65 @@ def run_collision_check():
 
 # -------------------- 启动（两阶段） --------------------
 
-def _thread_wrapper(func, name):
-    """后台线程异常捕获包装，确保线程崩溃时写入日志"""
-    def wrapper():
-        try:
-            func()
-        except Exception as e:
-            logger.critical('[线程崩溃] %s: %s', name, e, exc_info=True)
-            print(f'[线程崩溃] {name}: {e}', file=sys.stderr)
-    return wrapper
-
-
-def _main():
-    """主启动函数，全局异常捕获确保崩溃时写入日志"""
-    # 执行两阶段碰撞检测
-    _should_start, _collision_type, _collision_info = run_collision_check()
-    if not _should_start:
-        # single_instance 或 same_app（PID较大）→ 直接退出
-        print(f"[系统] 启动终止: {_collision_info}")
-        sys.exit(1)
-    # 全局心跳线程：整个运行期间持续发送47050心跳，供其他实例发现
-    _heartbeat_stop = threading.Event()
-    _heartbeat_thread = None
-
-    if _collision_type == 'real_teacher':
-        # 检测到真实教师端 → 控制台提示，等待用户输入yes/no
-        # 先启动心跳线程，等待期间和运行期间都持续发送
-        _heartbeat_thread = threading.Thread(target=_heartbeat_loop, args=(_heartbeat_stop,), daemon=True)
-        _heartbeat_thread.start()
-        print(f"[警告] 检测到局域网内教师端活动: {_collision_info}")
-        print("[警告] 同时运行可能导致学生端无法连接或网络风暴")
-        print("[输入] 输入 yes 继续启动，输入 no 取消启动")
-        sys.stdout.flush()
-        logger.warning('[Collision] 检测到真实教师端，等待用户输入yes/no（心跳持续发送中）')
-        try:
-            choice = input().strip().lower()
-        except (EOFError, KeyboardInterrupt):
-            choice = 'no'
-        if choice != 'yes':
-            _heartbeat_stop.set()
-            print("[系统] 用户取消启动")
-            logger.info('[Collision] 用户输入 %s，取消启动', choice)
-            sys.exit(0)
-        print("[系统] 用户确认继续启动")
-        logger.info('[Collision] 用户确认继续启动，心跳线程保持运行')
-    else:
-        # 无冲突或PID选举通过 → 启动后也持续发心跳，防止后续第二个实例抢入
-        _heartbeat_thread = threading.Thread(target=_heartbeat_loop, args=(_heartbeat_stop,), daemon=True)
-        _heartbeat_thread.start()
-        logger.info('[Collision] 启动持续心跳线程')
-
-    spawn_log_window()
-    logger.info('启动 4 个后台线程 (collision_type=%s)', _collision_type)
-    threading.Thread(target=_thread_wrapper(broadcast, 'broadcast'), name='broadcast', daemon=True).start()
-    threading.Thread(target=_thread_wrapper(session_anno, 'session_anno'), name='session_anno', daemon=True).start()
-    threading.Thread(target=_thread_wrapper(session_recv, 'session_recv'), name='session_recv', daemon=True).start()
-    threading.Thread(target=_thread_wrapper(main_recv, 'main_recv'), name='main_recv', daemon=True).start()
-
-    command_loop()
-
-    running = False
-    # 停止心跳线程
-    _heartbeat_stop.set()
-    for sip in list(remote_views):
-        stop_remote_view(sip, notify=False)
-    for sip in list(remote_controls):
-        stop_remote_control(sip, notify=False)
-    try:
-        lock_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) or os.getcwd(), 'teacher_sim.lock')
-        if os.path.exists(lock_path):
-            with open(lock_path, 'r') as f:
-                if f.read().strip() == str(os.getpid()):
-                    os.remove(lock_path)
-    except Exception:
-        pass
-    logger.info('程序退出。students=%s, previews=%s', list(students.keys()), list(previews.keys()))
-
-try:
-    _main()
-except Exception as _e:
-    logger.critical('程序崩溃: %s', _e, exc_info=True)
-    print(f'[致命错误] {_e}', file=sys.stderr)
+# 执行两阶段碰撞检测
+_should_start, _collision_type, _collision_info = run_collision_check()
+if not _should_start:
+    # single_instance 或 same_app（PID较大）→ 直接退出
+    print(f"[系统] 启动终止: {_collision_info}")
     sys.exit(1)
+# 全局心跳线程：整个运行期间持续发送47050心跳，供其他实例发现
+_heartbeat_stop = threading.Event()
+_heartbeat_thread = None
+
+if _collision_type == 'real_teacher':
+    # 检测到真实教师端 → 控制台提示，等待用户输入yes/no
+    # 先启动心跳线程，等待期间和运行期间都持续发送
+    _heartbeat_thread = threading.Thread(target=_heartbeat_loop, args=(_heartbeat_stop,), daemon=True)
+    _heartbeat_thread.start()
+    print(f"[警告] 检测到局域网内教师端活动: {_collision_info}")
+    print("[警告] 同时运行可能导致学生端无法连接或网络风暴")
+    print("[输入] 输入 yes 继续启动，输入 no 取消启动")
+    sys.stdout.flush()
+    logger.warning('[Collision] 检测到真实教师端，等待用户输入yes/no（心跳持续发送中）')
+    try:
+        choice = input().strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        choice = 'no'
+    if choice != 'yes':
+        _heartbeat_stop.set()
+        print("[系统] 用户取消启动")
+        logger.info('[Collision] 用户输入 %s，取消启动', choice)
+        sys.exit(0)
+    print("[系统] 用户确认继续启动")
+    logger.info('[Collision] 用户确认继续启动，心跳线程保持运行')
+else:
+    # 无冲突或PID选举通过 → 启动后也持续发心跳，防止后续第二个实例抢入
+    _heartbeat_thread = threading.Thread(target=_heartbeat_loop, args=(_heartbeat_stop,), daemon=True)
+    _heartbeat_thread.start()
+    logger.info('[Collision] 启动持续心跳线程')
+
+spawn_log_window()
+logger.info('启动 4 个后台线程 (collision_type=%s)', _collision_type)
+threading.Thread(target=broadcast, name='broadcast', daemon=True).start()
+threading.Thread(target=session_anno, name='session_anno', daemon=True).start()
+threading.Thread(target=session_recv, name='session_recv', daemon=True).start()
+threading.Thread(target=main_recv, name='main_recv', daemon=True).start()
+
+command_loop()
+
+running = False
+# 停止心跳线程
+_heartbeat_stop.set()
+for sip in list(remote_views):
+    stop_remote_view(sip, notify=False)
+for sip in list(remote_controls):
+    stop_remote_control(sip, notify=False)
+try:
+    lock_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) or os.getcwd(), 'teacher_sim.lock')
+    if os.path.exists(lock_path):
+        with open(lock_path, 'r') as f:
+            if f.read().strip() == str(os.getpid()):
+                os.remove(lock_path)
+except Exception:
+    pass
+logger.info('程序退出。students=%s, previews=%s', list(students.keys()), list(previews.keys()))
