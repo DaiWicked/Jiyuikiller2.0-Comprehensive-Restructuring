@@ -110,7 +110,7 @@
                      又因为卡片底色是半透明的，光晕强度按 alpha 自然衰减 —— 字形（不透明）亮、
                      卡片边缘（约 15% alpha）几乎看不见。 -->
                 <Grid.Effect>
-                    <DropShadowEffect Color="#FFFFFFFF" ShadowDepth="0" BlurRadius="3" Opacity="0.6" />
+                    <DropShadowEffect Color="#FFFFFFFF" ShadowDepth="0" BlurRadius="2.5" Opacity="0.4" />
                 </Grid.Effect>
 
                 <!-- 设置页面 -->

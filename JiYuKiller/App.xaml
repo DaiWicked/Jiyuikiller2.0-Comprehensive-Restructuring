@@ -43,8 +43,8 @@
                  15% 黑，同一套深色文字被两种底色夹着 —— 这里统一成白渐变 + 1px 白描边（与快捷栏卡片一致）。
                  注意：这是卡片自身的底色，与"内容层透明度"(GlassOpacity) 那套全局图层无关。 -->
             <LinearGradientBrush x:Key="GlassCardBrush" StartPoint="0,0" EndPoint="0,1">
-                <GradientStop Color="#3AFFFFFF" Offset="0" />
-                <GradientStop Color="#1FFFFFFF" Offset="1" />
+                <GradientStop Color="#22FFFFFF" Offset="0" />
+                <GradientStop Color="#0FFFFFFF" Offset="1" />
             </LinearGradientBrush>
             <SolidColorBrush x:Key="GlassCardBorderBrush" Color="#33FFFFFF" />
 
