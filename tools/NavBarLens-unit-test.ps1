@@ -119,7 +119,7 @@ foreach ($step in @(2, 20, 26, 30)) {
     # 该台阶深度(相对玻璃左边缘 x=24): depth = step - 24 (负数表示在玻璃外)
     $depth = $step - 24
     $edge = if ($depth -gt 0) { [Math]::Pow([Math]::Max(0, 1 - $depth/21), 2) } else { 1.0 }
-    "台阶x={0,3}  depth={1,4}  edge={2:F3}  理论位移={3,6:F2}px   实测位移={4,6:F2}px" -f $step, $depth, $edge, (-10*$edge), ($c2-$c1)
+    # 注意：折射方向已在 c5941fb 由"向内"改为"向外"，位移符号随之取正（这里曾写作 -10*edge 已过期）`r`n    "台阶x={0,3}  depth={1,4}  edge={2:F3}  理论位移={3,6:F2}px   实测位移={4,6:F2}px" -f $step, $depth, $edge, (10*$edge), ($c2-$c1)
 }
 
 ""
@@ -133,4 +133,4 @@ $ab2 = RenderIt 1.0 10 3.0 30
 $r = Centroid $ab2 0 40 2; $g = Centroid $ab2 0 40 1; $b = Centroid $ab2 0 40 0
 $offR = Centroid $off 0 40 2; $offG = Centroid $off 0 40 1; $offB = Centroid $off 0 40 0
 "  关折射基准:  R={0:F2} G={1:F2} B={2:F2}" -f $offR, $offG, $offB
-"  => 色散位移 R-G={0:F2}px  B-G={1:F2}px (期望 R-G≈+3, B-G≈-3)" -f (($r-$offR)-($g-$offG)), (($b-$offB)-($g-$offG))
+"  => 色散位移 R-G={0:F2}px  B-G={1:F2}px (注：本项期望值未计入 edge 因子；depth=6 时 edge=(1-6/21)^2≈0.51，故实测约为设计值的一半，属正常)" -f (($r-$offR)-($g-$offG)), (($b-$offB)-($g-$offG))
