@@ -3152,7 +3152,7 @@ def _send_heartbeat(det_sock, my_pid, start_ts):
         logger.debug('[Collision] 发送心跳失败: %s', e)
 
 
-def _silent_listen_and_detect(timeout=2.0):
+def _silent_listen_and_detect(timeout=3.0):
     """
     静默监听阶段：
     - 监听4705端口（极域协议），检测是否有真实教师端或其他teacher_sim在发包
@@ -3209,15 +3209,14 @@ def _silent_listen_and_detect(timeout=2.0):
                 logger.debug('[Collision] 专属端口接收异常: %s', e)
 
         # 监听4705端口（真实教师端宣告）
+        # 放宽检测：4705是极域教师端专用端口，收到任何来自非本机IP的包都认为有教师端活动
         try:
             data, addr = sock.recvfrom(4096)
-            if len(data) >= 4:
+            if len(data) >= 4 and addr[0] != ip:
                 magic = struct.unpack_from('<I', data, 0)[0]
-                if magic in (0x434E414E, 0x434E4143, 0x434E4F4F, 0x4F4F4E43):
-                    if addr[0] != ip:
-                        has_real_teacher = True
-                        logger.info('[Collision] 检测到教师端宣告: IP=%s magic=0x%08X', addr[0], magic)
-                        print(f'[Collision] 检测到教师端活动: {addr[0]}')
+                has_real_teacher = True
+                logger.info('[Collision] 检测到4705端口活动: IP=%s magic=0x%08X len=%d', addr[0], magic, len(data))
+                print(f'[Collision] 检测到教师端活动: {addr[0]} (magic=0x{magic:08X})')
         except socket.timeout:
             pass
         except Exception as e:
@@ -3251,7 +3250,7 @@ def run_collision_check():
         return False, 'single_instance', '同机器已存在teacher_sim实例'
 
     # 阶段2：静默监听+专属心跳
-    has_real_teacher, same_app_pids = _silent_listen_and_detect(timeout=2.0)
+    has_real_teacher, same_app_pids = _silent_listen_and_detect(timeout=3.0)
 
     my_pid = os.getpid()
 
