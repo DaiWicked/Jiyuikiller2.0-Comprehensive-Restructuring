@@ -636,18 +636,30 @@ namespace JiYuKiller.Services
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        private static extern long WritePrivateProfileString(string section, string key, string val, string filePath);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool WritePrivateProfileString(string section, string key, string val, string filePath);
 
         private string ReadIni(string section, string key, string def)
         {
-            StringBuilder sb = new StringBuilder(1024);
-            GetPrivateProfileString(section, key, def, sb, 1024, ConfigPath);
-            return sb.ToString();
+            lock (_iniLock)
+            {
+                StringBuilder sb = new StringBuilder(1024);
+                GetPrivateProfileString(section, key, def, sb, 1024, ConfigPath);
+                return sb.ToString();
+            }
         }
+        private readonly object _iniLock = new object();
         private void WriteIni(string section, string key, string val)
         {
-            WritePrivateProfileString(section, key, val, ConfigPath);
+            lock (_iniLock)
+            {
+                bool ok = WritePrivateProfileString(section, key, val, ConfigPath);
+                if (!ok)
+                {
+                    int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                    Logger.Instance.Error($"[RealtimeReplace] INI写入失败: [{section}] {key}={val}, Win32Error={err}");
+                }
+            }
         }
     }
 }

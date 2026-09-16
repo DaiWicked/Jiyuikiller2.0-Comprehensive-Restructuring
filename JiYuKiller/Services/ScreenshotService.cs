@@ -15,6 +15,12 @@ namespace JiYuKiller.Services
     /// </summary>
     public class ScreenshotService
     {
+        /// <summary>
+        /// 全局INI文件锁：i.chaoxing.ini被ScreenshotService/RealtimeReplaceService/JiYuController共享，
+        /// 并发写入可能写坏文件，所有写操作必须持此锁
+        /// </summary>
+        public static readonly object IniFileLock = new object();
+
         public event Action<string> OnLog;
         public event Action<string> OnStatusChanged;
 
@@ -185,8 +191,19 @@ namespace JiYuKiller.Services
                 }
 
                 // 写入INI文件（编码层替换用FakeJpegPath，兼容GDI层保留FakeScreenImage）
-                WritePrivateProfileString("JTSettings", "FakeJpegPath", fakeJpegPath, _iniPath);
-                WritePrivateProfileString("JTSettings", "FakeScreenImage", _currentImagePath, _iniPath);
+                // 加全局锁防止与RealtimeReplaceService/JiYuController并发写坏INI
+                bool writeOk1, writeOk2;
+                lock (IniFileLock)
+                {
+                    writeOk1 = WritePrivateProfileString("JTSettings", "FakeJpegPath", fakeJpegPath, _iniPath);
+                    writeOk2 = WritePrivateProfileString("JTSettings", "FakeScreenImage", _currentImagePath, _iniPath);
+                }
+                if (!writeOk1 || !writeOk2)
+                {
+                    int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                    Logger.Instance.Error($"[ScreenshotService] INI写入失败! FakeJpegPath={writeOk1}, FakeScreenImage={writeOk2}, Win32Error={err}");
+                    OnLog?.Invoke($"警告: INI写入失败(错误码{err})，截图替换可能未生效");
+                }
                 Logger.Instance.Info("[ScreenshotService] 已应用截图替换: FakeJpegPath=" + fakeJpegPath);
                 OnLog?.Invoke("已应用: " + (string.IsNullOrEmpty(_currentImagePath) ? "清除截图替换" : _currentImagePath));
 
