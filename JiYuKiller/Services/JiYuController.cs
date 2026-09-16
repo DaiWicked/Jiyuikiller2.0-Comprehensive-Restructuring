@@ -443,17 +443,52 @@ namespace JiYuKiller.Services
         /// </summary>
         private void WriteSettingsToIni(string iniPath)
         {
-            WritePrivateProfileString("JTSettings", "AutoForceKill", _settings.AutoForceKill ? "TRUE" : "FALSE", iniPath);
-            WritePrivateProfileString("JTSettings", "AllowAllRunOp", "FALSE", iniPath);
-            WritePrivateProfileString("JTSettings", "BandAllRunOp", _settings.BanJiYuRunOp ? "TRUE" : "FALSE", iniPath);
-            WritePrivateProfileString("JTSettings", "ProhibitKillProcess", _settings.ProhibitKillProcess ? "TRUE" : "FALSE", iniPath);
-            WritePrivateProfileString("JTSettings", "ProhibitCloseWindow", _settings.ProhibitCloseWindow ? "TRUE" : "FALSE", iniPath);
-            // 修复: 原实现硬编码 "TRUE", 导致高级设置里"隐藏极域端控制输出窗口"取消勾选也不生效
-            WritePrivateProfileString("JTSettings", "DoNotShowVirusWindow", _settings.DoNotShowVirusWindow ? "TRUE" : "FALSE", iniPath);
-            WritePrivateProfileString("JTSettings", "ForceDisableWatchDog", _settings.ForceDisableWatchDog ? "TRUE" : "FALSE", iniPath);
-            WritePrivateProfileString("JTSettings", "AllowGbTop", _settings.AllowGbTop ? "TRUE" : "FALSE", iniPath);
-            WritePrivateProfileString("JTSettings", "AllowMonitor", _settings.AllowMonitor ? "TRUE" : "FALSE", iniPath);
-            WritePrivateProfileString("JTSettings", "AllowControl", _settings.AllowControl ? "TRUE" : "FALSE", iniPath);
+            // 与 ScreenshotService 共写同一个 i.chaoxing.ini，必须用同一把锁，
+            // 否则两边交替写同一文件可能互相截断（IniFileLock 由 ScreenshotService 提供，其写入处也用它）。
+            lock (ScreenshotService.IniFileLock)
+            {
+                const int total = 10;
+                int failed = 0;
+
+                if (!WriteIniKey(iniPath, "AutoForceKill", _settings.AutoForceKill)) failed++;
+                if (!WriteIniKey(iniPath, "AllowAllRunOp", false)) failed++;   // 本 fork 无对应 UI，按上游默认 FALSE
+                if (!WriteIniKey(iniPath, "BandAllRunOp", _settings.BanJiYuRunOp)) failed++;
+                if (!WriteIniKey(iniPath, "ProhibitKillProcess", _settings.ProhibitKillProcess)) failed++;
+                if (!WriteIniKey(iniPath, "ProhibitCloseWindow", _settings.ProhibitCloseWindow)) failed++;
+                // 修复: 原实现硬编码 "TRUE", 导致高级设置里"隐藏极域端控制输出窗口"取消勾选也不生效
+                if (!WriteIniKey(iniPath, "DoNotShowVirusWindow", _settings.DoNotShowVirusWindow)) failed++;
+                if (!WriteIniKey(iniPath, "ForceDisableWatchDog", _settings.ForceDisableWatchDog)) failed++;
+                if (!WriteIniKey(iniPath, "AllowGbTop", _settings.AllowGbTop)) failed++;
+                if (!WriteIniKey(iniPath, "AllowMonitor", _settings.AllowMonitor)) failed++;
+                if (!WriteIniKey(iniPath, "AllowControl", _settings.AllowControl)) failed++;
+
+                if (failed > 0)
+                {
+                    Logger.Instance.Warn(string.Format(
+                        "[JiYuController] 写入 INI 有 {0}/{1} 个键失败: {2}（注入的 DLL 可能读到旧值）",
+                        failed, total, iniPath));
+                }
+                else
+                {
+                    Logger.Instance.Debug(string.Format("[JiYuController] INI {0} 个键全部写入成功: {1}", total, iniPath));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 写入单个 INI 键并检查返回值（WritePrivateProfileString 返回 false 表示写入失败）
+        /// </summary>
+        private static bool WriteIniKey(string iniPath, string key, bool value)
+        {
+            try
+            {
+                return WritePrivateProfileString("JTSettings", key, value ? "TRUE" : "FALSE", iniPath);
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Warn("[JiYuController] 写 INI 键 " + key + " 异常: " + ex.Message);
+                return false;
+            }
         }
 
         [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
