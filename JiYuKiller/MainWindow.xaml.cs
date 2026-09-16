@@ -428,6 +428,14 @@ namespace JiYuKiller
                 Services.Logger.Instance.Info("[NavBar] 底栏玻璃已启用（快照裁切 + BlurEffect）");
                 Services.Logger.Instance.Info("[NavBar] 渲染层级 Tier = " + tier);
 
+                // Tier 0 的逐像素着色器是 CPU 实现，先问系统到底支持不支持 ——
+                // 不支持时强行开只会得到错误或空白的渲染结果（"3D 不正常"的老机器/虚拟机正是这一类）。
+                bool swShaderOk = System.Windows.Media.RenderCapability.IsPixelShaderVersionSupportedInSoftware(2, 0);   // 旧 API IsShaderEffectSoftwareRenderingSupported 已过时
+                bool hwPs2 = System.Windows.Media.RenderCapability.IsPixelShaderVersionSupported(2, 0);
+                Services.Logger.Instance.Info(string.Format(
+                    "[NavBar] 着色器能力: 软件渲染支持={0}, 硬件PS2.0={1}, 进程渲染模式={2}",
+                    swShaderOk, hwPs2, System.Windows.Media.RenderOptions.ProcessRenderMode));
+
                 // 液态玻璃折射层：受设置开关 + 渲染层级闸门控制，
                 // 因为 Tier==0 是纯软件渲染，逐像素着色器在老机器上可能拖慢拖动窗口。
                 bool wantLens = _settings != null && _settings.NavBarLiquidGlass;
@@ -435,7 +443,13 @@ namespace JiYuKiller
                 {
                     wantLens = false;
                 }
-                ApplyNavBarLens(wantLens, tier == 0 ? "Tier0 默认关闭" : "设置允许");
+                if (tier == 0 && !swShaderOk)
+                {
+                    // 软件渲染 + 系统不支持软件着色器：勾了"强制启用"也只是白开，直接关掉并在状态行说明
+                    if (wantLens) Services.Logger.Instance.Warn("[NavBar] Tier0 且系统不支持软件着色器, 折射强制关闭");
+                    wantLens = false;
+                }
+                ApplyNavBarLens(wantLens, tier == 0 ? (swShaderOk ? "Tier0 默认关闭" : "Tier0 不支持软件着色器") : "设置允许");
                 UpdateNavButtonBackdrops();   // 折射开关状态变了，按钮磨砂要跟着挂/摘
             }
             catch (Exception ex)
