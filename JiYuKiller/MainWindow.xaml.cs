@@ -1234,6 +1234,12 @@ namespace JiYuKiller
                     TextNavLensStatus.Text = "当前状态：已关闭（底栏为普通磨砂玻璃）";
                     return;
                 }
+                if (navLensTier == 0 && !System.Windows.Media.RenderCapability.IsPixelShaderVersionSupportedInSoftware(2, 0))
+                {
+                    // 这种情况勾"强制启用"也没用（会被 InitNavBarGlass 的闸门挡掉），所以不要提示用户去勾
+                    TextNavLensStatus.Text = "当前状态：未生效 —— 本机是软件渲染(Tier 0)且系统不支持软件着色器，折射无法开启（已自动关闭）。";
+                    return;
+                }
                 if (navLensTier == 0 && !_settings.NavBarLiquidGlassForceOnTier0)
                 {
                     TextNavLensStatus.Text = "当前状态：未生效 —— 本机是软件渲染(Tier 0)，默认关闭以避免卡顿。勾选上面的强制启用即可打开。";
