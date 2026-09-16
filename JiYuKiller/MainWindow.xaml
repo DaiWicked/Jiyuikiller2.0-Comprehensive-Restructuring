@@ -20,14 +20,14 @@
 
     <!-- 窗口根容器（光晕层 + 主窗口） -->
     <Grid Background="Transparent">
-        <!-- 窗口阴影层（Background=#01000000 alpha=1肉眼不可见，但给DropShadowEffect提供圆角遮罩） -->
-        <Border Margin="8" CornerRadius="16" Background="#01000000" IsHitTestVisible="False">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.3" Color="#000000" />
-            </Border.Effect>
-        </Border>
+        <!-- 窗口阴影层已删除（2026-09-17）：原实现是 Background="#01000000"(alpha=1) + DropShadowEffect，
+             但 DropShadowEffect 只取元素的 alpha 通道 ⇒ 阴影强度 = 0.3 × (1/255) ≈ 0.001，
+             受控测试（窗口在 / ShowWindow 隐藏各截一张全屏做差）实测窗口外一圈差值为 0 —— 
+             它一点阴影都没画出来，属死代码；它唯一的作用是让外层玻璃缩进 8px（为不存在的阴影留空间）。
+             删掉它并把 GlassContainer 的 Margin 归零：玻璃铺满窗口、全透明区域面积最小
+             —— 在 DWM 合成关闭的老系统上，透明区域正是最容易出黑边/黑角的地方。 -->
         <!-- 外层玻璃容器（对角渐变边框, 描边留在这里不被裁剪） -->
-        <Border x:Name="GlassContainer" CornerRadius="16" Margin="8" BorderThickness="1">
+        <Border x:Name="GlassContainer" CornerRadius="16" Margin="0" BorderThickness="1">
             <Border.BorderBrush>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                     <GradientStop Color="#C0FFFFFF" Offset="0" />
