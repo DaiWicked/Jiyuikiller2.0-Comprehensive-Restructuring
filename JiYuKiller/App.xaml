@@ -38,6 +38,16 @@
             <SolidColorBrush x:Key="GlassSuccessBrush" Color="{StaticResource GlassSuccessColor}" />
             <SolidColorBrush x:Key="GlassDangerBrush" Color="{StaticResource GlassDangerColor}" />
 
+            <!-- 内容卡片统一底色
+                 深色文字必须落在浅底上才读得出来，而此前"快捷栏"卡片是白渐变、"设置/高级设置"卡片是
+                 15% 黑，同一套深色文字被两种底色夹着 —— 这里统一成白渐变 + 1px 白描边（与快捷栏卡片一致）。
+                 注意：这是卡片自身的底色，与"内容层透明度"(GlassOpacity) 那套全局图层无关。 -->
+            <LinearGradientBrush x:Key="GlassCardBrush" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#3AFFFFFF" Offset="0" />
+                <GradientStop Color="#1FFFFFFF" Offset="1" />
+            </LinearGradientBrush>
+            <SolidColorBrush x:Key="GlassCardBorderBrush" Color="#33FFFFFF" />
+
             <!-- 玻璃按钮样式（借鉴COUI: Sink按压缩放 + 状态层覆盖 + Storyboard动画） -->
             <!-- 注意: 不动画背景色, 只通过状态层叠加暗色, 保留按钮原始背景色 -->
             <Style x:Key="GlassButton" TargetType="Button">

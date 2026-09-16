@@ -46,8 +46,8 @@ namespace JiYuKiller
         private const uint SWP_NOSIZE = 0x0001;
         private const uint SWP_NOMOVE = 0x0002;
 
-        // 全局快捷键 API
-        [DllImport("user32.dll")]
+        // 全局快捷键 API（SetLastError=true 才能用 GetLastWin32Error 区分"被其它程序占用"）
+        [DllImport("user32.dll", SetLastError = true)]
         private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
@@ -2639,11 +2639,48 @@ namespace JiYuKiller
 
             // 紧急全屏: Ctrl+Alt+F (VK_F = 0x46)
             bool result1 = RegisterHotKey(hwnd, HOTKEY_FAKEFULL, MOD_CONTROL | MOD_ALT, 0x46);
+            int err1 = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
             Services.Logger.Instance.Info("[HotKey] 注册紧急全屏 Ctrl+Alt+F: " + (result1 ? "成功" : "失败"));
 
             // 显示/隐藏窗口: Ctrl+Alt+H (VK_H = 0x48)
             bool result2 = RegisterHotKey(hwnd, HOTKEY_SHOWHIDE, MOD_CONTROL | MOD_ALT, 0x48);
+            int err2 = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
             Services.Logger.Instance.Info("[HotKey] 注册显示/隐藏 Ctrl+Alt+H: " + (result2 ? "成功" : "失败"));
+
+            ReportHotKeyWarning(result1, err1, "Ctrl+Alt+F（紧急全屏）", result2, err2, "Ctrl+Alt+H（显示/隐藏窗口）");
+        }
+
+        /// <summary>
+        /// 热键注册失败时在「高级设置 → 快捷键」卡片里给出可见提示。
+        /// 原来只在日志里写一行 INFO，用户界面上完全看不出快捷键没生效。
+        /// </summary>
+        private void ReportHotKeyWarning(bool ok1, int err1, string name1, bool ok2, int err2, string name2)
+        {
+            if (TextHotKeyWarn == null) return;
+
+            if (ok1 && ok2)
+            {
+                TextHotKeyWarn.Text = "";
+                TextHotKeyWarn.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var sb = new System.Text.StringBuilder("注意：");
+            if (!ok1) sb.Append(DescribeHotKeyFailure(name1, err1));
+            if (!ok1 && !ok2) sb.Append("；");
+            if (!ok2) sb.Append(DescribeHotKeyFailure(name2, err2));
+            sb.Append("。该快捷键不会生效；多为其它程序已占用同一组合键，关闭占用它的程序后重启本软件即可。");
+
+            TextHotKeyWarn.Text = sb.ToString();
+            TextHotKeyWarn.Visibility = Visibility.Visible;
+            Services.Logger.Instance.Warn("[HotKey] " + sb.ToString());
+        }
+
+        /// <summary>把 RegisterHotKey 的失败原因翻译成人话（1409 = ERROR_HOTKEY_ALREADY_REGISTERED）</summary>
+        private static string DescribeHotKeyFailure(string name, int err)
+        {
+            string reason = (err == 1409) ? "已被其它程序占用" : (err == 0 ? "原因未知" : "系统错误码 " + err);
+            return $"{name} 注册失败（{reason}）";
         }
 
         private void UnregisterGlobalHotKeys()

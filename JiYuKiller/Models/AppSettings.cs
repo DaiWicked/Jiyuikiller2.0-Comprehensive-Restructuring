@@ -116,8 +116,9 @@ namespace JiYuKiller.Models
         /// <summary>启用底栏液态玻璃折射效果</summary>
         public bool NavBarLiquidGlass { get; set; } = true;
 
-        /// <summary>液态玻璃强度 0~1（控制向内折射量，即"水滴放大"的幅度）</summary>
-        public double NavBarLiquidGlassStrength { get; set; } = 0.5;
+        /// <summary>液态玻璃强度 0~1（控制向内折射量，即"水滴放大"的幅度）
+        /// 默认 0.35 → 边缘折射约 5.6px。强度 1.0 时折射 16px、色散彩边明显，更像"水波"而不是玻璃。</summary>
+        public double NavBarLiquidGlassStrength { get; set; } = 0.35;
 
         /// <summary>
         /// 在渲染层级 Tier=0（纯软件渲染：老机器 / 无 D3D 的虚拟机）上也强制启用。
