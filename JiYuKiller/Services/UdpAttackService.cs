@@ -37,7 +37,10 @@ namespace JiYuKiller.Services
                     return BitConverter.ToString(mac, 0, 6);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Instance.Debug($"[UDP攻击] GetMacAddress({ip})失败: {ex.Message}");
+            }
             return "未知";
         }
         private static readonly Lazy<UdpAttackService> _instance = new Lazy<UdpAttackService>(() => new UdpAttackService());
@@ -114,7 +117,7 @@ namespace JiYuKiller.Services
         public event Action<bool, string> OnSendResult;  // success, message
         public event Action<List<NetworkHost>> OnScanComplete;
 
-        private bool _isScanning = false;
+        private volatile bool _isScanning = false;
 
         /// <summary>
         /// 发送消息到目标IP
@@ -202,16 +205,16 @@ namespace JiYuKiller.Services
                         client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                         IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ip), port);
                         int sent = client.Send(data, data.Length, endPoint);
-                        OnLog?.Invoke($"[{ip}:{port}] {description} == 发送成功。{sent} 字节");
+                        try { OnLog?.Invoke($"[{ip}:{port}] {description} == 发送成功。{sent} 字节"); } catch (Exception e) { Logger.Instance.Error("[UDP攻击] OnLog回调异常", e); }
                         Logger.Instance.Info($"[UDP攻击] 发送成功 {sent} 字节 -> {ip}:{port}");
-                        OnSendResult?.Invoke(true, $"发送成功！目标 {ip}:{port}，共 {sent} 字节");
+                        try { OnSendResult?.Invoke(true, $"发送成功！目标 {ip}:{port}，共 {sent} 字节"); } catch (Exception e) { Logger.Instance.Error("[UDP攻击] OnSendResult回调异常", e); }
                     }
                 }
                 catch (Exception ex)
                 {
-                    OnLog?.Invoke($"[{ip}:{port}] {description} == 发送失败: {ex.Message}");
+                    try { OnLog?.Invoke($"[{ip}:{port}] {description} == 发送失败: {ex.Message}"); } catch (Exception e) { Logger.Instance.Error("[UDP攻击] OnLog回调异常", e); }
                     Logger.Instance.Error($"[UDP攻击] 发送失败 -> {ip}:{port}", ex);
-                    OnSendResult?.Invoke(false, $"发送失败！目标 {ip}:{port}\n错误: {ex.Message}");
+                    try { OnSendResult?.Invoke(false, $"发送失败！目标 {ip}:{port}\n错误: {ex.Message}"); } catch (Exception e) { Logger.Instance.Error("[UDP攻击] OnSendResult回调异常", e); }
                 }
             });
         }
@@ -230,7 +233,7 @@ namespace JiYuKiller.Services
             }
 
             _isScanning = true;
-            OnLog?.Invoke("开始扫描局域网...");
+            try { OnLog?.Invoke("开始扫描局域网..."); } catch (Exception e) { Logger.Instance.Error("[UDP攻击] OnLog回调异常", e); }
 
             Task.Run(() =>
             {
@@ -245,11 +248,11 @@ namespace JiYuKiller.Services
                         return;
                     }
 
-                    OnLog?.Invoke($"本机IP: {localIp}");
+                    try { OnLog?.Invoke($"本机IP: {localIp}"); } catch (Exception e) { Logger.Instance.Error("[UDP攻击] OnLog回调异常", e); }
 
                     string[] parts = localIp.Split('.');
                     string subnet = parts[0] + "." + parts[1] + "." + parts[2];
-                    OnLog?.Invoke($"正在扫描 {subnet}.1 - {subnet}.254 ...");
+                    try { OnLog?.Invoke($"正在扫描 {subnet}.1 - {subnet}.254 ..."); } catch (Exception e) { Logger.Instance.Error("[UDP攻击] OnLog回调异常", e); }
 
                     List<NetworkHost> hosts = new List<NetworkHost>();
 
@@ -259,26 +262,34 @@ namespace JiYuKiller.Services
                         string scanIp = subnet + "." + i;
                         try
                         {
-                            Ping ping = new Ping();
-                            PingReply reply = ping.Send(scanIp, 200);
-                            if (reply.Status == IPStatus.Success)
+                            using (Ping ping = new Ping())
                             {
-                                string hostName = "";
-                                try
+                                PingReply reply = ping.Send(scanIp, 200);
+                                if (reply.Status == IPStatus.Success)
                                 {
-                                    IPHostEntry entry = Dns.GetHostEntry(scanIp);
-                                    hostName = entry.HostName;
-                                }
-                                catch { }
+                                    string hostName = "";
+                                    try
+                                    {
+                                        IPHostEntry entry = Dns.GetHostEntry(scanIp);
+                                        hostName = entry.HostName;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Logger.Instance.Debug($"[UDP攻击] 获取主机名失败 {scanIp}: {ex.Message}");
+                                    }
 
-                                string mac = GetMacAddress(scanIp);
-                                lock (hosts)
-                                {
-                                    hosts.Add(new NetworkHost { IP = scanIp, MAC = mac, HostName = hostName });
+                                    string mac = GetMacAddress(scanIp);
+                                    lock (hosts)
+                                    {
+                                        hosts.Add(new NetworkHost { IP = scanIp, MAC = mac, HostName = hostName });
+                                    }
                                 }
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                            {
+                                Logger.Instance.Debug($"[UDP攻击] 扫描 {scanIp} 失败: {ex.Message}");
+                            }
                     });
 
                     hosts.Sort((a, b) =>
@@ -288,12 +299,12 @@ namespace JiYuKiller.Services
                         return int.Parse(aParts[3]).CompareTo(int.Parse(bParts[3]));
                     });
 
-                    OnLog?.Invoke($"扫描完成，共发现 {hosts.Count} 台主机");
-                    OnScanComplete?.Invoke(hosts);
+                    try { OnLog?.Invoke($"扫描完成，共发现 {hosts.Count} 台主机"); } catch (Exception e) { Logger.Instance.Error("[UDP攻击] OnLog回调异常", e); }
+                    try { OnScanComplete?.Invoke(hosts); } catch (Exception e) { Logger.Instance.Error("[UDP攻击] OnScanComplete回调异常", e); }
                 }
                 catch (Exception ex)
                 {
-                    OnLog?.Invoke($"扫描失败: {ex.Message}");
+                    try { OnLog?.Invoke($"扫描失败: {ex.Message}"); } catch (Exception e) { Logger.Instance.Error("[UDP攻击] OnLog回调异常", e); }
                     Logger.Instance.Error("[UDP攻击] 局域网扫描失败", ex);
                 }
                 finally
@@ -317,8 +328,9 @@ namespace JiYuKiller.Services
                     return endPoint?.Address.ToString();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Instance.Debug($"[UDP攻击] GetLocalIP socket方式失败: {ex.Message}，使用fallback");
                 // fallback: 遍历网络接口
                 foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
                 {
@@ -368,7 +380,10 @@ namespace JiYuKiller.Services
                             client.Close();
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                        {
+                            Logger.Instance.Debug($"[UDP攻击] 检测端口{port}失败: {ex.Message}");
+                        }
                 }
                 OnLog?.Invoke("未发现极域相关端口（常见 4705/4988）");
                 return -1;
