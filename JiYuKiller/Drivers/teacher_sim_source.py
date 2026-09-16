@@ -3309,14 +3309,19 @@ else:
         print(f"[系统] 启动终止: {_collision_info}")
         sys.exit(1)
     if _collision_type == 'real_teacher':
-        # 检测到真实教师端 → 输出特殊标记，主程序弹窗让用户选择
-        # 主程序检测到[CollisionWait]后弹窗，用户选继续则用--force-start重启
+        # 检测到真实教师端 → 输出特殊标记，保持运行不退出
+        # 主程序检测到[CollisionWait]后弹窗，用户选继续则kill本进程并用--force-start重启
+        # 用户选取消则kill本进程
         print(f"[CollisionWait] {_collision_info}")
         print("[CollisionWait] 等待用户选择...（主程序将弹窗）")
         sys.stdout.flush()
-        # 保持运行1秒让主程序读取输出，然后退出
-        # 主程序会用--force-start重新启动一个新实例
-        time.sleep(1)
+        logger.info('[Collision] 检测到真实教师端，保持运行等待主程序决策')
+        # 保持运行，不启动广播线程，等待主程序kill
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
         sys.exit(0)
 
 spawn_log_window()

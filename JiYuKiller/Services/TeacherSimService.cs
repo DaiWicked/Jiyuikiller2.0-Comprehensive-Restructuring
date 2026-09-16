@@ -189,23 +189,10 @@ namespace JiYuKiller.Services
 
                     if (_process.HasExited)
                     {
-                        // PyInstaller onefile的stdout有缓冲，进程退出后输出才陆续到达
-                        // 等待异步输出读取完成（最多2秒），再判断是否碰撞
-                        try { _process.WaitForExit(2000); } catch { }
-                        Thread.Sleep(300);
-
-                        // 区分正常退出（碰撞检测后主动退出）和异常退出
-                        if (collisionWaitDetected)
-                        {
-                            string collisionInfo = string.Join("\n", collisionWaitLines);
-                            Logger.Instance.Warn($"[TeacherSim] 碰撞检测后退出: {collisionInfo}");
-                            OnCollisionDetected?.Invoke(collisionInfo);
-                        }
-                        else
-                        {
-                            Logger.Instance.Error($"[TeacherSim] 进程启动后退出，退出码: {_process.ExitCode}");
-                            OnLogOutput?.Invoke($"[错误] teacher_sim.exe 启动失败，退出码: {_process.ExitCode}");
-                        }
+                        // 正常情况下teacher_sim检测到冲突后会保持运行，不会走到这里
+                        // 走到这里说明进程异常退出（崩溃/PyInstaller解压失败等）
+                        Logger.Instance.Error($"[TeacherSim] 进程启动后退出，退出码: {_process.ExitCode}");
+                        OnLogOutput?.Invoke($"[错误] teacher_sim.exe 启动失败，退出码: {_process.ExitCode}");
                         _isRunning = false;
                         OnStateChanged?.Invoke(false);
                         return false;
