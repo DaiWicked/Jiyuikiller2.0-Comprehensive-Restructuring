@@ -44,6 +44,9 @@ namespace JiYuKiller
         private double _navSpecularY = 0;
         private bool _navSpecularInit = false;
 
+        // 窗口是否已经显形（启动时先 Opacity=0，等首次桌面截图就绪再淡入）
+        private bool _windowRevealed = false;
+
         // 底栏每个按钮各自的"磨砂玻璃"采样画刷（每按钮一份，见 UpdateNavButtonBackdrops）
         private readonly System.Collections.Generic.Dictionary<System.Windows.Controls.Button, System.Windows.Media.VisualBrush> _navBtnGlassBrushes
             = new System.Collections.Generic.Dictionary<System.Windows.Controls.Button, System.Windows.Media.VisualBrush>();
@@ -159,6 +162,21 @@ namespace JiYuKiller
             timer.Interval = TimeSpan.FromSeconds(2);
             timer.Tick += (s, e) => UpdateStatus();
             timer.Start();
+
+            // 先不显形（Opacity=0），等首次桌面截图就绪再淡入 —— 见 RevealWindowAfterBackdrop。
+            // 兜底：1.5 秒内无论如何都显形，绝不能留下一个看不见的窗口。
+            this.Opacity = 0;
+            var revealTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+            revealTimer.Tick += (s, ev) =>
+            {
+                revealTimer.Stop();
+                if (!_windowRevealed)
+                {
+                    Services.Logger.Instance.Warn("[启动] 1.5 秒内仍未取得桌面截图, 强制显形(背景可能先为空)");
+                    RevealWindowAfterBackdrop();
+                }
+            };
+            revealTimer.Start();
 
             // 默认显示快捷栏
             // 自检钩子: JYKILLER_START_PAGE=advanced 可指定启动页, 用于截图核对各页面(无法模拟鼠标点击时)
@@ -986,6 +1004,38 @@ namespace JiYuKiller
         }
 
 
+        /// <summary>
+        /// 首次桌面截图就绪后把窗口淡入（只做一次）。
+        /// 这样"窗口可见"与"玻璃有背景可显示"两个时刻就重合了，不会再出现开窗瞬间的白板帧。
+        /// </summary>
+        private void RevealWindowAfterBackdrop()
+        {
+            if (_windowRevealed) return;
+            _windowRevealed = true;
+            try
+            {
+                if (_glassyManager != null) _glassyManager.BackdropUpdated -= RevealWindowAfterBackdrop;
+                Services.Logger.Instance.Info("[启动] 首次桌面截图就绪 -> 窗口淡入");
+                var anim = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(160))
+                {
+                    EasingFunction = new System.Windows.Media.Animation.CubicEase
+                    {
+                        EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
+                    }
+                };
+                anim.Completed += (s, e) =>
+                {
+                    try { this.BeginAnimation(UIElement.OpacityProperty, null); this.Opacity = 1.0; } catch { }
+                };
+                this.BeginAnimation(UIElement.OpacityProperty, anim);
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Debug("[启动] 窗口淡入失败: " + ex.Message);
+                try { this.Opacity = 1.0; } catch { }
+            }
+        }
+
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.Info("窗口加载完成，初始化毛玻璃效果管理器");
@@ -1002,17 +1052,28 @@ namespace JiYuKiller
                 InitWallpaper();
                 // 桌面截图刷新时同步底栏背景
                 _glassyManager.BackdropUpdated += () => { UpdateNavBarBackdrop(); UpdateNavBarTextTheme(); };
+                // 首次桌面截图就绪后再让窗口显形：否则开窗瞬间所有玻璃层都没有背景图，
+                // 会先看到约 200ms 的"无背景白板"再跳成玻璃。
+                _glassyManager.BackdropUpdated += RevealWindowAfterBackdrop;
+                // 管理器在构造过程中可能就把首帧快照拍好了（那次 BackdropUpdated 早于本次订阅），
+                // 这时必须立刻显形，否则窗口要白等到兜底计时器才出现。
+                if (Services.ScreenCaptureHelper.FullScreenSnapshot != null)
+                {
+                    UpdateNavBarBackdrop();
+                    UpdateNavBarTextTheme();
+                    RevealWindowAfterBackdrop();
+                }
                 // 初始化底栏玻璃效果（必须在UpdateNavBarGlass之前）
                 InitNavBarGlass();
                 InitNavBarTextTheme();
-            UpdateNavIndicatorBackdrop();
-                InitNoiseLayer();            UpdateNavIndicatorBackdrop();
+                UpdateNavIndicatorBackdrop();
                 UpdateNavButtonBackdrops();
                 InitNoiseLayer();
             }
             catch (Exception ex)
             {
                 Services.Logger.Instance.Error("毛玻璃效果管理器初始化失败", ex);
+                RevealWindowAfterBackdrop();   // 初始化失败也必须显形，不能留下一个看不见的窗口
             }
             // 初始化导航指示器位置到第一个按钮
             try

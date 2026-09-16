@@ -281,7 +281,9 @@ namespace JiYuKiller.Effects
             var snapshot = ScreenCaptureHelper.FullScreenSnapshot;
             if (snapshot == null)
             {
-                Services.Logger.Instance.Warn("桌面截图为空，无法更新毛玻璃背景");
+                // 启动早期（OnSourceInitialized 之后、CaptureBehindWindow 之前）快照本来还没拍，
+                // 这不是故障 —— 真正拍不到会在 CaptureBehindWindow 里报错。用 Debug 免得每次启动都吓人一跳。
+                Services.Logger.Instance.Debug("桌面快照尚未就绪，本次跳过背景更新（启动早期属正常）");
                 return;
             }
 
