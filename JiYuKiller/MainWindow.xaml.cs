@@ -151,7 +151,6 @@ namespace JiYuKiller
             _teacherSimService.OnLogOutput += TeacherSim_OnLogOutput;
             _teacherSimService.OnLogFileOutput += TeacherSim_OnLogFileOutput;
             _teacherSimService.OnStateChanged += TeacherSim_OnStateChanged;
-            _teacherSimService.OnCollisionDetected += TeacherSim_OnCollisionDetected;
 
             // 注册全局快捷键
             this.Loaded += (s, e) => RegisterGlobalHotKeys();
@@ -3742,36 +3741,6 @@ namespace JiYuKiller
         private void TeacherSim_OnStateChanged(bool isRunning)
         {
             Dispatcher.Invoke(() => UpdateTeacherSimState());
-        }
-
-        /// <summary>
-        /// 检测到网络碰撞时弹出确认框
-        /// 用户选"继续"则以--skip-collision参数重新启动，避免循环弹窗
-        /// </summary>
-        private void TeacherSim_OnCollisionDetected(string collisionInfo)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                string msg = "检测到局域网内已有其他教师端运行：\n\n" + collisionInfo +
-                    "\n\n同时使用可能导致学生端无法连接或网络风暴。\n\n是否仍要继续启动？";
-                var result = System.Windows.MessageBox.Show(msg, "网络碰撞警告",
-                    System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
-                if (result == System.Windows.MessageBoxResult.Yes)
-                {
-                    _teacherSimService.SkipCollisionCheck = true;
-                    if (int.TryParse(TextTeacherSimChannel.Text, out int channel))
-                    {
-                        _teacherSimService.Channel = channel;
-                    }
-                    _teacherSimService.Start();
-                    UpdateTeacherSimState();
-                }
-                else
-                {
-                    _teacherSimService.SkipCollisionCheck = false;
-                    UpdateTeacherSimState();
-                }
-            });
         }
 
         private void BtnTeacherSimStart_Click(object sender, RoutedEventArgs e)

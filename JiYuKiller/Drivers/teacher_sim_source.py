@@ -3290,40 +3290,29 @@ def run_collision_check():
 
 # -------------------- 启动（两阶段） --------------------
 
-# --skip-collision: 用户确认继续时跳过碰撞检测
-# --force-start: 内部使用，碰撞检测通过后直接启动（不再重复检测）
-_skip_collision = "--skip-collision" in sys.argv
-_force_start = "--force-start" in sys.argv
-
-if _force_start:
-    # 碰撞检测已通过（由主程序带--force-start重启），直接启动
-    print("[系统] 碰撞检测已通过，直接启动")
-    _collision_type = 'user_continue'
-elif _skip_collision:
-    print("[系统] 已跳过网络碰撞检测（用户确认继续）")
-    _collision_type = 'skipped'
-else:
-    # 执行两阶段碰撞检测
-    _should_start, _collision_type, _collision_info = run_collision_check()
-    if not _should_start:
-        # single_instance 或 same_app（PID较大）→ 直接退出
-        print(f"[系统] 启动终止: {_collision_info}")
-        sys.exit(1)
-    if _collision_type == 'real_teacher':
-        # 检测到真实教师端 → 输出特殊标记，保持运行不退出
-        # 主程序检测到[CollisionWait]后弹窗，用户选继续则kill本进程并用--force-start重启
-        # 用户选取消则kill本进程
-        print(f"[CollisionWait] {_collision_info}")
-        print("[CollisionWait] 等待用户选择...（主程序将弹窗）")
-        sys.stdout.flush()
-        logger.info('[Collision] 检测到真实教师端，保持运行等待主程序决策')
-        # 保持运行，不启动广播线程，等待主程序kill
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            pass
+# 执行两阶段碰撞检测
+_should_start, _collision_type, _collision_info = run_collision_check()
+if not _should_start:
+    # single_instance 或 same_app（PID较大）→ 直接退出
+    print(f"[系统] 启动终止: {_collision_info}")
+    sys.exit(1)
+if _collision_type == 'real_teacher':
+    # 检测到真实教师端 → 控制台提示，等待用户输入yes/no
+    print(f"[警告] 检测到局域网内教师端活动: {_collision_info}")
+    print("[警告] 同时运行可能导致学生端无法连接或网络风暴")
+    print("[输入] 输入 yes 继续启动，输入 no 取消启动")
+    sys.stdout.flush()
+    logger.warning('[Collision] 检测到真实教师端，等待用户输入yes/no')
+    try:
+        choice = input().strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        choice = 'no'
+    if choice != 'yes':
+        print("[系统] 用户取消启动")
+        logger.info('[Collision] 用户输入 %s，取消启动', choice)
         sys.exit(0)
+    print("[系统] 用户确认继续启动")
+    logger.info('[Collision] 用户确认继续启动')
 
 spawn_log_window()
 logger.info('启动 4 个后台线程 (collision_type=%s)', _collision_type)

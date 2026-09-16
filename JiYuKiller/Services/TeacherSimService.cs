@@ -17,7 +17,6 @@ namespace JiYuKiller.Services
         private bool _isRunning = false;
         private long _lastLogPosition = 0;
         private readonly object _lock = new object();
-        private bool _collisionHandled = false;  // 防止碰撞事件重复触发
 
         /// <summary>stdout输出事件（控制台交互）</summary>
         public event Action<string> OnLogOutput;
@@ -40,12 +39,6 @@ namespace JiYuKiller.Services
         /// <summary>是否运行中</summary>
         public bool IsRunning => _isRunning && _process != null && !_process.HasExited;
 
-        /// <summary>是否跳过网络碰撞检测（用户确认继续后设为true）</summary>
-        public bool SkipCollisionCheck { get; set; } = false;
-
-        /// <summary>检测到网络碰撞时触发（参数为冲突描述）</summary>
-        public event Action<string> OnCollisionDetected;
-
         /// <summary>
         /// 启动teacher_sim.exe
         /// </summary>
@@ -58,7 +51,6 @@ namespace JiYuKiller.Services
                     Logger.Instance.Warn("[TeacherSim] 已经在运行中");
                     return false;
                 }
-                _collisionHandled = false;
 
                 try
                 {
@@ -99,12 +91,6 @@ namespace JiYuKiller.Services
                         StandardErrorEncoding = Encoding.GetEncoding("GB2312")
                     };
 
-                    // 用户确认继续时，用--force-start直接启动（碰撞检测已通过）
-                    if (SkipCollisionCheck)
-                    {
-                        psi.Arguments = "--force-start";
-                    }
-
                     // 设置环境变量
                     psi.EnvironmentVariables["TEACHER_CHANNEL"] = Channel.ToString();
 
@@ -112,33 +98,13 @@ namespace JiYuKiller.Services
                     _process.StartInfo = psi;
                     _process.EnableRaisingEvents = true;
 
-                    // 接收stdout输出（teacher_sim的print输出到stdout）
-                    System.Collections.Generic.List<string> collisionWaitLines = new System.Collections.Generic.List<string>();
-                    bool collisionWaitDetected = false;
+                    // 接收stdout输出（teacher_sim的print输出到stdout，直接转发到控制台）
                     _process.OutputDataReceived += (s, e) =>
                     {
                         if (!string.IsNullOrEmpty(e.Data))
                         {
                             Logger.Instance.Debug($"[TeacherSim] stdout: {e.Data}");
                             OnLogOutput?.Invoke(e.Data);
-                            // 两阶段启动：teacher_sim检测到真实教师端时输出[CollisionWait]
-                            // 然后3秒后退出，主程序弹窗让用户选择是否用--force-start重启
-                            if (e.Data.Contains("[CollisionWait]"))
-                            {
-                                lock (collisionWaitLines) { collisionWaitLines.Add(e.Data); }
-                                collisionWaitDetected = true;
-                            }
-                            // 相同程序用户冲突：teacher_sim直接退出，输出[Collision]
-                            if (e.Data.Contains("[Collision] 检测到相同程序用户") || e.Data.Contains("[Collision] 同机器已存在"))
-                            {
-                                lock (collisionWaitLines) { collisionWaitLines.Add(e.Data); }
-                                collisionWaitDetected = true;
-                            }
-                            // 收到"教师端已启动"说明启动成功
-                            if (e.Data.Contains("教师端已启动") && !_collisionHandled)
-                            {
-                                _collisionHandled = true;
-                            }
                         }
                     };
                     _process.ErrorDataReceived += (s, e) =>
@@ -165,32 +131,17 @@ namespace JiYuKiller.Services
                     _process.BeginOutputReadLine();
                     _process.BeginErrorReadLine();
 
-                    // 等待进程初始化（PyInstaller解压需要时间）+ 碰撞检测（2秒静默监听）
-                    // 最多等20秒：15秒解压 + 2秒检测 + 3秒CollisionWait
+                    // 等待进程初始化（PyInstaller解压需要时间），最多15秒
+                    // teacher_sim可能在碰撞检测后等用户输入yes/no，此时进程不退出即认为启动成功
                     int waited = 0;
-                    while (waited < 20000 && !_process.HasExited && !_collisionHandled)
+                    while (waited < 15000 && !_process.HasExited)
                     {
                         Thread.Sleep(500);
                         waited += 500;
-                        if (collisionWaitDetected && !SkipCollisionCheck)
-                        {
-                            // 检测到碰撞，等teacher_sim自己退出（CollisionWait等3秒，same_app直接退出）
-                            Thread.Sleep(2000);
-                            string collisionInfo = string.Join("\n", collisionWaitLines);
-                            Logger.Instance.Warn($"[TeacherSim] 检测到网络碰撞: {collisionInfo}");
-                            try { if (!_process.HasExited) _process.Kill(); } catch { }
-                            _isRunning = false;
-                            _collisionHandled = true;
-                            OnStateChanged?.Invoke(false);
-                            OnCollisionDetected?.Invoke(collisionInfo);
-                            return false;
-                        }
                     }
 
                     if (_process.HasExited)
                     {
-                        // 正常情况下teacher_sim检测到冲突后会保持运行，不会走到这里
-                        // 走到这里说明进程异常退出（崩溃/PyInstaller解压失败等）
                         Logger.Instance.Error($"[TeacherSim] 进程启动后退出，退出码: {_process.ExitCode}");
                         OnLogOutput?.Invoke($"[错误] teacher_sim.exe 启动失败，退出码: {_process.ExitCode}");
                         _isRunning = false;
