@@ -90,6 +90,8 @@ def spawn_log_window():
 logger = setup_logging()
 
 MCAST, PORT = '224.50.50.42', 4705
+# 专属检测端口：用于相同程序用户之间的互相发现（不干扰极域协议）
+DETECT_PORT = 47050
 SESSION_MCAST_PREFIX = '225.2'
 SESSION_BASE_PORT = 5000
 SESSION_PORT_STRIDE = 0x200
@@ -3099,137 +3101,195 @@ def command_loop():
             print(f'[命令] 未知命令：{cmd}，输入 help 查看帮助')
 
 
-# -------------------- 网络碰撞检测 --------------------
+# -------------------- 网络碰撞检测（两阶段：静默监听+专属心跳） --------------------
 
-def _check_single_instance():
-    """同机器单实例：文件锁，防止同一台机器运行多个teacher_sim"""
-    lock_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) or os.getcwd(), 'teacher_sim.lock')
+# 心跳包魔数: TSHB (Teacher Sim HeartBeat)
+_HEARTBEAT_MAGIC = b'TSHB'
+
+
+def _send_heartbeat(det_sock, my_pid, start_ts):
+    """在专属端口发送心跳包，用于相同程序用户互相发现"""
     try:
-        if os.path.exists(lock_path):
-            with open(lock_path, 'r') as f:
-                old_pid = f.read().strip()
-            if old_pid and old_pid.isdigit():
-                try:
-                    import ctypes
-                    kernel32 = ctypes.windll.kernel32
-                    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
-                    h = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, int(old_pid))
-                    if h:
-                        kernel32.CloseHandle(h)
-                        print(f'[Collision] 同机器已存在 teacher_sim 实例 (PID={old_pid})，拒绝启动')
-                        logger.warning('[Collision] 同机器已存在实例 PID=%s，退出', old_pid)
-                        return False
-                except Exception:
-                    pass
-            os.remove(lock_path)
-        with open(lock_path, 'w') as f:
-            f.write(str(os.getpid()))
-        return True
+        pkt = _HEARTBEAT_MAGIC + struct.pack('<IQ', my_pid, int(start_ts))
+        # 广播到局域网
+        det_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        det_sock.sendto(pkt, ('255.255.255.255', DETECT_PORT))
+        # 也发到组播
+        try:
+            det_sock.sendto(pkt, (MCAST, DETECT_PORT))
+        except Exception:
+            pass
     except Exception as e:
-        logger.warning('[Collision] 单实例检测失败: %s', e)
-        return True
+        logger.debug('[Collision] 发送心跳失败: %s', e)
 
 
-def _check_port_occupied():
-    """检测教师端端口是否已被占用"""
-    occupied = []
-    for test_port, name in [(PORT, '主端口'), (SPORT, '会话端口')]:
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.bind(('', test_port))
-            s.close()
-        except OSError:
-            occupied.append((test_port, name))
-    if occupied:
-        for p, n in occupied:
-            print(f'[Collision] 端口 {p} ({n}) 已被占用，局域网内可能已有教师端运行')
-            logger.warning('[Collision] 端口 %d (%s) 已被占用', p, n)
-        return True
-    return False
+def _silent_listen_and_detect(timeout=2.0):
+    """
+    静默监听阶段：
+    - 监听4705端口（极域协议），检测是否有真实教师端或其他teacher_sim在发包
+    - 在专属端口47050发心跳并监听，检测相同程序用户
+    - 不发送任何极域协议包，避免干扰学生端
+    返回: (has_real_teacher, has_same_app, other_pids)
+    """
+    my_pid = os.getpid()
+    start_ts = time.time()
+    has_real_teacher = False
+    same_app_pids = []
 
-
-def _probe_lan_teachers(timeout=0.8):
-    """发送教师宣告探测包，监听局域网内是否有其他教师端响应"""
+    # 创建专属检测端口socket
+    det_sock = None
     try:
-        probe_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        probe_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        probe_sock.settimeout(timeout)
-        probe_sock.bind(('', PORT))
-        try:
-            probe_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
-                                   struct.pack('4s4s', socket.inet_aton(MCAST), socket.inet_aton(ip)))
-        except Exception:
-            pass
-        try:
-            probe_pkt = nanc()
-            for target, tport in MAIN_ANNOUNCE_TARGETS:
-                try:
-                    probe_sock.sendto(probe_pkt, (target, tport))
-                except Exception:
-                    pass
-        except Exception:
-            pass
-        found_teachers = set()
-        deadline = time.time() + timeout
-        while time.time() < deadline:
+        det_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        det_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        det_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        det_sock.bind(('', DETECT_PORT))
+        det_sock.settimeout(0.2)
+        logger.info('[Collision] 专属检测端口已绑定: %d', DETECT_PORT)
+    except Exception as e:
+        logger.warning('[Collision] 专属端口绑定失败: %s', e)
+        det_sock = None
+
+    print('[系统] 正在进行网络碰撞检测（静默监听 %.0f 秒）...' % timeout)
+
+    deadline = time.time() + timeout
+    last_heartbeat = 0
+    # 主sock设置短超时，用于非阻塞轮询
+    sock.settimeout(0.2)
+
+    while time.time() < deadline:
+        now = time.time()
+
+        # 每0.3秒发一次心跳
+        if det_sock and now - last_heartbeat > 0.3:
+            _send_heartbeat(det_sock, my_pid, start_ts)
+            last_heartbeat = now
+
+        # 监听专属端口（相同程序用户心跳）
+        if det_sock:
             try:
-                remaining = deadline - time.time()
-                if remaining <= 0:
-                    break
-                probe_sock.settimeout(remaining)
-                data, addr = probe_sock.recvfrom(2048)
-                if len(data) >= 4:
-                    magic = struct.unpack_from('<I', data, 0)[0]
-                    if magic in (0x434E414E, 0x434E4143, 0x434E4F4F):
-                        if addr[0] != ip and addr[0] not in found_teachers:
-                            found_teachers.add(addr[0])
+                data, addr = det_sock.recvfrom(1024)
+                if len(data) >= 12 and data[:4] == _HEARTBEAT_MAGIC:
+                    other_pid, other_ts = struct.unpack_from('<IQ', data, 4)
+                    if other_pid != my_pid and other_pid not in same_app_pids:
+                        same_app_pids.append(other_pid)
+                        logger.info('[Collision] 检测到相同程序用户: IP=%s PID=%d', addr[0], other_pid)
+                        print(f'[Collision] 检测到相同程序用户: {addr[0]} (PID={other_pid})')
             except socket.timeout:
-                break
-            except Exception:
-                break
-        probe_sock.close()
-        if found_teachers:
-            for t_ip in found_teachers:
-                print(f'[Collision] 检测到局域网内其他教师端: {t_ip}')
-                logger.warning('[Collision] 检测到其他教师端 IP=%s', t_ip)
-            print(f'[Collision] 共检测到 {len(found_teachers)} 个其他教师端，同时运行可能导致学生端无法连接')
-            return True
-        return False
-    except Exception as e:
-        logger.debug('[Collision] 局域网探测失败: %s', e)
-        return False
+                pass
+            except Exception as e:
+                logger.debug('[Collision] 专属端口接收异常: %s', e)
+
+        # 监听4705端口（真实教师端宣告）
+        try:
+            data, addr = sock.recvfrom(4096)
+            if len(data) >= 4:
+                magic = struct.unpack_from('<I', data, 0)[0]
+                if magic in (0x434E414E, 0x434E4143, 0x434E4F4F, 0x4F4F4E43):
+                    if addr[0] != ip:
+                        has_real_teacher = True
+                        logger.info('[Collision] 检测到教师端宣告: IP=%s magic=0x%08X', addr[0], magic)
+                        print(f'[Collision] 检测到教师端活动: {addr[0]}')
+        except socket.timeout:
+            pass
+        except Exception as e:
+            logger.debug('[Collision] 主端口接收异常: %s', e)
+
+    if det_sock:
+        det_sock.close()
+
+    # 恢复主sock为阻塞模式（main_recv线程会自己设置timeout）
+    try:
+        sock.settimeout(None)
+    except Exception:
+        pass
+
+    return has_real_teacher, same_app_pids
 
 
 def run_collision_check():
-    """启动前网络碰撞检测"""
-    print('[系统] 正在进行网络碰撞检测...')
+    """
+    两阶段碰撞检测：
+    1. 同机器单实例检查
+    2. 静默监听+专属心跳（2秒）
+    返回: (should_start, collision_type, info)
+      should_start=True: 可以正常启动
+      should_start=False: 应该退出
+      collision_type: 'none' / 'same_app' / 'real_teacher' / 'single_instance'
+    """
+    # 阶段1：同机器单实例
     if not _check_single_instance():
-        print('[系统] 因同机器已存在实例，启动终止')
-        return False
-    port_occupied = _check_port_occupied()
-    lan_conflict = _probe_lan_teachers()
-    if port_occupied or lan_conflict:
-        print('[警告] 检测到网络冲突，继续运行可能导致学生端无法连接或网络风暴')
-        print('[警告] 建议：确认局域网内只有一个教师端后再启动')
-        logger.warning('[Collision] 检测到网络冲突 port_occupied=%s lan_conflict=%s',
-                       port_occupied, lan_conflict)
-    else:
-        print('[系统] 网络碰撞检测通过，未发现其他教师端')
-    return True
+        print('[系统] 同机器已存在实例，启动终止')
+        return False, 'single_instance', '同机器已存在teacher_sim实例'
+
+    # 阶段2：静默监听+专属心跳
+    has_real_teacher, same_app_pids = _silent_listen_and_detect(timeout=2.0)
+
+    my_pid = os.getpid()
+
+    # 情况A：检测到相同程序用户 → PID选举
+    if same_app_pids:
+        min_pid = min(same_app_pids + [my_pid])
+        if my_pid > min_pid:
+            # 我的PID更大 → 我退出
+            info = f'检测到相同程序用户(PID={min_pid})，本实例PID={my_pid}较大，自动退出避免网络风暴'
+            print(f'[Collision] {info}')
+            logger.warning('[Collision] %s', info)
+            return False, 'same_app', info
+        else:
+            # 我的PID更小 → 我留下，等待其他实例退出
+            print(f'[Collision] 检测到相同程序用户，但本实例PID={my_pid}较小，继续运行')
+            logger.info('[Collision] PID选举通过，本实例PID=%d较小，继续', my_pid)
+            # 继续检查真实教师端
+            if has_real_teacher:
+                return True, 'real_teacher', '检测到教师端活动，请确认是否继续'
+            return True, 'none', ''
+
+    # 情况B：检测到真实教师端（无相同程序用户）→ 让用户选择
+    if has_real_teacher:
+        info = '检测到局域网内教师端活动，同时运行可能导致学生端无法连接'
+        print(f'[Collision] {info}')
+        logger.warning('[Collision] %s', info)
+        return True, 'real_teacher', info
+
+    # 情况C：无冲突
+    print('[系统] 网络碰撞检测通过，未发现其他教师端')
+    logger.info('[Collision] 未检测到冲突')
+    return True, 'none', ''
 
 
-# -------------------- 启动 --------------------
+# -------------------- 启动（两阶段） --------------------
 
-# 支持 --skip-collision 参数：用户确认继续时跳过检测
+# --skip-collision: 用户确认继续时跳过碰撞检测
+# --force-start: 内部使用，碰撞检测通过后直接启动（不再重复检测）
 _skip_collision = "--skip-collision" in sys.argv
-if not _skip_collision and not run_collision_check():
-    sys.exit(1)
+_force_start = "--force-start" in sys.argv
+
+if _force_start:
+    # 碰撞检测已通过（由主程序带--force-start重启），直接启动
+    print("[系统] 碰撞检测已通过，直接启动")
+    _collision_type = 'user_continue'
 elif _skip_collision:
     print("[系统] 已跳过网络碰撞检测（用户确认继续）")
+    _collision_type = 'skipped'
+else:
+    # 执行两阶段碰撞检测
+    _should_start, _collision_type, _collision_info = run_collision_check()
+    if not _should_start:
+        # single_instance 或 same_app（PID较大）→ 直接退出
+        print(f"[系统] 启动终止: {_collision_info}")
+        sys.exit(1)
+    if _collision_type == 'real_teacher':
+        # 检测到真实教师端 → 输出特殊标记，主程序弹窗让用户选择
+        # 主程序检测到[CollisionWait]后弹窗，用户选继续则用--force-start重启
+        print(f"[CollisionWait] {_collision_info}")
+        print("[CollisionWait] 等待用户选择...（主程序将弹窗）")
+        # 保持运行3秒等待主程序读取输出，然后退出
+        # 主程序会用--force-start重新启动一个新实例
+        time.sleep(3)
+        sys.exit(0)
 
 spawn_log_window()
-logger.info('启动 4 个后台线程')
+logger.info('启动 4 个后台线程 (collision_type=%s)', _collision_type)
 threading.Thread(target=broadcast, name='broadcast', daemon=True).start()
 threading.Thread(target=session_anno, name='session_anno', daemon=True).start()
 threading.Thread(target=session_recv, name='session_recv', daemon=True).start()
