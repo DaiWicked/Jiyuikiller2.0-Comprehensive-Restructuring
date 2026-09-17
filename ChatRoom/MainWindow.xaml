@@ -10,6 +10,95 @@
         UseLayoutRounding="True"
         TextOptions.TextFormattingMode="Display">
 
+    <Window.Resources>
+        <!-- ============ 按钮样式（替代 WPF 默认模板：方角 + Aero 悬停 + 系统灰） ============ -->
+
+        <!-- 主色按钮：发送 / 群聊广播。圆角 8、悬停变亮、按下变深 -->
+        <Style x:Key="AccentButton" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource AccentFg}" />
+            <Setter Property="Background" Value="{DynamicResource Accent}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource AccentHover}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource AccentPressed}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 图标按钮：☾ ⚙ ✕ 📎。平时无底色，悬停才浮出圆角底 + 文字变主色 -->
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="6" Background="{TemplateBinding Background}" Margin="3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource GhostHover}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource GhostPressed}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 细滚动条：8px、圆角滑块、无箭头（原来那条是系统灰箭头，最显旧的地方之一） -->
+        <Style x:Key="SlimScrollBar" TargetType="ScrollBar">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border CornerRadius="4" Margin="2,0"
+                                                        Background="{DynamicResource ScrollThumb}" />
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" />
+                                </Track.IncreaseRepeatButton>
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" />
+                                </Track.DecreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <!-- ================= 窗口外壳（玻璃血统：圆角 + 细描边 + 投影 + 顶部高光） =================
          只是"外壳"语汇；内容层（消息区/气泡/输入框）一律实色 —— 聊天以可读性为先。
          尺寸取自官方 tdesktop 源码实测值：侧栏固定 240、顶栏 54、列表行高 62、
@@ -48,7 +137,7 @@
                     <Border DockPanel.Dock="Bottom" Padding="10" Background="{DynamicResource SideBg}">
                         <Button x:Name="BtnGroupChat" Content="📢 群聊广播" Click="BtnGroupChat_Click"
                                 Background="{DynamicResource Accent}" Foreground="{DynamicResource AccentFg}"
-                                BorderThickness="0" Padding="10,9" Cursor="Hand"
+                                BorderThickness="0" Padding="10,9" Cursor="Hand" Style="{StaticResource AccentButton}"
                                 HorizontalAlignment="Stretch" FontSize="13" />
                     </Border>
 
@@ -56,6 +145,9 @@
                     <ListBox x:Name="UserList" Background="Transparent" BorderThickness="0"
                              SelectionChanged="UserList_SelectionChanged"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.Resources>
+                            <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScrollBar}" />
+                        </ListBox.Resources>
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Height" Value="62" />
@@ -136,15 +228,15 @@
                     <DockPanel LastChildFill="True">
                         <Button x:Name="BtnExit" Content="✕" Click="BtnExit_Click"
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
-                                Width="46" FontSize="14" Cursor="Hand" ToolTip="退出"
+                                Width="46" FontSize="14" Cursor="Hand" ToolTip="退出" Style="{StaticResource IconButton}"
                                 Foreground="{DynamicResource TextSecondary}" />
                         <Button x:Name="BtnTheme" Content="☾" Click="BtnTheme_Click"
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
-                                Width="40" FontSize="14" Cursor="Hand" ToolTip="切换明暗主题"
+                                Width="40" FontSize="14" Cursor="Hand" ToolTip="切换明暗主题" Style="{StaticResource IconButton}"
                                 Foreground="{DynamicResource TextSecondary}" />
                         <Button x:Name="BtnSettings" Content="⚙" Click="BtnSettings_Click"
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
-                                Width="46" FontSize="16" Cursor="Hand" ToolTip="设置"
+                                Width="46" FontSize="16" Cursor="Hand" ToolTip="设置" Style="{StaticResource IconButton}"
                                 Foreground="{DynamicResource TextSecondary}" />
                         <TextBlock x:Name="ChatTitle" Text="# 群聊" FontSize="15" FontWeight="SemiBold"
                                    VerticalAlignment="Center" Margin="14,0"
@@ -155,6 +247,9 @@
                 <!-- 消息区：底色与白色来消息气泡刻意拉开（原来白气泡压在 #FAFAFA 上几乎看不见） -->
                 <ScrollViewer Grid.Row="1" x:Name="ChatScroll" Background="{DynamicResource ChatBg}"
                               VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer.Resources>
+                        <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScrollBar}" />
+                    </ScrollViewer.Resources>
                     <ItemsControl x:Name="ChatItems" Padding="14,10">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -207,14 +302,24 @@
                     <DockPanel LastChildFill="True" Margin="10,8">
                         <Button x:Name="BtnImage" Content="📎" Click="BtnImage_Click"
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
-                                Width="40" FontSize="16" Cursor="Hand" ToolTip="发送图片（jpg/png/bmp/gif）"
+                                Width="40" FontSize="16" Cursor="Hand" ToolTip="发送图片（jpg/png/bmp/gif）" Style="{StaticResource IconButton}"
                                 Foreground="{DynamicResource TextSecondary}" />
                         <Button x:Name="BtnSend" Content="发送" Click="BtnSend_Click"
                                 Background="{DynamicResource Accent}" Foreground="{DynamicResource AccentFg}"
-                                BorderThickness="0" Padding="18,0" Margin="8,0,0,0" Width="76"
+                                BorderThickness="0" Padding="18,0" Margin="8,0,0,0" Width="76" Style="{StaticResource AccentButton}"
                                 Cursor="Hand" FontSize="13" />
                         <Border Background="{DynamicResource InputBg}" CornerRadius="10"
                                 BorderBrush="{DynamicResource InputBorder}" BorderThickness="1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <!-- 聚焦时描边变主色（原来一直是灰的，看不出焦点在哪） -->
+                                        <DataTrigger Binding="{Binding IsKeyboardFocusWithin, ElementName=InputBox}" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
                             <TextBox x:Name="InputBox" FontSize="13" VerticalContentAlignment="Center"
                                      KeyDown="InputBox_KeyDown" Padding="10,8" BorderThickness="0"
                                      Background="Transparent"

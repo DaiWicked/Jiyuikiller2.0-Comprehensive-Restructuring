@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media;
 
 namespace ChatRoom
@@ -50,6 +50,12 @@ namespace ChatRoom
             { "ServiceBg",        "#FFE8E8ED", "#FF1E2C3A" },   // 服务消息（上线/离线/日期）胶囊底
             { "ServiceFg",        "#FF8E8E93", "#FF8B9AA8" },   // 服务消息文字
             { "TimeFg",           "#FF9A9AA0", "#FF7D8B99" },   // 气泡内时间戳
+            // —— 按钮/滚动条（2026-09-18 加：默认 WPF 按钮模板是方角 + Aero 悬停，观感差） ——
+            { "AccentHover",      "#FF4A7DE0", "#FF4A7DE0" },   // 主色按钮悬停
+            { "AccentPressed",    "#FF3C69BE", "#FF3C69BE" },   // 主色按钮按下
+            { "GhostHover",       "#14000000", "#22FFFFFF" },   // 图标按钮悬停底
+            { "GhostPressed",     "#22000000", "#38FFFFFF" },   // 图标按钮按下底
+            { "ScrollThumb",      "#40000000", "#40FFFFFF" },   // 细滚动条滑块
         };
 
         public static void Apply(bool dark)
