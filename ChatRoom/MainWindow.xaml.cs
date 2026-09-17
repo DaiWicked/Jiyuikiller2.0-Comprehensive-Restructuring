@@ -91,13 +91,17 @@ namespace ChatRoom
                     }
                     File.Delete(_pidFilePath);
                 }
-                // 再扫描是否有其他ChatRoom进程在跑
+                // 再扫描是否有其他ChatRoom进程在跑（排除自己）
+                int myPid = System.Diagnostics.Process.GetCurrentProcess().Id;
                 var procs = System.Diagnostics.Process.GetProcessesByName("ChatRoom");
-                if (procs.Length > 0)
+                foreach (var p in procs)
                 {
-                    // 有其他实例，写回PID文件指向第一个
-                    File.WriteAllText(_pidFilePath, procs[0].Id.ToString());
-                    return false;
+                    if (p.Id != myPid && !p.HasExited)
+                    {
+                        // 有其他实例，写回PID文件
+                        File.WriteAllText(_pidFilePath, p.Id.ToString());
+                        return false;
+                    }
                 }
             }
             catch { }
