@@ -10,7 +10,7 @@ namespace JiYuKiller.Services
     /// <summary>
     /// 小小私聊服务
     /// 原理：极域学生端不对UDP包做身份验证，可构造数据包发送消息
-    /// 座位号换算算法移植自jiyu_chat，按6人一排布局推算
+    /// 座位号换算：5列x11排竖向排列，一列走完接下一列（从上到下）
     /// </summary>
     public class ChatService
     {
@@ -54,24 +54,22 @@ namespace JiYuKiller.Services
             }
         }
 
+        // === 私聊布局参数（由主程序从设置注入）===
+        private static int _baseIPLast = 127;
+
+        /// <summary>设置机房布局参数</summary>
+        public static void SetLayout(int baseIPLast)
+        {
+            _baseIPLast = baseIPLast;
+        }
+
         /// <summary>
-        /// 座位号转IP末位（6人一排布局）
+        /// 座位号转IP末位（5列x11排竖向排列，从上到下）
         /// </summary>
         public static int StuID2IPLast(int stuID)
         {
             if (stuID <= 0) return 0;
-            if (stuID % 6 == 0)
-            {
-                int op = stuID / 6;
-                return 60 + op;
-            }
-            else
-            {
-                int r = stuID % 6;
-                int tp = r * 10;
-                int op = stuID / 6 + 1;
-                return tp + op;
-            }
+            return _baseIPLast + stuID - 1;
         }
 
         /// <summary>
@@ -79,10 +77,7 @@ namespace JiYuKiller.Services
         /// </summary>
         public static int IPLast2StuID(int ipLastOctet)
         {
-            int m = ipLastOctet;
-            int o = m - 1;
-            int tens = o / 10;
-            return (m - tens * 10) * 6 - (6 - tens);
+            return ipLastOctet - _baseIPLast + 1;
         }
 
         /// <summary>

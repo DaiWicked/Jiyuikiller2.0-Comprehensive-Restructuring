@@ -97,6 +97,16 @@ namespace JiYuKiller.Models
         /// <summary>壁纸透明度 (0-100)</summary>
         public int WallpaperOpacity { get; set; } = 80;
 
+        // === 小小私聊布局配置 ===
+        /// <summary>座位1号对应的IP末段（机房起始IP）</summary>
+        public int ChatBaseIPLast { get; set; } = 127;
+
+        /// <summary>机房列数</summary>
+        public int ChatColumns { get; set; } = 5;
+
+        /// <summary>每列排数</summary>
+        public int ChatRowsPerColumn { get; set; } = 11;
+
         // === 底栏液态玻璃（折射）===
         /// <summary>底栏圆角用超椭圆(squircle)而非正圆弧；false 则退化为普通圆角矩形</summary>
         public bool NavBarSquircle { get; set; } = true;

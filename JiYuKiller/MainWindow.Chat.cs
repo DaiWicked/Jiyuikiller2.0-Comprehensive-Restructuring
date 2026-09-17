@@ -34,7 +34,8 @@ namespace JiYuKiller
             TextChatLog.Clear();
             TextChatLog.AppendText("~~ 欢迎使用小小私聊 ~~\n");
             TextChatLog.AppendText("原理：极域学生端不对UDP包做身份验证，可构造数据包发送消息。\n");
-            TextChatLog.AppendText("提示：座位号换算算法移植自jiyu_chat，按6人一排布局推算。\n");
+            Services.ChatService.SetLayout(_settings.ChatBaseIPLast);
+            TextChatLog.AppendText("布局：5列x11排竖向排列，座位1号IP末段=" + _settings.ChatBaseIPLast + "\n");
             _chatService.InitLocalInfo();
         }
 
