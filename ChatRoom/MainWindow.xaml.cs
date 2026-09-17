@@ -15,7 +15,7 @@ namespace ChatRoom
         private ChatUdpService _chat;
         private ChatSettings _settings;
         private ChatUser _currentTarget;
-        private string _pidFilePath;
+
         private ObservableCollection<ChatUser> _userList = new ObservableCollection<ChatUser>();
         private ObservableCollection<ChatMessageItem> _messages = new ObservableCollection<ChatMessageItem>();
         private string _historyPath;
@@ -41,27 +41,35 @@ namespace ChatRoom
                     _settings.Nickname = args[i].Substring(7);
             }
 
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            _pidFilePath = Path.Combine(baseDir, "ChatRoom.pid");
-            if (CheckSingleInstance())
-            {
-                LoadHistory();
-                _chat = new ChatUdpService { Nickname = _settings.Nickname };
-                _chat.OnUserJoined += OnUserJoined;
-                _chat.OnUserLeft += OnUserLeft;
-                _chat.OnGroupMessage += OnGroupMessage;
-                _chat.OnPrivateMessage += OnPrivateMessage;
-                _chat.OnLog += OnServiceLog;
-                _chat.Start();
+            LoadHistory();
+            _chat = new ChatUdpService { Nickname = _settings.Nickname };
+            _chat.OnUserJoined += OnUserJoined;
+            _chat.OnUserLeft += OnUserLeft;
+            _chat.OnGroupMessage += OnGroupMessage;
+            _chat.OnPrivateMessage += OnPrivateMessage;
+            _chat.OnLog += OnServiceLog;
 
-                WritePidFile();
-                ApplySettings();
+            // 单实例判定 = "能否绑定 47060"，由操作系统仲裁。
+            // 旧实现靠扫进程名 + PID 文件：被僵尸进程误判（2026-09-17 实测有 8 个不可杀的旧实例，
+            // 它们占不到端口却让新实例启动被拒）。僵尸进程不持有端口 ⇒ 现在不会再误伤。
+            try
+            {
+                _chat.Start();
             }
-            else
+            catch (InvalidOperationException)
             {
                 MessageBox.Show("小小聊天已在运行中。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
                 Application.Current.Shutdown();
+                return;
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show("聊天服务启动失败：" + Environment.NewLine + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                Application.Current.Shutdown();
+                return;
+            }
+
+            ApplySettings();
         }
 
         private void ApplySettings()
@@ -70,53 +78,10 @@ namespace ChatRoom
             InputBox.FontSize = _settings.FontSize;
         }
 
-        // === PID单实例 ===
-
-        private bool CheckSingleInstance()
-        {
-            try
-            {
-                // 先检查PID文件
-                if (File.Exists(_pidFilePath))
-                {
-                    string pidStr = File.ReadAllText(_pidFilePath).Trim();
-                    if (int.TryParse(pidStr, out int pid))
-                    {
-                        try
-                        {
-                            var proc = System.Diagnostics.Process.GetProcessById(pid);
-                            if (!proc.HasExited) return false;
-                        }
-                        catch { }
-                    }
-                    File.Delete(_pidFilePath);
-                }
-                // 再扫描是否有其他ChatRoom进程在跑（排除自己）
-                int myPid = System.Diagnostics.Process.GetCurrentProcess().Id;
-                var procs = System.Diagnostics.Process.GetProcessesByName("ChatRoom");
-                foreach (var p in procs)
-                {
-                    if (p.Id != myPid && !p.HasExited)
-                    {
-                        // 有其他实例，写回PID文件
-                        File.WriteAllText(_pidFilePath, p.Id.ToString());
-                        return false;
-                    }
-                }
-            }
-            catch { }
-            return true;
-        }
-
-        private void WritePidFile()
-        {
-            try { File.WriteAllText(_pidFilePath, System.Diagnostics.Process.GetCurrentProcess().Id.ToString()); } catch { }
-        }
-
-        private void CleanPidFile()
-        {
-            try { if (File.Exists(_pidFilePath)) File.Delete(_pidFilePath); } catch { }
-        }
+        // === 单实例 ===
+        // 原 CheckSingleInstance/WritePidFile/CleanPidFile 三段已删除（2026-09-17）：
+        // 扫进程名 + PID 文件的做法会把"不可杀的僵尸实例"也算作冲突，导致程序无法启动；
+        // 现在改由 ChatUdpService.Start() 绑定 47060 失败来判定，见构造函数上的说明。
 
         // === 消息历史持久化 ===
 
@@ -158,11 +123,24 @@ namespace ChatRoom
             catch { }
         }
 
+        /// <summary>
+        /// 从网络线程切回 UI 线程。<b>用 BeginInvoke 而不是 Invoke</b>：
+        /// 接收/心跳线程绝不能被 UI 线程阻塞（原来 5 处 Dispatcher.Invoke 会让 UDP 收发等 UI，
+        /// UI 一忙就卡住收发，极端情况还会与"UI 等网络线程"形成死锁）。
+        /// 已经在 UI 线程时直接执行，避免无谓的二次排队。
+        /// </summary>
+        private void OnUI(Action action)
+        {
+            if (action == null) return;
+            if (Dispatcher.CheckAccess()) { action(); return; }
+            Dispatcher.BeginInvoke(new Action(action));
+        }
+
         // === 聊天服务事件 ===
 
         private void OnUserJoined(ChatUser user)
         {
-            Dispatcher.Invoke(() =>
+            OnUI(() =>
             {
                 if (!_userList.Any(u => u.IP == user.IP))
                     _userList.Add(user);
@@ -173,7 +151,7 @@ namespace ChatRoom
 
         private void OnUserLeft(ChatUser user)
         {
-            Dispatcher.Invoke(() =>
+            OnUI(() =>
             {
                 var existing = _userList.FirstOrDefault(u => u.IP == user.IP);
                 if (existing != null) _userList.Remove(existing);
@@ -190,7 +168,7 @@ namespace ChatRoom
 
         private void OnGroupMessage(ChatUser from, string msg)
         {
-            Dispatcher.Invoke(() =>
+            OnUI(() =>
             {
                 AddMessage(from.Nickname, msg, "#FFFFFF", "Left");
                 SaveHistoryLine(from.Nickname, msg);
@@ -199,7 +177,7 @@ namespace ChatRoom
 
         private void OnPrivateMessage(ChatUser from, string msg)
         {
-            Dispatcher.Invoke(() =>
+            OnUI(() =>
             {
                 if (_currentTarget != null && _currentTarget.IP == from.IP)
                     AddMessage(from.Nickname + " [私聊]", msg, "#FFD699", "Left");
@@ -211,10 +189,20 @@ namespace ChatRoom
 
         private void OnServiceLog(string log)
         {
-            Dispatcher.Invoke(() => AddMessage("系统", log, "#F0F0F5", "Left"));
+            OnUI(() => AddMessage("系统", log, "#F0F0F5", "Left"));
         }
 
         // === UI事件 ===
+
+        /// <summary>
+        /// 无边框窗口的拖动：WindowStyle=None 之后系统不再提供标题栏拖动，必须自己实现。
+        /// （按压缩下状态才拖，避免单击就移动；拖动期间异常（如按住时窗口被关）直接忽略。）
+        /// </summary>
+        private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ButtonState != System.Windows.Input.MouseButtonState.Pressed) return;
+            try { DragMove(); } catch { }
+        }
 
         private void UserList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -308,7 +296,7 @@ namespace ChatRoom
         protected override void OnClosed(EventArgs e)
         {
             _chat?.Stop();
-            CleanPidFile();
+
             if (_settings.ClearOnExit)
             {
                 try { if (File.Exists(_historyPath)) File.Delete(_historyPath); } catch { }

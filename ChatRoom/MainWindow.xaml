@@ -4,8 +4,9 @@
         Title="小小聊天" Height="620" Width="880"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
-        AllowsTransparency="False"
-        WindowChrome.WindowChrome="">
+        AllowsTransparency="True"
+        WindowStyle="None"
+        ResizeMode="NoResize">
     <Border CornerRadius="12" Background="#F2F2F7" BorderBrush="#D1D1D6" BorderThickness="1">
         <Grid Margin="0">
             <Grid.ColumnDefinitions>
@@ -66,7 +67,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- 标题栏 -->
-                <Border Grid.Row="0" Background="#F5F5F7" CornerRadius="0,12,0,0">
+                <Border Grid.Row="0" Background="#F5F5F7" CornerRadius="0,12,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                     <DockPanel LastChildFill="True">
                         <Button x:Name="BtnExit" Content="✕" Click="BtnExit_Click"
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
