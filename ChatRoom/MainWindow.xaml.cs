@@ -311,7 +311,67 @@ namespace ChatRoom
                 Align = right ? HorizontalAlignment.Right : HorizontalAlignment.Left,
                 Margin = new Thickness(right ? 100 : 0, 4, right ? 0 : 100, 4)
             });
+
+            // 未读：自己发的不算；正看着窗口也不算；未读分隔线本身也不算
+            if (kind == BubbleKind.Incoming) TrackUnread(true);   // 只计真实来消息：服务消息(上线/日志)与启动横幅不算，否则每次启动都会冒出一个未读
+            AutoScroll();
+        }
+
+        // === 未读 / 滚动 ===
+
+        private int _unreadCount = 0;
+        private bool _unreadSeparatorShown = false;
+        private bool _addingServiceLine = false;
+
+        /// <summary>
+        /// 未读计数：只在用户"没在看"时累加（最小化或窗口不在前台）。
+        /// 第一次出现未读时插入一条服务分隔线（Telegram 的 unread divider 概念），
+        /// 之后回来的用户往上翻就能看到"从这里开始是新消息"。
+        /// </summary>
+        private void TrackUnread(bool incoming)
+        {
+            if (!incoming) return;
+            if (IsActive && WindowState != WindowState.Minimized) return;
+
+            _unreadCount++;
+            TextUnread.Text = _unreadCount + " 条新消息";
+            BtnUnread.Visibility = Visibility.Visible;
+
+            if (!_unreadSeparatorShown)
+            {
+                _unreadSeparatorShown = true;
+                _addingServiceLine = true;                                   // 防止分隔线自己被算成未读
+                try { AddMessage("系统", "── 以下为新消息 ──", BubbleKind.Service); }
+                finally { _addingServiceLine = false; }
+            }
+        }
+
+        private void ClearUnread()
+        {
+            _unreadCount = 0;
+            _unreadSeparatorShown = false;
+            TextUnread.Text = "0 条新消息";
+            BtnUnread.Visibility = Visibility.Collapsed;
+        }
+
+        private void BtnUnread_Click(object sender, RoutedEventArgs e)
+        {
             ChatScroll.ScrollToEnd();
+            ClearUnread();
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            if (_unreadCount > 0) ClearUnread();   // 回到前台即视为已读（分隔线记录保留）
+        }
+
+        /// <summary>
+        /// 只有"本来就在底部附近"才自动滚动 —— 否则用户正在往上翻历史，被强行拽到底部很烦。
+        /// </summary>
+        private void AutoScroll()
+        {
+            if (ChatScroll.ScrollableHeight - ChatScroll.VerticalOffset < 40) ChatScroll.ScrollToEnd();
         }
 
         // === UI事件 ===
@@ -423,7 +483,10 @@ namespace ChatRoom
                 Align = right ? HorizontalAlignment.Right : HorizontalAlignment.Left,
                 Margin = new Thickness(right ? 100 : 0, 4, right ? 0 : 100, 4)
             });
-            ChatScroll.ScrollToEnd();
+
+            // 未读：自己发的不算；正看着窗口也不算；未读分隔线本身也不算
+            if (kind == BubbleKind.Incoming) TrackUnread(true);   // 只计真实来消息：服务消息(上线/日志)与启动横幅不算，否则每次启动都会冒出一个未读
+            AutoScroll();
         }
 
         /// <summary>按气泡类型从当前主题取一组颜色</summary>

@@ -238,6 +238,13 @@
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
                                 Width="46" FontSize="16" Cursor="Hand" ToolTip="设置" Style="{StaticResource IconButton}"
                                 Foreground="{DynamicResource TextSecondary}" />
+                        <!-- 未读徽标：窗口不在前台时收到消息才出现，点它=跳到最新并清零 -->
+                        <Button x:Name="BtnUnread" Click="BtnUnread_Click" Visibility="Collapsed"
+                                DockPanel.Dock="Right" Padding="10,4" Margin="0,0,6,0"
+                                FontSize="12" VerticalAlignment="Center" ToolTip="跳到最新消息"
+                                Style="{StaticResource AccentButton}">
+                            <TextBlock x:Name="TextUnread" Text="0 条新消息" />
+                        </Button>
                         <TextBlock x:Name="ChatTitle" Text="# 群聊" FontSize="15" FontWeight="SemiBold"
                                    VerticalAlignment="Center" Margin="14,0"
                                    Foreground="{DynamicResource TextPrimary}" />
