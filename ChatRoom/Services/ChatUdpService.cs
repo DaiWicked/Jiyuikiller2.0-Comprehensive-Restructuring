@@ -194,10 +194,12 @@ namespace ChatRoom.Services
 
             bool isNew;
             ChatUser snap = TouchUser(ip, nick, out isNew);
-            if (isNew) Raise(OnUserJoined, snap);
-
-            // 回复心跳让对方发现我
-            SendBroadcast(EncodePacket("CHAT", Nickname, ""));
+            if (isNew)
+            {
+                Raise(OnUserJoined, snap);
+                // 只有新用户上线时才回复一次心跳，避免广播风暴
+                SendBroadcast(EncodePacket("CHAT", Nickname, ""));
+            }
         }
 
         private void HandleGroupMessage(string ip, string nick, string msg)
