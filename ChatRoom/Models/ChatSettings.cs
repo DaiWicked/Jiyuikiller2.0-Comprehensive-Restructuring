@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Windows;
 
@@ -11,6 +11,9 @@ namespace ChatRoom.Models
         public int FontSize { get; set; } = 13;
         public bool ClearOnExit { get; set; } = false;
         public bool TopMost { get; set; } = false;
+
+        /// <summary>暗色模式（明暗两套配色见 Theme.cs）</summary>
+        public bool DarkMode { get; set; } = false;
 
         private static string SettingsPath
         {
@@ -37,6 +40,7 @@ namespace ChatRoom.Models
                             case "FontSize": int.TryParse(val, out int fs); s.FontSize = fs > 0 ? fs : 13; break;
                             case "ClearOnExit": s.ClearOnExit = val == "1"; break;
                             case "TopMost": s.TopMost = val == "1"; break;
+                            case "DarkMode": s.DarkMode = val == "1"; break;
                         }
                     }
                 }
@@ -55,7 +59,8 @@ namespace ChatRoom.Models
                     "SendWithEnter=" + (SendWithEnter ? "1" : "0"),
                     "FontSize=" + FontSize,
                     "ClearOnExit=" + (ClearOnExit ? "1" : "0"),
-                    "TopMost=" + (TopMost ? "1" : "0")
+                    "TopMost=" + (TopMost ? "1" : "0"),
+                    "DarkMode=" + (DarkMode ? "1" : "0")
                 };
                 File.WriteAllLines(SettingsPath, lines, System.Text.Encoding.UTF8);
             }

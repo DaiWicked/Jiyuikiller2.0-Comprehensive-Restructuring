@@ -100,15 +100,12 @@ namespace ChatRoom
                         string sender = parts[1].Trim();
                         string msg = parts[2].Trim();
                         bool isMe = sender.StartsWith("我");
-                        AddMessage(sender, msg,
-                            isMe ? "#5B8DEF" : "#FFFFFF",
-                            isMe ? "Right" : "Left",
-                            isMe ? "#FFFFFF" : "#000000",
-                            false);
+                        AddMessage(sender, msg, isMe ? BubbleKind.Outgoing : BubbleKind.Incoming,
+                            false, parts[0].Trim().Trim('[', ']'));
                     }
                 }
                 if (_messages.Count > 0)
-                    AddMessage("系统", "--- 以下为新消息 ---", "#8E8E93", "Left", "#8E8E93", false);
+                    AddMessage("系统", "--- 以下为新消息 ---", BubbleKind.Service);
             }
             catch { }
         }
@@ -145,7 +142,7 @@ namespace ChatRoom
                 if (!_userList.Any(u => u.IP == user.IP))
                     _userList.Add(user);
                 UpdateUserCount();
-                AddMessage("系统", $"{user.Nickname} 加入了聊天", "#8E8E93", "Left");
+                AddMessage("系统", $"{user.Nickname} 加入了聊天", BubbleKind.Service);
             });
         }
 
@@ -156,7 +153,7 @@ namespace ChatRoom
                 var existing = _userList.FirstOrDefault(u => u.IP == user.IP);
                 if (existing != null) _userList.Remove(existing);
                 UpdateUserCount();
-                AddMessage("系统", $"{user.Nickname} 离开了聊天", "#8E8E93", "Left");
+                AddMessage("系统", $"{user.Nickname} 离开了聊天", BubbleKind.Service);
             });
         }
 
@@ -170,7 +167,7 @@ namespace ChatRoom
         {
             OnUI(() =>
             {
-                AddMessage(from.Nickname, msg, "#FFFFFF", "Left");
+                AddMessage(from.Nickname, msg, BubbleKind.Incoming);
                 SaveHistoryLine(from.Nickname, msg);
             });
         }
@@ -180,16 +177,16 @@ namespace ChatRoom
             OnUI(() =>
             {
                 if (_currentTarget != null && _currentTarget.IP == from.IP)
-                    AddMessage(from.Nickname + " [私聊]", msg, "#FFD699", "Left");
+                    AddMessage(from.Nickname + " [私聊]", msg, BubbleKind.Incoming);
                 else
-                    AddMessage("📩 " + from.Nickname, msg, "#FFD699", "Left");
+                    AddMessage("📩 " + from.Nickname, msg, BubbleKind.Incoming);
                 SaveHistoryLine(from.Nickname + "[私聊]", msg);
             });
         }
 
         private void OnServiceLog(string log)
         {
-            OnUI(() => AddMessage("系统", log, "#F0F0F5", "Left"));
+            OnUI(() => AddMessage("系统", log, BubbleKind.Service));
         }
 
         // === UI事件 ===
@@ -264,33 +261,82 @@ namespace ChatRoom
             if (_currentTarget != null)
             {
                 _chat.SendPrivate(_currentTarget.IP, msg);
-                AddMessage("我 → " + _currentTarget.Nickname, msg, "#5B8DEF", "Right", "#FFFFFF");
+                AddMessage("我 → " + _currentTarget.Nickname, msg, BubbleKind.Outgoing);
                 SaveHistoryLine("我[私聊]", msg);
             }
             else
             {
                 _chat.SendGroup(msg);
-                AddMessage("我", msg, "#5B8DEF", "Right", "#FFFFFF");
+                AddMessage("我", msg, BubbleKind.Outgoing);
                 SaveHistoryLine("我", msg);
             }
 
             InputBox.Clear();
         }
 
-        private void AddMessage(string sender, string message, string bgColor, string align,
-                                string textColor = "#000000", bool saveToHistory = true)
+        /// <summary>
+        /// 追加一条消息。颜色**统一从 Theme 取**（原来 9 处调用各写各的硬编码色值，
+        /// 结果收到的是 #FFFFFF 白气泡压在 #FAFAFA 浅灰底上，几乎看不见）。
+        /// </summary>
+        private void AddMessage(string sender, string message, BubbleKind kind,
+                                bool saveToHistory = true, string time = null)
         {
+            ApplyBubbleStyle(kind, out Brush bg, out Brush border, out Brush fg, out Brush secondary);
+            bool right = kind == BubbleKind.Outgoing;
+
             _messages.Add(new ChatMessageItem
             {
                 Sender = sender,
                 Message = message,
                 FontSize = _settings.FontSize,
-                BgBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(bgColor)),
-                Align = align == "Right" ? HorizontalAlignment.Right : HorizontalAlignment.Left,
-                Margin = new Thickness(align == "Right" ? 100 : 0, 4, align == "Right" ? 0 : 100, 4),
-                TextBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(textColor))
+                Kind = kind,
+                BgBrush = bg,
+                BorderBrush = border,
+                TextBrush = fg,
+                SecondaryBrush = secondary,
+                Time = string.IsNullOrEmpty(time) ? DateTime.Now.ToString("HH:mm") : time,
+                Align = right ? HorizontalAlignment.Right : HorizontalAlignment.Left,
+                Margin = new Thickness(right ? 100 : 0, 4, right ? 0 : 100, 4)
             });
             ChatScroll.ScrollToEnd();
+        }
+
+        /// <summary>按气泡类型从当前主题取一组颜色</summary>
+        private static void ApplyBubbleStyle(BubbleKind kind, out Brush bg, out Brush border, out Brush fg, out Brush secondary)
+        {
+            secondary = Theme.Get("TextSecondary");
+            switch (kind)
+            {
+                case BubbleKind.Outgoing:
+                    bg = Theme.Get("BubbleOutBg"); border = Theme.Get("BubbleOutBorder"); fg = Theme.Get("BubbleOutFg");
+                    break;
+                case BubbleKind.Service:
+                    bg = Theme.Get("ServiceBg"); border = Theme.Get("ServiceBg"); fg = Theme.Get("ServiceFg");
+                    secondary = Theme.Get("ServiceFg");
+                    break;
+                default:
+                    bg = Theme.Get("BubbleInBg"); border = Theme.Get("BubbleInBorder"); fg = Theme.Get("BubbleInFg");
+                    break;
+            }
+        }
+
+        /// <summary>切换明暗主题：换资源 + 重着色已有气泡 + 存盘（气泡颜色是代码赋的，不会自己跟着资源变）</summary>
+        private void BtnTheme_Click(object sender, RoutedEventArgs e)
+        {
+            Theme.Apply(!Theme.IsDark);
+            BtnTheme.Content = Theme.IsDark ? "☀" : "☾";
+            RecolorMessages();
+            _settings.DarkMode = Theme.IsDark;
+            _settings.Save();
+        }
+
+        private void RecolorMessages()
+        {
+            foreach (ChatMessageItem item in _messages)
+            {
+                ApplyBubbleStyle(item.Kind, out Brush bg, out Brush border, out Brush fg, out Brush secondary);
+                item.BgBrush = bg; item.BorderBrush = border; item.TextBrush = fg; item.SecondaryBrush = secondary;
+            }
         }
 
         protected override void OnClosed(EventArgs e)
@@ -305,13 +351,20 @@ namespace ChatRoom
         }
     }
 
+    /// <summary>气泡类型：决定用主题里的哪一组颜色</summary>
+    public enum BubbleKind { Incoming, Outgoing, Service }
+
     public class ChatMessageItem
     {
         public string Sender { get; set; }
         public string Message { get; set; }
         public int FontSize { get; set; } = 13;
         public Brush BgBrush { get; set; }
+        public Brush BorderBrush { get; set; }
         public Brush TextBrush { get; set; }
+        public Brush SecondaryBrush { get; set; }
+        public string Time { get; set; } = "";
+        public BubbleKind Kind { get; set; } = BubbleKind.Incoming;
         public HorizontalAlignment Align { get; set; }
         public Thickness Margin { get; set; }
     }

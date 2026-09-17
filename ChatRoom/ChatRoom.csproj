@@ -80,6 +80,7 @@
     </Compile>
     <Compile Include="Services\ChatUdpService.cs" />
     <Compile Include="Models\ChatUser.cs" />
+    <Compile Include="Theme.cs" />
     <Compile Include="Models\ChatSettings.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

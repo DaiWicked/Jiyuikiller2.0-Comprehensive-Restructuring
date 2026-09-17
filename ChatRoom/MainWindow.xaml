@@ -6,93 +6,175 @@
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
-        ResizeMode="NoResize">
-    <Border CornerRadius="12" Background="#F2F2F7" BorderBrush="#D1D1D6" BorderThickness="1">
-        <Grid Margin="0">
+        ResizeMode="NoResize"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display">
+
+    <!-- ================= 窗口外壳（玻璃血统：圆角 + 细描边 + 投影 + 顶部高光） =================
+         只是"外壳"语汇；内容层（消息区/气泡/输入框）一律实色 —— 聊天以可读性为先。
+         尺寸取自官方 tdesktop 源码实测值：侧栏固定 240、顶栏 54、列表行高 62、
+         气泡圆角 16 / 最大宽 430 / 内边距 11×8。 -->
+    <Border CornerRadius="12" Background="{DynamicResource WindowBg}"
+            BorderBrush="{DynamicResource WindowBorder}" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.18" Color="#000000" />
+        </Border.Effect>
+
+        <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="220"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="240" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- 左栏 -->
-            <Border Grid.Column="0" Background="#E8E8ED" CornerRadius="12,0,0,12">
+            <!-- ================= 左栏：在线用户 ================= -->
+            <Border Grid.Column="0" Background="{DynamicResource SideBg}" CornerRadius="12,0,0,12">
                 <DockPanel>
-                    <Border DockPanel.Dock="Top" Padding="14,12" Background="#D1D1D6" CornerRadius="12,0,0,0">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="💬" FontSize="16" VerticalAlignment="Center"/>
-                            <TextBlock Text="在线用户" FontSize="14" FontWeight="SemiBold" Foreground="#3A3A3C"
-                                       VerticalAlignment="Center" Margin="6,0,0,0"/>
-                            <TextBlock x:Name="UserCount" Text="(0)" FontSize="12" Foreground="#8E8E93"
-                                       VerticalAlignment="Center" Margin="6,0,0,0"/>
+
+                    <!-- 侧栏标题（也是拖动区） -->
+                    <Border DockPanel.Dock="Top" Height="54" Background="{DynamicResource HeaderBg}"
+                            CornerRadius="12,0,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0">
+                            <TextBlock Text="💬" FontSize="15" VerticalAlignment="Center" />
+                            <TextBlock Text="在线用户" FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       VerticalAlignment="Center" Margin="6,0,0,0" />
+                            <TextBlock x:Name="UserCount" Text="(0)" FontSize="12"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       VerticalAlignment="Center" Margin="6,0,0,0" />
                         </StackPanel>
                     </Border>
-                    <Border DockPanel.Dock="Bottom" Padding="12,10" Background="#D1D1D6" CornerRadius="0,0,0,12">
+
+                    <!-- 底部：群聊广播 -->
+                    <Border DockPanel.Dock="Bottom" Padding="10" Background="{DynamicResource SideBg}">
                         <Button x:Name="BtnGroupChat" Content="📢 群聊广播" Click="BtnGroupChat_Click"
-                                Background="#5B8DEF" Foreground="White" BorderThickness="0"
-                                Padding="10,8" Cursor="Hand" HorizontalAlignment="Stretch" FontSize="13"/>
+                                Background="{DynamicResource Accent}" Foreground="{DynamicResource AccentFg}"
+                                BorderThickness="0" Padding="10,9" Cursor="Hand"
+                                HorizontalAlignment="Stretch" FontSize="13" />
                     </Border>
+
+                    <!-- 用户列表：行高 62（tdesktop dialogsRowHeight） -->
                     <ListBox x:Name="UserList" Background="Transparent" BorderThickness="0"
-                             SelectionChanged="UserList_SelectionChanged">
+                             SelectionChanged="UserList_SelectionChanged"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Height" Value="62" />
+                                <Setter Property="Padding" Value="12,0" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="row" Background="Transparent" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter VerticalAlignment="Center" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="row" Property="Background" Value="{DynamicResource RowHoverBg}" />
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="row" Property="Background" Value="{DynamicResource RowSelectedBg}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal" Margin="8,6">
-                                    <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <!-- 头像：昵称首字 + 由 IP 稳定派生的底色 -->
+                                    <Grid Width="40" Height="40" VerticalAlignment="Center">
+                                        <Ellipse Fill="{Binding AvatarBrush}" />
+                                        <TextBlock Text="{Binding Initial}" FontSize="16" Foreground="White"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Grid>
+                                    <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Nickname}" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding IP}" FontSize="11"
+                                                   Foreground="{DynamicResource TextSecondary}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <Ellipse Grid.Column="2" Width="9" Height="9" VerticalAlignment="Center" Margin="6,0,0,0">
                                         <Ellipse.Style>
                                             <Style TargetType="Ellipse">
-                                                <Setter Property="Fill" Value="#8E8E93"/>
+                                                <Setter Property="Fill" Value="#FFB0B0B6" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsOnline}" Value="True">
-                                                        <Setter Property="Fill" Value="#4CD964"/>
+                                                        <Setter Property="Fill" Value="#FF4CD964" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsMe}" Value="True">
+                                                        <Setter Property="Fill" Value="#FF5B8DEF" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Ellipse.Style>
                                     </Ellipse>
-                                    <TextBlock Text="{Binding Nickname}" FontSize="13" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding IP}" FontSize="11" Foreground="#8E8E93"
-                                               Margin="6,0,0,0" VerticalAlignment="Center"/>
-                                </StackPanel>
+                                </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </DockPanel>
             </Border>
 
-            <!-- 右栏 -->
+            <!-- ================= 右栏 ================= -->
             <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="44"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="56"/>
+                    <RowDefinition Height="54" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="56" />
                 </Grid.RowDefinitions>
 
-                <!-- 标题栏 -->
-                <Border Grid.Row="0" Background="#F5F5F7" CornerRadius="0,12,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <!-- 顶栏（54，可拖动） -->
+                <Border Grid.Row="0" Background="{DynamicResource HeaderBg}" CornerRadius="0,12,0,0"
+                        MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                     <DockPanel LastChildFill="True">
                         <Button x:Name="BtnExit" Content="✕" Click="BtnExit_Click"
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
-                                Width="44" FontSize="14" Cursor="Hand" ToolTip="退出"/>
+                                Width="46" FontSize="14" Cursor="Hand" ToolTip="退出"
+                                Foreground="{DynamicResource TextSecondary}" />
+                        <Button x:Name="BtnTheme" Content="☾" Click="BtnTheme_Click"
+                                DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
+                                Width="40" FontSize="14" Cursor="Hand" ToolTip="切换明暗主题"
+                                Foreground="{DynamicResource TextSecondary}" />
                         <Button x:Name="BtnSettings" Content="⚙" Click="BtnSettings_Click"
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
-                                Width="44" FontSize="16" Cursor="Hand" ToolTip="设置"/>
+                                Width="46" FontSize="16" Cursor="Hand" ToolTip="设置"
+                                Foreground="{DynamicResource TextSecondary}" />
                         <TextBlock x:Name="ChatTitle" Text="# 群聊" FontSize="15" FontWeight="SemiBold"
-                                   VerticalAlignment="Center" Margin="14,0" Foreground="#1C1C2E"/>
+                                   VerticalAlignment="Center" Margin="14,0"
+                                   Foreground="{DynamicResource TextPrimary}" />
                     </DockPanel>
                 </Border>
 
-                <!-- 聊天记录 -->
-                <ScrollViewer Grid.Row="1" x:Name="ChatScroll" Background="#FAFAFA" VerticalScrollBarVisibility="Auto">
+                <!-- 消息区：底色与白色来消息气泡刻意拉开（原来白气泡压在 #FAFAFA 上几乎看不见） -->
+                <ScrollViewer Grid.Row="1" x:Name="ChatScroll" Background="{DynamicResource ChatBg}"
+                              VerticalScrollBarVisibility="Auto">
                     <ItemsControl x:Name="ChatItems" Padding="14,10">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="{Binding BgBrush}" CornerRadius="12" Padding="12,7"
-                                        Margin="{Binding Margin}" HorizontalAlignment="{Binding Align}"
-                                        MaxWidth="480">
+                                <Border CornerRadius="16" Padding="11,8" MaxWidth="430"
+                                        Margin="{Binding Margin}"
+                                        HorizontalAlignment="{Binding Align}"
+                                        Background="{Binding BgBrush}"
+                                        BorderBrush="{Binding BorderBrush}"
+                                        BorderThickness="1">
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Sender}" FontSize="11" Foreground="#8E8E93"
-                                                   Margin="0,0,0,3"/>
+                                        <TextBlock Text="{Binding Sender}" FontSize="11"
+                                                   Foreground="{Binding SecondaryBrush}"
+                                                   Margin="0,0,0,2" />
                                         <TextBlock Text="{Binding Message}" FontSize="{Binding FontSize}"
-                                                   TextWrapping="Wrap"/>
+                                                   Foreground="{Binding TextBrush}"
+                                                   TextWrapping="Wrap" />
+                                        <!-- 时间戳（原实现只写进历史文件，气泡上没有） -->
+                                        <TextBlock Text="{Binding Time}" FontSize="10"
+                                                   Foreground="{Binding SecondaryBrush}"
+                                                   HorizontalAlignment="Right" Margin="0,3,0,0" />
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -100,19 +182,34 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- 输入区 -->
-                <Border Grid.Row="2" Background="#F5F5F7" CornerRadius="0,0,12,0">
+                <!-- 输入区（56） -->
+                <Border Grid.Row="2" Background="{DynamicResource ComposerBg}" CornerRadius="0,0,12,0">
                     <DockPanel LastChildFill="True" Margin="10,8">
                         <Button x:Name="BtnSend" Content="发送" Click="BtnSend_Click"
-                                Background="#5B8DEF" Foreground="White" BorderThickness="0"
-                                Padding="18,0" Margin="8,0,0,0" Width="72" Cursor="Hand" FontSize="13"/>
-                        <Border Background="White" CornerRadius="8" BorderBrush="#D1D1D6" BorderThickness="1">
+                                Background="{DynamicResource Accent}" Foreground="{DynamicResource AccentFg}"
+                                BorderThickness="0" Padding="18,0" Margin="8,0,0,0" Width="76"
+                                Cursor="Hand" FontSize="13" />
+                        <Border Background="{DynamicResource InputBg}" CornerRadius="10"
+                                BorderBrush="{DynamicResource InputBorder}" BorderThickness="1">
                             <TextBox x:Name="InputBox" FontSize="13" VerticalContentAlignment="Center"
-                                     KeyDown="InputBox_KeyDown" Padding="10,8" BorderThickness="0"/>
+                                     KeyDown="InputBox_KeyDown" Padding="10,8" BorderThickness="0"
+                                     Background="Transparent"
+                                     Foreground="{DynamicResource TextPrimary}" />
                         </Border>
                     </DockPanel>
                 </Border>
             </Grid>
+
+            <!-- 顶部高光（玻璃语汇；纯视觉、不吃鼠标事件） -->
+            <Border Grid.ColumnSpan="2" Height="40" VerticalAlignment="Top" IsHitTestVisible="False"
+                    CornerRadius="12,12,0,0" Opacity="0.5">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#18FFFFFF" Offset="0" />
+                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
         </Grid>
     </Border>
 </Window>
