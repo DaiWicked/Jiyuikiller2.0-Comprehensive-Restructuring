@@ -218,3 +218,10 @@ ffmpeg64.exe
 # 旧备份文件
 JiYuTrainerHooks.dll.stable_backup
 *.stable_backup
+
+# ChatRoom运行时生成文件
+chat_images/
+*/chat_images/
+chat_settings.ini
+chat_history.txt
+ChatRoom.pid

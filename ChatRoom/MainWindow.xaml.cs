@@ -20,6 +20,18 @@ namespace ChatRoom
 
         private ObservableCollection<ChatUser> _userList = new ObservableCollection<ChatUser>();
         private ObservableCollection<ChatMessageItem> _messages = new ObservableCollection<ChatMessageItem>();
+        private const int MaxMessages = 500;  // 内存中最多保留500条消息，超出裁剪
+
+        private void TrimMessages()
+        {
+            while (_messages.Count > MaxMessages)
+            {
+                // 释放旧图片资源
+                var old = _messages[0];
+                if (old != null) { old.Image = null; }
+                _messages.RemoveAt(0);
+            }
+        }
         private string _historyPath;
 
         public MainWindow()
