@@ -117,9 +117,24 @@ namespace ChatRoom.Services
 
                 for (int r = 0; r < ImageRepeat; r++)
                 {
-                    bool sentOk = string.IsNullOrEmpty(targetIP) ? SendBroadcast(pkt) : SendTo(targetIP, pkt);
-                    allPackets++;
-                    if (sentOk) okPackets++;
+                    if (string.IsNullOrEmpty(targetIP))
+                    {
+                        // 群聊：逐个单播给在线用户，不广播(避免抢局域网带宽)
+                        var users = SnapshotUsers();
+                        foreach (var u in users)
+                        {
+                            if (u.IsMe) continue;
+                            bool sentOk = SendTo(u.IP, pkt);
+                            allPackets++;
+                            if (sentOk) okPackets++;
+                        }
+                    }
+                    else
+                    {
+                        bool sentOk = SendTo(targetIP, pkt);
+                        allPackets++;
+                        if (sentOk) okPackets++;
+                    }
 
                     if (total > 1 || ImageRepeat > 1) Thread.Sleep(8);   // 轻微错开，别把接收方缓冲打爆
                 }
