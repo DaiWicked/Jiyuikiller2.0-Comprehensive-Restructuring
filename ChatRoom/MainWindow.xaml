@@ -168,7 +168,22 @@
                                         <TextBlock Text="{Binding Sender}" FontSize="11"
                                                    Foreground="{Binding SecondaryBrush}"
                                                    Margin="0,0,0,2" />
-                                        <TextBlock Text="{Binding Message}" FontSize="{Binding FontSize}"
+                                        <!-- 图片消息：点一下用系统查看器打开 -->
+                                        <Image Source="{Binding Image}" MaxWidth="200" MaxHeight="150"
+                                               Margin="0,2" Stretch="Uniform" Cursor="Hand"
+                                               MouseLeftButtonUp="Image_MouseLeftButtonUp">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsImage}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                        <TextBlock x:Name="msgText" Text="{Binding Message}" FontSize="{Binding FontSize}"
                                                    Foreground="{Binding TextBrush}"
                                                    TextWrapping="Wrap" />
                                         <!-- 时间戳（原实现只写进历史文件，气泡上没有） -->
@@ -177,6 +192,11 @@
                                                    HorizontalAlignment="Right" Margin="0,3,0,0" />
                                     </StackPanel>
                                 </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsImage}" Value="True">
+                                        <Setter TargetName="msgText" Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -185,6 +205,10 @@
                 <!-- 输入区（56） -->
                 <Border Grid.Row="2" Background="{DynamicResource ComposerBg}" CornerRadius="0,0,12,0">
                     <DockPanel LastChildFill="True" Margin="10,8">
+                        <Button x:Name="BtnImage" Content="📎" Click="BtnImage_Click"
+                                DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
+                                Width="40" FontSize="16" Cursor="Hand" ToolTip="发送图片（jpg/png/bmp/gif）"
+                                Foreground="{DynamicResource TextSecondary}" />
                         <Button x:Name="BtnSend" Content="发送" Click="BtnSend_Click"
                                 Background="{DynamicResource Accent}" Foreground="{DynamicResource AccentFg}"
                                 BorderThickness="0" Padding="18,0" Margin="8,0,0,0" Width="76"

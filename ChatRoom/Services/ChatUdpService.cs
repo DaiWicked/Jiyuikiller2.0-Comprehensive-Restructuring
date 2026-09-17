@@ -27,7 +27,7 @@ namespace ChatRoom.Services
     /// ★ 单实例：不再靠"扫进程名"（会被僵尸进程误判），改为**以能否绑定 47060 为准** ——
     ///   由操作系统仲裁，端口被占说明确有活着的实例；僵尸进程不占端口，因此不再阻塞启动。
     /// </summary>
-    public class ChatUdpService
+    public partial class ChatUdpService
     {
         public const int Port = 47060;
         private const int HeartbeatInterval = 3000;  // 3 秒
@@ -169,6 +169,7 @@ namespace ChatRoom.Services
                         case "CHAT": HandleHeartbeat(senderIP, nick); break;
                         case "GBRD": HandleGroupMessage(senderIP, nick, msg); break;
                         case "PMSG": HandlePrivateMessage(senderIP, nick, msg); break;
+                        case "CIMG": HandleImageChunk(senderIP, nick, msg); break;   // 图片分块（见 ChatUdpService.Images.cs）
                     }
                 }
                 catch (SocketException)

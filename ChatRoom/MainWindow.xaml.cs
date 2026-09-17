@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using ChatRoom.Models;
 using ChatRoom.Services;
 
@@ -48,6 +49,7 @@ namespace ChatRoom
             _chat.OnGroupMessage += OnGroupMessage;
             _chat.OnPrivateMessage += OnPrivateMessage;
             _chat.OnLog += OnServiceLog;
+            _chat.OnImageReceived += OnImageReceived;
 
             // 单实例判定 = "能否绑定 47060"，由操作系统仲裁。
             // 旧实现靠扫进程名 + PID 文件：被僵尸进程误判（2026-09-17 实测有 8 个不可杀的旧实例，
@@ -187,6 +189,99 @@ namespace ChatRoom
         private void OnServiceLog(string log)
         {
             OnUI(() => AddMessage("系统", log, BubbleKind.Service));
+        }
+
+        // === 图片 ===
+
+        /// <summary>收到一张完整图片：解码 → 落盘 → 显示 → 历史只记 [图片]</summary>
+        private void OnImageReceived(ChatUser from, byte[] jpeg, string scope)
+        {
+            OnUI(() =>
+            {
+                BitmapImage bmp = ChatImageCodec.Decode(jpeg);
+                if (bmp == null)
+                {
+                    AddMessage("系统", "收到一张无法解码的图片", BubbleKind.Service);
+                    return;
+                }
+
+                string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chat_images");
+                string name = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff") + "_" + (from.Nickname ?? "未知");
+                string saved = ChatImageCodec.SaveTo(dir, name, jpeg);
+
+                string label = scope == "P" ? (from.Nickname + " [私聊图片]") : from.Nickname;
+                AddImageMessage(label, bmp, saved, BubbleKind.Incoming);
+                SaveHistoryLine(from.Nickname + (scope == "P" ? "[私聊]" : ""), "[图片]");
+            });
+        }
+
+        private void BtnImage_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "选择要发送的图片",
+                Filter = "图片文件|*.jpg;*.jpeg;*.png;*.bmp;*.gif"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            try
+            {
+                byte[] jpeg = ChatImageCodec.EncodeFile(dlg.FileName);
+                if (jpeg == null || jpeg.Length == 0) { MessageBox.Show("图片读取失败。", "提示"); return; }
+
+                if (jpeg.Length / 3 * 4 > ChatUdpService.ImageMaxChars)
+                {
+                    MessageBox.Show("这张图太大了（压缩后 " + (jpeg.Length / 1024) + "KB），请换一张更小的。", "提示");
+                    return;
+                }
+
+                string target = _currentTarget != null ? _currentTarget.IP : null;
+                _chat.SendImage(jpeg, target);
+
+                BitmapImage bmp = ChatImageCodec.Decode(jpeg);
+                string label = target == null ? "我（群发）" : ("我 → " + _currentTarget.Nickname);
+                AddImageMessage(label, bmp, "", BubbleKind.Outgoing);
+                SaveHistoryLine("我", "[图片]");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("发送图片失败：" + ex.Message, "错误");
+            }
+        }
+
+        /// <summary>点图片用系统查看器打开（发送端已缩到 320x240，线上没有更高分辨率的原图）</summary>
+        private void Image_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            ChatMessageItem item = (sender as FrameworkElement)?.DataContext as ChatMessageItem;
+            if (item == null || string.IsNullOrEmpty(item.ImagePath)) return;
+            try { System.Diagnostics.Process.Start(item.ImagePath); }
+            catch (Exception ex) { MessageBox.Show("打开图片失败：" + ex.Message, "提示"); }
+        }
+
+        /// <summary>追加一条图片消息（气泡样式与文字消息同一套主题）</summary>
+        private void AddImageMessage(string sender, System.Windows.Media.ImageSource image, string path, BubbleKind kind)
+        {
+            ApplyBubbleStyle(kind, out Brush bg, out Brush border, out Brush fg, out Brush secondary);
+            bool right = kind == BubbleKind.Outgoing;
+
+            _messages.Add(new ChatMessageItem
+            {
+                Sender = sender,
+                Message = "[图片]",
+                IsImage = true,
+                Image = image,
+                ImagePath = path,
+                FontSize = _settings.FontSize,
+                Kind = kind,
+                BgBrush = bg,
+                BorderBrush = border,
+                TextBrush = fg,
+                SecondaryBrush = secondary,
+                Time = DateTime.Now.ToString("HH:mm"),
+                Align = right ? HorizontalAlignment.Right : HorizontalAlignment.Left,
+                Margin = new Thickness(right ? 100 : 0, 4, right ? 0 : 100, 4)
+            });
+            ChatScroll.ScrollToEnd();
         }
 
         // === UI事件 ===
@@ -365,6 +460,11 @@ namespace ChatRoom
         public Brush SecondaryBrush { get; set; }
         public string Time { get; set; } = "";
         public BubbleKind Kind { get; set; } = BubbleKind.Incoming;
+        /// <summary>是否图片消息（气泡模板据此显示缩略图并隐藏文字）</summary>
+        public bool IsImage { get; set; }
+        public System.Windows.Media.ImageSource Image { get; set; }
+        /// <summary>落盘路径（点开查看用；自己发出的那条本地显示没有路径）</summary>
+        public string ImagePath { get; set; } = "";
         public HorizontalAlignment Align { get; set; }
         public Thickness Margin { get; set; }
     }

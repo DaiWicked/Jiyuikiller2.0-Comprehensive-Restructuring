@@ -79,6 +79,8 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Services\ChatUdpService.cs" />
+    <Compile Include="Services\ChatUdpService.Images.cs" />
+    <Compile Include="Services\ChatImageCodec.cs" />
     <Compile Include="Models\ChatUser.cs" />
     <Compile Include="Theme.cs" />
     <Compile Include="Models\ChatSettings.cs" />
