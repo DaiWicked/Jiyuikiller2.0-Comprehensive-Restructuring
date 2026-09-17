@@ -657,7 +657,6 @@ namespace JiYuKiller.Services
                 return false;
             }
 
-            bool deleted = false;
             try
             {
                 IntPtr hService = OpenService(hSCM, DRIVER_NAME, SERVICE_ALL_ACCESS);
@@ -696,7 +695,6 @@ namespace JiYuKiller.Services
                         }
                         else
                         {
-                            deleted = true;
                             Logger.Instance.Info("[Driver] 驱动服务已删除");
                         }
                     }
