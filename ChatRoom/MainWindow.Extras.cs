@@ -245,7 +245,7 @@ namespace ChatRoom
                     try { if (_tray != null) { _tray.Visible = false; _tray.Dispose(); _tray = null; } } catch { }
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // 托盘失败必须让用户知道：关闭到托盘会让窗口"藏了唤不回"，所以关闭逻辑会退化为直接退出
                 // 用可见提示（ChatRoom 没有日志系统）：用户需要知道"关闭会直接退出"
