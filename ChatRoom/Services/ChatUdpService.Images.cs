@@ -213,10 +213,12 @@ namespace ChatRoom.Services
                 }
 
                 if (asm.Completed || asm.Total != total) return;   // 重复块 / 参数不一致：忽略
-                asm.LastSeen = DateTime.Now;
 
                 if (asm.Parts[seq] == null)
                 {
+                    // 只在"新块"时刷新 LastSeen：否则对端只要不停重发同一块，这个残缺组装就永不过期，
+                    // 长期占满"同发送者最多 2 张在拼"的名额，之后该对端的图片全被丢弃。
+                    asm.LastSeen = DateTime.Now;
                     asm.Parts[seq] = data;
                     asm.Received++;
 

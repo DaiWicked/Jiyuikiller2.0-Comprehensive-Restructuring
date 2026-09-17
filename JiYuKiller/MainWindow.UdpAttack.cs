@@ -88,6 +88,8 @@ namespace JiYuKiller
         }
 
         private bool _udpLogRegistered = false;
+        private bool _udpScanRegistered = false;   // 见 BtnScanLan_Click
+
         private void RegisterUdpLog()
         {
             if (!_udpLogRegistered)
@@ -120,6 +122,10 @@ namespace JiYuKiller
             Services.Logger.Instance.ButtonClick("UDP攻击-扫描局域网", "BtnScanLan");
             RegisterUdpLog();
             var svc = Services.UdpAttackService.Instance;
+            // 幂等订阅：UdpAttackService 是静态单例，原来每点一次"扫描局域网"就追加一个捕获本窗口的处理器
+            // ⇒ 单例一直持有窗口（无法回收），点 N 次后一次扫描触发 N 遍（重复清列表/重复写日志）。
+            if (_udpScanRegistered) return;
+            _udpScanRegistered = true;
             svc.OnScanComplete += (hosts) => Dispatcher.Invoke(() =>
             {
                 ListUdpScanResult.Items.Clear();

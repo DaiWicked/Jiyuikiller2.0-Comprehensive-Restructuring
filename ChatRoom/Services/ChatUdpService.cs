@@ -77,9 +77,17 @@ namespace ChatRoom.Services
                 //   用 new UdpClient(Port) 时第二个实例会静默绑定成功 ⇒ 单实例检测形同虚设
                 //   （2026-09-18 实测：实例 #2 照样起来了）。
                 //   ExclusiveAddressUse 必须在 Bind 之前设置，所以不用便捷构造，改为手动三步。
-                var sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                sock.ExclusiveAddressUse = true;
-                sock.Bind(new IPEndPoint(IPAddress.Any, Port));
+                Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                try
+                {
+                    sock.ExclusiveAddressUse = true;
+                    sock.Bind(new IPEndPoint(IPAddress.Any, Port));
+                }
+                catch
+                {
+                    try { sock.Dispose(); } catch { }   // 绑定失败要释放，否则句柄泄漏
+                    throw;
+                }
                 _udp = new UdpClient();
                 _udp.Client = sock;
             }
@@ -132,14 +140,18 @@ namespace ChatRoom.Services
             Raise(OnLog, "聊天服务已停止");
         }
 
-        public void SendGroup(string message)
+        /// <summary>返回是否真的送出（UI 据此提示失败，避免消息静默丢失）</summary>
+        public bool SendGroup(string message)
         {
-            SendBroadcast(EncodePacket("GBRD", Nickname, message));
+            try { return SendBroadcast(EncodePacket("GBRD", Nickname, message)); }
+            catch (Exception ex) { Raise(OnLog, "发送失败: " + ex.Message); return false; }
         }
 
-        public void SendPrivate(string targetIP, string message)
+        /// <summary>返回是否真的送出</summary>
+        public bool SendPrivate(string targetIP, string message)
         {
-            SendTo(targetIP, EncodePacket("PMSG", Nickname, message));
+            try { return SendTo(targetIP, EncodePacket("PMSG", Nickname, message)); }
+            catch (Exception ex) { Raise(OnLog, "发送失败: " + ex.Message); return false; }
         }
 
         // ==================== 内部实现 ====================
@@ -159,8 +171,10 @@ namespace ChatRoom.Services
 
                     // payload 格式: nickname + "\0" + message
                     int sep = payload.IndexOf('\0');
-                    string nick = sep > 0 ? payload.Substring(0, sep) : payload;
-                    string msg = sep > 0 ? payload.Substring(sep + 1) : "";
+                    string nick = sep >= 0 ? payload.Substring(0, sep) : payload;   // sep>=0: 昵称为空时首字节就是 \0，用 sep>0 会把正文整段吃掉
+                    string msg = sep >= 0 ? payload.Substring(sep + 1) : "";
+                    if (nick.Length > 64) nick = nick.Substring(0, 64);      // 防畸形超长昵称
+                    if (msg.Length > 4096) msg = msg.Substring(0, 4096);     // 防超长正文
 
                     string senderIP = remote.Address.ToString();
 

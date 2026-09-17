@@ -219,9 +219,11 @@ namespace JiYuKiller
                 try
                 {
                     COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(lParam, typeof(COPYDATASTRUCT));
-                    if (cds.lpData != IntPtr.Zero)
+                    // 必须校验长度：源缓冲区若不是 NUL 结尾，PtrToStringUni(IntPtr) 会越界读，
+                    // 可能抛不可捕获的 AccessViolationException（同用户任意进程都能发这条消息）。
+                    if (cds.lpData != IntPtr.Zero && cds.cbData > 0 && cds.cbData <= 4096)
                     {
-                        string message = Marshal.PtrToStringUni(cds.lpData);
+                        string message = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2);
                         if (!string.IsNullOrEmpty(message))
                         {
                             Services.Logger.Instance.Info("[DLL回调] " + message);

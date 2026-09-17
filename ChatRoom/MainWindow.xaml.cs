@@ -138,6 +138,7 @@ namespace ChatRoom
                         AddMessage(sender, msg, isMe ? BubbleKind.Outgoing : BubbleKind.Incoming, false, lineTime);
                     }
                 }
+                _loadingHistory = false;   // 必须复位！否则启动后所有新消息都被标记成历史，入场动画永久失效
                 if (_messages.Count > 0)
                     AddMessage("系统", "--- 以下为新消息 ---", BubbleKind.Service);
             }
@@ -267,12 +268,16 @@ namespace ChatRoom
                     return;
                 }
 
-                // 目标离线时单播等于发给空气 —— 自动改群发并说明（用户反馈过"显示发出去但没人收到"）
+                // 目标离线时单播等于发给空气。但绝不能"静默改群发" —— 私聊图片被广播给全组是隐私事故，
+                // 所以这里是**询问**而不是自动决定（用户确认后才群发）。
                 string target = _currentTarget != null ? _currentTarget.IP : null;
                 if (_currentTarget != null && !_currentTarget.IsOnline)
                 {
+                    var ask = MessageBox.Show(
+                        _currentTarget.Nickname + " 似乎已离线。是否改为群发这张图片？",
+                        "对方离线", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (ask != MessageBoxResult.Yes) return;
                     target = null;
-                    AddMessage("系统", _currentTarget.Nickname + " 已离线，本次改为群发", BubbleKind.Service);
                 }
                 _chat.SendImage(jpeg, target);
 
@@ -307,6 +312,7 @@ namespace ChatRoom
                 Sender = sender,
                 Message = "[图片]",
                 IsImage = true,
+                IsHistory = _loadingHistory,
                 Image = image,
                 ImagePath = path,
                 FontSize = _settings.FontSize,
@@ -575,18 +581,22 @@ namespace ChatRoom
             string msg = InputBox.Text.Trim();
             if (string.IsNullOrEmpty(msg)) return;
 
+            bool sentOk;
             if (_currentTarget != null)
             {
-                _chat.SendPrivate(_currentTarget.IP, msg);
+                sentOk = _chat.SendPrivate(_currentTarget.IP, msg);
                 AddMessage("我 → " + _currentTarget.Nickname, msg, BubbleKind.Outgoing);
                 SaveHistoryLine("我[私聊]", msg);
             }
             else
             {
-                _chat.SendGroup(msg);
+                sentOk = _chat.SendGroup(msg);
                 AddMessage("我", msg, BubbleKind.Outgoing);
                 SaveHistoryLine("我", msg);
             }
+
+            // 发送失败要给可见反馈（对端离线、正文超过单个 UDP 包上限等 ⇒ 原来静默丢失）
+            if (!sentOk) AddMessage("系统", "消息发送失败（对方可能已离线，或内容过长超过单个 UDP 包上限）", BubbleKind.Service);
 
             InputBox.Clear();
         }
@@ -666,10 +676,14 @@ namespace ChatRoom
         {
             if (!_isExiting)
             {
-                // 点X或最小化时不退出，藏到托盘
-                e.Cancel = true;
-                Hide();
-                return;
+                // 只有托盘真的可用时才"关到托盘"；托盘失败时必须放行关闭，
+                // 否则窗口藏起来又没托盘，用户既唤不回也退不掉，只能杀进程。
+                if (_tray != null)
+                {
+                    e.Cancel = true;
+                    Hide();
+                    return;
+                }
             }
             base.OnClosing(e);
         }

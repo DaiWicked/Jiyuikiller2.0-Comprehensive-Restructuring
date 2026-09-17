@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Windows.Media.Imaging;
 
@@ -19,28 +19,43 @@ namespace ChatRoom.Services
         public const int MaxHeight = 240;
         public const int JpegQuality = 50;
 
+        /// <summary>像素上限：超过就直接拒绝解码（x86 下 4000 万像素约 160MB 位图，足以吃爆进程）</summary>
+        public const int MaxPixels = 40000000;
+        /// <summary>接收侧单张图字节上限（协议侧正文上限 128K 字符 ≈ 96KB 图）</summary>
+        public const int MaxDecodeBytes = 256 * 1024;
+
         /// <summary>读文件并按上限等比缩放、编码为 JPEG（质量 50）</summary>
         public static byte[] EncodeFile(string path)
         {
             // OnLoad：读完即放，不锁文件
+            // 先只读元数据取原始尺寸：直接整幅解码超大图会把 x86 进程吃爆（解码炸弹）
+            int pw, ph;
+            using (var probe = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                var dec = BitmapDecoder.Create(probe, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+                pw = dec.Frames[0].PixelWidth;
+                ph = dec.Frames[0].PixelHeight;
+            }
+            if (pw <= 0 || ph <= 0) return null;
+            if ((long)pw * ph > MaxPixels)
+                throw new InvalidOperationException("图片像素过多（" + pw + "x" + ph + "），已拒绝处理");
+
+            // 按目标尺寸解码（只设长边，保持比例）；OnLoad：读完即放，不锁文件
             var src = new BitmapImage();
             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 src.BeginInit();
                 src.CacheOption = BitmapCacheOption.OnLoad;
                 src.StreamSource = fs;
+                if (pw > MaxWidth || ph > MaxHeight)
+                {
+                    if (pw >= ph) src.DecodePixelWidth = MaxWidth; else src.DecodePixelHeight = MaxHeight;
+                }
                 src.EndInit();
             }
             src.Freeze();
 
-            double scale = Math.Min(1.0, Math.Min((double)MaxWidth / src.PixelWidth, (double)MaxHeight / src.PixelHeight));
             BitmapSource output = src;
-            if (scale < 1.0)
-            {
-                var tb = new TransformedBitmap(src, new System.Windows.Media.ScaleTransform(scale, scale));
-                tb.Freeze();
-                output = tb;
-            }
 
             var encoder = new JpegBitmapEncoder { QualityLevel = JpegQuality };
             encoder.Frames.Add(BitmapFrame.Create(output));
@@ -56,12 +71,25 @@ namespace ChatRoom.Services
         {
             try
             {
+                if (jpeg == null || jpeg.Length == 0 || jpeg.Length > MaxDecodeBytes) return null;
+
+                // 远端可控内容：解码前先按元数据判像素数，避免"小文件大位图"的内存炸弹
+                int pw, ph;
+                using (var probe = new MemoryStream(jpeg))
+                {
+                    var dec = BitmapDecoder.Create(probe, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+                    pw = dec.Frames[0].PixelWidth;
+                    ph = dec.Frames[0].PixelHeight;
+                }
+                if (pw <= 0 || ph <= 0 || (long)pw * ph > MaxPixels) return null;
+
                 var bmp = new BitmapImage();
                 using (var ms = new MemoryStream(jpeg))
                 {
                     bmp.BeginInit();
                     bmp.CacheOption = BitmapCacheOption.OnLoad;
                     bmp.StreamSource = ms;
+                    if (pw >= ph) bmp.DecodePixelWidth = MaxWidth; else bmp.DecodePixelHeight = MaxHeight;
                     bmp.EndInit();
                 }
                 bmp.Freeze();

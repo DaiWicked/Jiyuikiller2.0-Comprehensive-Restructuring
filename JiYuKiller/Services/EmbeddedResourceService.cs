@@ -291,7 +291,18 @@ namespace JiYuKiller.Services
             {
                 if (Directory.Exists(TempDir))
                 {
-                    Directory.Delete(TempDir, true);
+                    // 保护：ForceInstallInCurrentDir=true 时释放目录就是 exe 目录，
+                    // 直接递归删除会把程序自己、Drivers、设置和日志一起删掉。
+                    if (string.Equals(TempDir.TrimEnd(Path.DirectorySeparatorChar),
+                                      AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar),
+                                      StringComparison.OrdinalIgnoreCase))
+                    {
+                        Logger.Instance.Warn("[释放] 释放目录即程序目录，跳过递归清理以免删除自身");
+                    }
+                    else
+                    {
+                        Directory.Delete(TempDir, true);
+                    }
                     Logger.Instance.Info("[EmbeddedResource] 释放目录已清理");
                 }
             }

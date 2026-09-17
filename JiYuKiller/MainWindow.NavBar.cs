@@ -479,14 +479,18 @@ namespace JiYuKiller
                 // 滑动指示器渐变：同理
                 if (NavIndicator != null)
                 {
+                    // XAML 里 NavIndicator 自身没设 Background，两个 GradientStop 在它的子 Border 上，
+                    // 所以原来取 NavIndicator.Background 恒为 null ⇒ 指示器配色自适应一直是死代码。
                     var lg = NavIndicator.Background as System.Windows.Media.LinearGradientBrush;
+                    if (lg == null && VisualTreeHelper.GetChildrenCount(NavIndicator) > 0)
+                    {
+                        var child = VisualTreeHelper.GetChild(NavIndicator, 0) as Border;
+                        if (child != null) lg = child.Background as System.Windows.Media.LinearGradientBrush;
+                    }
+
                     if (lg != null && lg.GradientStops.Count >= 2)
                     {
-                        if (lg.IsFrozen)
-                        {
-                            lg = lg.Clone();
-                            NavIndicator.Background = lg;
-                        }
+                        if (lg.IsFrozen) lg = lg.Clone();   // 只读取，不回写（子 Border 的画刷不该被替换）
                         _navIndTop = lg.GradientStops[0];
                         _navIndBottom = lg.GradientStops[1];
                     }

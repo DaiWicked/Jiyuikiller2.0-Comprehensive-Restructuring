@@ -119,7 +119,8 @@ foreach ($step in @(2, 20, 26, 30)) {
     # 该台阶深度(相对玻璃左边缘 x=24): depth = step - 24 (负数表示在玻璃外)
     $depth = $step - 24
     $edge = if ($depth -gt 0) { [Math]::Pow([Math]::Max(0, 1 - $depth/21), 2) } else { 1.0 }
-    # 注意：折射方向已在 c5941fb 由"向内"改为"向外"，位移符号随之取正（这里曾写作 -10*edge 已过期）`r`n    "台阶x={0,3}  depth={1,4}  edge={2:F3}  理论位移={3,6:F2}px   实测位移={4,6:F2}px" -f $step, $depth, $edge, (10*$edge), ($c2-$c1)
+    # 注意：折射方向已在 c5941fb 由"向内"改为"向外"，位移符号随之取正（这里曾写作 -10*edge 已过期）
+    "台阶x={0,3}  depth={1,4}  edge={2:F3}  理论位移={3,6:F2}px   实测位移={4,6:F2}px" -f $step, $depth, $edge, (10*$edge), ($c2-$c1)
 }
 
 ""

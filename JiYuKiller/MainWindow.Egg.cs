@@ -121,6 +121,9 @@ namespace JiYuKiller
             {
                 // 失败时给出可读提示, 不要留一个纯黑窗口
                 EggMedia.Visibility = System.Windows.Visibility.Collapsed;
+                // 关键：复位状态。原来不复位 ⇒ _eggShowing 永远为 true，彩蛋再也点不出来（除非手动点关闭）
+                _eggShowing = false;
+                _eggClickCount = 0;
             }
             catch
             {

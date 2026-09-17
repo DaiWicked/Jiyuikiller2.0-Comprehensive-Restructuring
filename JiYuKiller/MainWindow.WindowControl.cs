@@ -22,7 +22,9 @@ namespace JiYuKiller
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             // 仅允许拖动窗口，不响应双击最大化（窗口固定大小不可最大化）
-            DragMove();
+            // 左键已释放（快速点击/双击/触控）时 DragMove 会抛 InvalidOperationException，别让它弹全局错误框
+            try { DragMove(); }
+            catch (InvalidOperationException) { }
         }
 
 

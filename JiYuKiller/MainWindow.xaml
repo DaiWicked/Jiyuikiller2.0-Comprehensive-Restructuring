@@ -464,7 +464,7 @@
                                             <ColumnDefinition Width="110" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="紧急全屏快捷键" VerticalAlignment="Center" Foreground="#FF0A0A0A" FontSize="13" />
-                                        <TextBox x:Name="TextHotKeyFakeFull" Grid.Column="1" Text="Ctrl+Alt+F" Height="26" FontSize="12"
+                                        <TextBox x:Name="TextHotKeyFakeFull" Grid.Column="1" Text="Ctrl+Shift+F" Height="26" FontSize="12"
                                                  TextAlignment="Center" VerticalContentAlignment="Center" IsReadOnly="True" IsReadOnlyCaretVisible="False"
                                                  Cursor="Hand" Style="{StaticResource GlassTextBox}" PreviewKeyDown="HotKeyBox_PreviewKeyDown"
                                                  ToolTip="点这里，然后直接按下想要的组合键（须含 Ctrl/Alt/Shift/Win 至少一个）" />
@@ -475,7 +475,7 @@
                                             <ColumnDefinition Width="110" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="显示/隐藏窗口快捷键" VerticalAlignment="Center" Foreground="#FF0A0A0A" FontSize="13" />
-                                        <TextBox x:Name="TextHotKeyShowHide" Grid.Column="1" Text="Ctrl+Alt+H" Height="26" FontSize="12"
+                                        <TextBox x:Name="TextHotKeyShowHide" Grid.Column="1" Text="Ctrl+Shift+D" Height="26" FontSize="12"
                                                  TextAlignment="Center" VerticalContentAlignment="Center" IsReadOnly="True" IsReadOnlyCaretVisible="False"
                                                  Cursor="Hand" Style="{StaticResource GlassTextBox}" PreviewKeyDown="HotKeyBox_PreviewKeyDown"
                                                  ToolTip="点这里，然后直接按下想要的组合键（须含 Ctrl/Alt/Shift/Win 至少一个）" />

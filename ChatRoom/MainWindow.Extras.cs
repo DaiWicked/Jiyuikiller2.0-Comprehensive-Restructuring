@@ -35,6 +35,9 @@ namespace ChatRoom
         {
             BuildEmojiPanel();
             InitTray();
+            StartUserSync();
+            // 系统关机/注销时必须放行关闭，否则会被"此程序阻止关机"卡住
+            Application.Current.SessionEnding += (s, a) => { _isExiting = true; };
         }
 
         private void BtnSearch_Click(object sender, RoutedEventArgs e)
@@ -242,7 +245,45 @@ namespace ChatRoom
                     try { if (_tray != null) { _tray.Visible = false; _tray.Dispose(); _tray = null; } } catch { }
                 };
             }
-            catch { /* 托盘失败不影响主功能 */ }
+            catch (Exception ex)
+            {
+                // 托盘失败必须让用户知道：关闭到托盘会让窗口"藏了唤不回"，所以关闭逻辑会退化为直接退出
+                // 用可见提示（ChatRoom 没有日志系统）：用户需要知道"关闭会直接退出"
+                try { AddMessage("系统", "托盘图标创建失败，关闭窗口将直接退出程序", BubbleKind.Service); } catch { }
+            }
+        }
+
+        private DispatcherTimer _userSyncTimer;
+
+        /// <summary>
+        /// 定时把服务端的用户态同步回 UI 列表。
+        /// 必须做：UI 里的 ChatUser 是"加入时"的快照，LastSeen 不会自己变 ⇒ 8 秒后 IsOnline 恒为 false，
+        /// 会导致在线点变灰、在线数变 0，以及"选中的私聊对象被误判离线"（曾经因此把私密图片改成群发）。
+        /// </summary>
+        private void StartUserSync()
+        {
+            _userSyncTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            _userSyncTimer.Tick += (s, a) => SyncUserListFromService();
+            _userSyncTimer.Start();
+            Closed += (s, a) => { try { if (_userSyncTimer != null) _userSyncTimer.Stop(); } catch { } };
+        }
+
+        private void SyncUserListFromService()
+        {
+            if (_chat == null) return;
+            try
+            {
+                var live = _chat.SnapshotUsers();
+                foreach (ChatUser u in _userList)
+                {
+                    foreach (ChatUser s in live)
+                    {
+                        if (s.IP == u.IP) { u.LastSeen = s.LastSeen; u.Nickname = s.Nickname; break; }
+                    }
+                }
+                UpdateUserCount();
+            }
+            catch { }
         }
 
         private void ToggleWindowVisible()
