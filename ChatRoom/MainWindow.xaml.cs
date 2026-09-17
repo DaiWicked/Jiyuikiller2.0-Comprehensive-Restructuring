@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Animation;
 using ChatRoom.Models;
 using ChatRoom.Services;
 
@@ -111,7 +112,8 @@ namespace ChatRoom
                 var recent = lines.Skip(Math.Max(0, lines.Length - 100)).ToList();
                 foreach (string line in recent)
                 {
-                    string[] parts = line.Split('|');
+                    _loadingHistory = true;   // 见 Bubble_Loaded：历史条目不播放入场动画
+                string[] parts = line.Split('|');
                     if (parts.Length >= 3)
                     {
                         string sender = parts[1].Trim();
@@ -321,6 +323,7 @@ namespace ChatRoom
 
         private int _unreadCount = 0;
         private bool _unreadSeparatorShown = false;
+        private bool _loadingHistory = false;   // 历史批量加载时不逐条播放入场动画
 
         /// <summary>
         /// 未读计数：只在用户"没在看"时累加（最小化或窗口不在前台）。
@@ -335,6 +338,7 @@ namespace ChatRoom
             _unreadCount++;
             TextUnread.Text = _unreadCount + " 条新消息";
             BtnUnread.Visibility = Visibility.Visible;
+            PopElement(BtnUnread);
 
             if (!_unreadSeparatorShown)
             {
@@ -369,6 +373,130 @@ namespace ChatRoom
         private void AutoScroll()
         {
             if (ChatScroll.ScrollableHeight - ChatScroll.VerticalOffset < 40) ChatScroll.ScrollToEnd();
+        }
+
+        // === 动效（参考 COUI：spring / animateFloatAsState / graphicsLayer） ===
+
+        /// <summary>
+        /// 气泡入场：淡入 + 上移 8px，缓动用 BackEase（近似 COUI 的 spring，略微过冲后回落）。
+        /// 历史条目直接跳过 —— 否则启动时上百条会一起飞入。
+        /// </summary>
+        private void Bubble_Loaded(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement el = sender as FrameworkElement;
+            if (el == null) return;
+
+            ChatMessageItem item = el.DataContext as ChatMessageItem;
+            if (item != null && item.IsHistory) return;
+
+            el.Opacity = 0;
+            var tt = new TranslateTransform(0, 8);
+            el.RenderTransform = tt;
+
+            var sb = new Storyboard();
+            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180));
+            Storyboard.SetTarget(fade, el);
+            Storyboard.SetTargetProperty(fade, new PropertyPath("Opacity"));
+
+            var slide = new DoubleAnimation(8, 0, TimeSpan.FromMilliseconds(240))
+            {
+                EasingFunction = new BackEase { Amplitude = 0.5, EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(slide, tt);
+            Storyboard.SetTargetProperty(slide, new PropertyPath("Y"));
+
+            sb.Children.Add(fade);
+            sb.Children.Add(slide);
+            sb.Begin();
+        }
+
+        /// <summary>元素"弹一下"（未读徽标出现/数字变化时用；一次性，不循环，避免一直闪）</summary>
+        private static void PopElement(FrameworkElement el)
+        {
+            if (el == null) return;
+            var st = new ScaleTransform(0.75, 0.75);
+            el.RenderTransform = st;
+
+            var sb = new Storyboard();
+            var sx = new DoubleAnimation(0.75, 1.0, TimeSpan.FromMilliseconds(260))
+            {
+                EasingFunction = new BackEase { Amplitude = 0.8, EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(sx, st);
+            Storyboard.SetTargetProperty(sx, new PropertyPath("ScaleX"));
+            var sy = sx.Clone();
+            Storyboard.SetTarget(sy, st);
+            Storyboard.SetTargetProperty(sy, new PropertyPath("ScaleY"));
+            sb.Children.Add(sx);
+            sb.Children.Add(sy);
+            sb.Begin();
+        }
+
+        // === 右键菜单 ===
+
+
+        private void MsgMenu_Copy(object sender, RoutedEventArgs e)
+        {
+            ChatMessageItem item = ((FrameworkElement)sender).DataContext as ChatMessageItem;
+            if (item == null) return;
+            try { Clipboard.SetText(item.Message ?? ""); }
+            catch { }
+        }
+
+        /// <summary>引用回复：把引文拼在输入框前面（纯文本，不动协议，对方看到的也是普通文字）</summary>
+        private void MsgMenu_Quote(object sender, RoutedEventArgs e)
+        {
+            ChatMessageItem item = ((FrameworkElement)sender).DataContext as ChatMessageItem;
+            if (item == null) return;
+            string quoted = item.Message ?? "";
+            if (quoted.Length > 60) quoted = quoted.Substring(0, 60) + "…";
+            InputBox.Text = "> " + item.Sender + "：" + quoted + "  →  " + InputBox.Text;
+            InputBox.Focus();
+            InputBox.CaretIndex = InputBox.Text.Length;
+        }
+
+        private void MsgMenu_Delete(object sender, RoutedEventArgs e)
+        {
+            ChatMessageItem item = ((FrameworkElement)sender).DataContext as ChatMessageItem;
+            if (item == null) return;
+            _messages.Remove(item);
+
+            // 历史文件里也删掉对应的那一条（只删第一条匹配的）
+            try
+            {
+                if (File.Exists(_historyPath))
+                {
+                    string needle = "| " + item.Sender + " | " + item.Message;
+                    var kept = File.ReadAllLines(_historyPath, System.Text.Encoding.UTF8)
+                                   .Where(l => !l.Contains(needle)).ToArray();
+                    File.WriteAllLines(_historyPath, kept, System.Text.Encoding.UTF8);
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>导出当前会话为文本（含时间/发送者/内容）</summary>
+        private void MsgMenu_Export(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "导出聊天记录",
+                Filter = "文本文件|*.txt",
+                FileName = "chat_export_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + ".txt"
+            };
+            if (dlg.ShowDialog() != true) return;
+            try
+            {
+                var sb = new System.Text.StringBuilder();
+                foreach (ChatMessageItem m in _messages)
+                    sb.AppendLine("[" + m.Time + "] " + m.Sender + ": " + (m.IsImage ? "[图片] " + m.ImagePath : m.Message));
+                File.WriteAllText(dlg.FileName, sb.ToString(), System.Text.Encoding.UTF8);
+                AddMessage("系统", "已导出 " + _messages.Count + " 条到 " + System.IO.Path.GetFileName(dlg.FileName), BubbleKind.Service);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("导出失败：" + ex.Message, "错误");
+            }
         }
 
         // === UI事件 ===
@@ -472,6 +600,7 @@ namespace ChatRoom
                 Message = message,
                 FontSize = _settings.FontSize,
                 Kind = kind,
+                IsHistory = _loadingHistory,
                 BgBrush = bg,
                 BorderBrush = border,
                 TextBrush = fg,
@@ -562,6 +691,8 @@ namespace ChatRoom
         public string Time { get; set; } = "";
         public BubbleKind Kind { get; set; } = BubbleKind.Incoming;
         /// <summary>是否图片消息（气泡模板据此显示缩略图并隐藏文字）</summary>
+        /// <summary>历史加载出来的条目：不播放入场动画（否则启动时上百条一起飞入）</summary>
+        public bool IsHistory { get; set; }
         public bool IsImage { get; set; }
         public System.Windows.Media.ImageSource Image { get; set; }
         /// <summary>落盘路径（点开查看用；自己发出的那条本地显示没有路径）</summary>

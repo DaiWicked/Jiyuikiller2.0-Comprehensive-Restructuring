@@ -22,16 +22,52 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" CornerRadius="8" Background="{TemplateBinding Background}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
+                        <!-- 动效参考 COUI：颜色/透明度用 animate*AsState，位移用 spring，缩放在 graphicsLayer。
+                             这里用"叠加层透明度 + 缩放"实现：主题画刷从 Application.Resources 来（已冻结），
+                             直接动画它的 Color 会抛异常，所以改成动画叠加层 Opacity。 -->
+                        <Grid RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="sc" ScaleX="1" ScaleY="1" />
+                            </Grid.RenderTransform>
+                            <Border x:Name="bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <Border x:Name="hoverLayer" CornerRadius="8" Background="#26FFFFFF" Opacity="0" IsHitTestVisible="False" />
+                            <Border x:Name="pressLayer" CornerRadius="8" Background="#33000000" Opacity="0" IsHitTestVisible="False" />
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource AccentHover}" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12" />
+                                    </Storyboard></BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.16" />
+                                    </Storyboard></BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource AccentPressed}" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.06" />
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="0.97" Duration="0:0:0.06" />
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="0.97" Duration="0:0:0.06" />
+                                    </Storyboard></BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.14" />
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.22">
+                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.6" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.22">
+                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.6" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard></BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="bd" Property="Opacity" Value="0.45" />
@@ -50,16 +86,49 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" CornerRadius="6" Background="{TemplateBinding Background}" Margin="3">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
+                        <Grid RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="sc" ScaleX="1" ScaleY="1" />
+                            </Grid.RenderTransform>
+                            <Border x:Name="bd" CornerRadius="6" Background="{TemplateBinding Background}" Margin="3">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <Border x:Name="hoverLayer" CornerRadius="6" Margin="3" Background="#1F000000" Opacity="0" IsHitTestVisible="False" />
+                            <Border x:Name="pressLayer" CornerRadius="6" Margin="3" Background="#33000000" Opacity="0" IsHitTestVisible="False" />
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource GhostHover}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12" />
+                                    </Storyboard></BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.16" />
+                                    </Storyboard></BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource GhostPressed}" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.06" />
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="0.92" Duration="0:0:0.06" />
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="0.92" Duration="0:0:0.06" />
+                                    </Storyboard></BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.14" />
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.24">
+                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.7" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.24">
+                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.7" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard></BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -240,6 +309,7 @@
                                 Foreground="{DynamicResource TextSecondary}" />
                         <!-- 未读徽标：窗口不在前台时收到消息才出现，点它=跳到最新并清零 -->
                         <Button x:Name="BtnUnread" Click="BtnUnread_Click" Visibility="Collapsed"
+                                RenderTransformOrigin="0.5,0.5"
                                 DockPanel.Dock="Right" Padding="10,4" Margin="0,0,6,0"
                                 FontSize="12" VerticalAlignment="Center" ToolTip="跳到最新消息"
                                 Style="{StaticResource AccentButton}">
@@ -265,7 +335,17 @@
                                         HorizontalAlignment="{Binding Align}"
                                         Background="{Binding BgBrush}"
                                         BorderBrush="{Binding BorderBrush}"
-                                        BorderThickness="1">
+                                        BorderThickness="1"
+                                        Loaded="Bubble_Loaded">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="复制文字" Click="MsgMenu_Copy" />
+                                            <MenuItem Header="引用回复" Click="MsgMenu_Quote" />
+                                            <Separator />
+                                            <MenuItem Header="删除本条（本地）" Click="MsgMenu_Delete" />
+                                            <MenuItem Header="导出聊天记录…" Click="MsgMenu_Export" />
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
                                     <StackPanel>
                                         <TextBlock Text="{Binding Sender}" FontSize="11"
                                                    Foreground="{Binding SecondaryBrush}"
