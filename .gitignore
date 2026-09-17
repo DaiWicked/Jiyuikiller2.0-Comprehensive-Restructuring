@@ -214,3 +214,7 @@ JiYuKiller/Drivers/ffmpeg.exe
 # 64位ffmpeg（82MB，不提交到git，发布时单独打包）
 ffmpeg64.exe
 */Drivers/ffmpeg64.exe
+
+# 旧备份文件
+JiYuTrainerHooks.dll.stable_backup
+*.stable_backup
