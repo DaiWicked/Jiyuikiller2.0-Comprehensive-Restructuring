@@ -18,6 +18,7 @@ namespace ChatRoom
         private string _pidFilePath;
         private ObservableCollection<ChatUser> _userList = new ObservableCollection<ChatUser>();
         private ObservableCollection<ChatMessageItem> _messages = new ObservableCollection<ChatMessageItem>();
+        private string _historyPath;
 
         public MainWindow()
         {
@@ -30,10 +31,9 @@ namespace ChatRoom
         {
             base.OnSourceInitialized(e);
 
-            // 加载设置
             _settings = ChatSettings.Load();
+            _historyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chat_history.txt");
 
-            // 命令行参数 --nick= 覆盖设置中的昵称
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 1; i < args.Length; i++)
             {
@@ -41,11 +41,11 @@ namespace ChatRoom
                     _settings.Nickname = args[i].Substring(7);
             }
 
-            // PID单实例检测
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             _pidFilePath = Path.Combine(baseDir, "ChatRoom.pid");
             if (CheckSingleInstance())
             {
+                LoadHistory();
                 _chat = new ChatUdpService { Nickname = _settings.Nickname };
                 _chat.OnUserJoined += OnUserJoined;
                 _chat.OnUserLeft += OnUserLeft;
@@ -105,6 +105,46 @@ namespace ChatRoom
             try { if (File.Exists(_pidFilePath)) File.Delete(_pidFilePath); } catch { }
         }
 
+        // === 消息历史持久化 ===
+
+        private void LoadHistory()
+        {
+            try
+            {
+                if (!File.Exists(_historyPath)) return;
+                var lines = File.ReadAllLines(_historyPath, System.Text.Encoding.UTF8);
+                var recent = lines.Skip(Math.Max(0, lines.Length - 100)).ToList();
+                foreach (string line in recent)
+                {
+                    string[] parts = line.Split('|');
+                    if (parts.Length >= 3)
+                    {
+                        string sender = parts[1].Trim();
+                        string msg = parts[2].Trim();
+                        bool isMe = sender.StartsWith("我");
+                        AddMessage(sender, msg,
+                            isMe ? "#5B8DEF" : "#FFFFFF",
+                            isMe ? "Right" : "Left",
+                            isMe ? "#FFFFFF" : "#000000",
+                            false);
+                    }
+                }
+                if (_messages.Count > 0)
+                    AddMessage("系统", "--- 以下为新消息 ---", "#8E8E93", "Left", "#8E8E93", false);
+            }
+            catch { }
+        }
+
+        private void SaveHistoryLine(string sender, string message)
+        {
+            try
+            {
+                string line = $"[{DateTime.Now:HH:mm}] | {sender} | {message}";
+                File.AppendAllText(_historyPath, line + Environment.NewLine, System.Text.Encoding.UTF8);
+            }
+            catch { }
+        }
+
         // === 聊天服务事件 ===
 
         private void OnUserJoined(ChatUser user)
@@ -113,6 +153,7 @@ namespace ChatRoom
             {
                 if (!_userList.Any(u => u.IP == user.IP))
                     _userList.Add(user);
+                UpdateUserCount();
                 AddMessage("系统", $"{user.Nickname} 加入了聊天", "#8E8E93", "Left");
             });
         }
@@ -123,13 +164,24 @@ namespace ChatRoom
             {
                 var existing = _userList.FirstOrDefault(u => u.IP == user.IP);
                 if (existing != null) _userList.Remove(existing);
+                UpdateUserCount();
                 AddMessage("系统", $"{user.Nickname} 离开了聊天", "#8E8E93", "Left");
             });
         }
 
+        private void UpdateUserCount()
+        {
+            int count = _userList.Count(u => u.IsOnline);
+            UserCount.Text = $"({count})";
+        }
+
         private void OnGroupMessage(ChatUser from, string msg)
         {
-            Dispatcher.Invoke(() => AddMessage(from.Nickname, msg, "#E8E8ED", "Left"));
+            Dispatcher.Invoke(() =>
+            {
+                AddMessage(from.Nickname, msg, "#FFFFFF", "Left");
+                SaveHistoryLine(from.Nickname, msg);
+            });
         }
 
         private void OnPrivateMessage(ChatUser from, string msg)
@@ -137,9 +189,10 @@ namespace ChatRoom
             Dispatcher.Invoke(() =>
             {
                 if (_currentTarget != null && _currentTarget.IP == from.IP)
-                    AddMessage(from.Nickname + " [私聊]", msg, "#E8E8ED", "Left");
+                    AddMessage(from.Nickname + " [私聊]", msg, "#FFD699", "Left");
                 else
-                    AddMessage("📩 " + from.Nickname, msg, "#FFF3CD", "Left");
+                    AddMessage("📩 " + from.Nickname, msg, "#FFD699", "Left");
+                SaveHistoryLine(from.Nickname + "[私聊]", msg);
             });
         }
 
@@ -193,11 +246,7 @@ namespace ChatRoom
             {
                 _settings = dlg.Settings;
                 ApplySettings();
-                // 如果昵称变了，更新广播中的昵称
-                if (_chat != null)
-                {
-                    _chat.Nickname = _settings.Nickname;
-                }
+                if (_chat != null) _chat.Nickname = _settings.Nickname;
             }
         }
 
@@ -209,18 +258,21 @@ namespace ChatRoom
             if (_currentTarget != null)
             {
                 _chat.SendPrivate(_currentTarget.IP, msg);
-                AddMessage("我 → " + _currentTarget.Nickname, msg, "#4A90D9", "Right", "#FFFFFF");
+                AddMessage("我 → " + _currentTarget.Nickname, msg, "#5B8DEF", "Right", "#FFFFFF");
+                SaveHistoryLine("我[私聊]", msg);
             }
             else
             {
                 _chat.SendGroup(msg);
-                AddMessage("我", msg, "#4A90D9", "Right", "#FFFFFF");
+                AddMessage("我", msg, "#5B8DEF", "Right", "#FFFFFF");
+                SaveHistoryLine("我", msg);
             }
 
             InputBox.Clear();
         }
 
-        private void AddMessage(string sender, string message, string bgColor, string align, string textColor = "#000000")
+        private void AddMessage(string sender, string message, string bgColor, string align,
+                                string textColor = "#000000", bool saveToHistory = true)
         {
             _messages.Add(new ChatMessageItem
             {
@@ -229,7 +281,7 @@ namespace ChatRoom
                 FontSize = _settings.FontSize,
                 BgBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(bgColor)),
                 Align = align == "Right" ? HorizontalAlignment.Right : HorizontalAlignment.Left,
-                Margin = new Thickness(align == "Right" ? 80 : 0, 4, align == "Right" ? 0 : 80, 4),
+                Margin = new Thickness(align == "Right" ? 100 : 0, 4, align == "Right" ? 0 : 100, 4),
                 TextBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(textColor))
             });
             ChatScroll.ScrollToEnd();
@@ -239,7 +291,10 @@ namespace ChatRoom
         {
             _chat?.Stop();
             CleanPidFile();
-            if (_settings.ClearOnExit) _messages.Clear();
+            if (_settings.ClearOnExit)
+            {
+                try { if (File.Exists(_historyPath)) File.Delete(_historyPath); } catch { }
+            }
             base.OnClosed(e);
         }
     }
