@@ -197,8 +197,9 @@ namespace ChatRoom.Services
             if (isNew)
             {
                 Raise(OnUserJoined, snap);
-                // 只有新用户上线时才回复一次心跳，避免广播风暴
-                SendBroadcast(EncodePacket("CHAT", Nickname, ""));
+                // 只有新用户上线时才回复一次（避免广播风暴），且改成单播给对方，不再打扰全网。
+                // 注：心跳本身不需要互相回复 —— 双方各自每 3 秒广播一次，最多 3 秒就能互相发现。
+                SendTo(ip, EncodePacket("CHAT", Nickname, ""));
             }
         }
 
@@ -256,6 +257,10 @@ namespace ChatRoom.Services
                 {
                     SendBroadcast(EncodePacket("CHAT", Nickname, ""));
 
+                    // 定期清理图片组装缓存：不放在这里的话，"收不齐"要等到下一块到来才被发现，
+                    // 而残缺图片之后往往再没有块 —— 用户就永远看不到任何提示（实测踩到过）。
+                    CleanupImageAssemblies();
+
                     // 清理离线用户：先在锁内取出并移除，再在锁外抛事件
                     List<ChatUser> expired = null;
                     lock (_userLock)
@@ -308,16 +313,17 @@ namespace ChatRoom.Services
             return result;
         }
 
-        private void SendBroadcast(byte[] data)
+        /// <summary>返回是否真的送出（原来失败被 catch 吞掉，发送端照样报已发送）</summary>
+        private bool SendBroadcast(byte[] data)
         {
-            if (!_running || _udp == null) return;
-            try { _udp.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, Port)); } catch { }
+            if (!_running || _udp == null) return false;
+            try { _udp.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, Port)); return true; } catch { return false; }
         }
 
-        private void SendTo(string ip, byte[] data)
+        private bool SendTo(string ip, byte[] data)
         {
-            if (!_running || _udp == null) return;
-            try { _udp.Send(data, data.Length, new IPEndPoint(IPAddress.Parse(ip), Port)); } catch { }
+            if (!_running || _udp == null) return false;
+            try { _udp.Send(data, data.Length, new IPEndPoint(IPAddress.Parse(ip), Port)); return true; } catch { return false; }
         }
 
         private string GetLocalIP()

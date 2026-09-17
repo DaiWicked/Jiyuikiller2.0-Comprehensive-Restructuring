@@ -267,7 +267,13 @@ namespace ChatRoom
                     return;
                 }
 
+                // 目标离线时单播等于发给空气 —— 自动改群发并说明（用户反馈过"显示发出去但没人收到"）
                 string target = _currentTarget != null ? _currentTarget.IP : null;
+                if (_currentTarget != null && !_currentTarget.IsOnline)
+                {
+                    target = null;
+                    AddMessage("系统", _currentTarget.Nickname + " 已离线，本次改为群发", BubbleKind.Service);
+                }
                 _chat.SendImage(jpeg, target);
 
                 BitmapImage bmp = ChatImageCodec.Decode(jpeg);

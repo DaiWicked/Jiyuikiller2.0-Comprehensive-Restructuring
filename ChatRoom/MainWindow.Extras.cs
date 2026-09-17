@@ -107,7 +107,16 @@ namespace ChatRoom
         {
             if (EmojiPanel == null || EmojiPanel.Children.Count > 0) return;
 
-            string[] emojis =
+            // Win7 没有 Segoe UI Emoji（也没有任何彩色 emoji 字体），U+1F600 以上的字符会显示成方框。
+            // => 老系统改用 BMP 区段的符号集（Segoe UI Symbol / Arial Unicode 都自带），字体写成回退链。
+            bool legacy = Environment.OSVersion.Version < new Version(6, 2);   // 6.2 = Windows 8
+            string[] emojis = legacy ? new[]
+            {
+                "☺","☻","☹","☀","☁","☂","☃","★","☆","♥","♦","♣","♠","♪","♫","✿",
+                "✔","✖","✚","❄","❖","●","○","◆","◇","■","□","▲","▼","◀","▶","※",
+                "←","→","↑","↓","↔","↕","➤","⚠","⚡","⚙","⚔","⚖","⌛","☕","☎","✎",
+                "①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩","⑪","⑫","⑬","⑭","⑮","⑯"
+            } : new[]
             {
                 "😀","😄","😁","😆","😅","😂","🙂","😉","😊","😍","😘","😜","🤔","😐","😴","😭",
                 "😡","👍","👎","👌","✌️","🙏","👏","💪","🤝","❤️","💔","⭐","🔥","✨","🎉","🎁",
@@ -124,7 +133,8 @@ namespace ChatRoom
                     Height = 32,
                     Margin = new Thickness(1),
                     FontSize = 17,
-                    FontFamily = new FontFamily("Segoe UI Emoji"),   // 不指定会退化成单色线稿
+                    // 字体回退链：Win8.1+ 用 Segoe UI Emoji（彩色）；Win7 只能靠 Segoe UI Symbol
+                    FontFamily = new FontFamily(legacy ? "Segoe UI Symbol, Arial Unicode MS, Segoe UI" : "Segoe UI Emoji, Segoe UI Symbol, Segoe UI"),
                     Background = Brushes.Transparent,
                     BorderThickness = new Thickness(0),
                     Cursor = Cursors.Hand,

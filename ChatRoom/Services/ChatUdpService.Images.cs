@@ -49,6 +49,9 @@ namespace ChatRoom.Services
         private const int ImageMaxAssemblies = 64;
 
         private int _imgSeq = 1;
+        private static readonly object _imgSendLock = new object();   // 图片发送串行化：多人同时发也不会同时抢带宽
+        private DateTime _lastImageSentAt = DateTime.MinValue;
+        private const int ImageMinGapMs = 2000;                        // 同一客户端两次发图至少间隔 2 秒
         private readonly Dictionary<string, ImageAssembly> _images = new Dictionary<string, ImageAssembly>();
         private readonly object _imgLock = new object();
 
@@ -74,11 +77,19 @@ namespace ChatRoom.Services
         {
             if (!_running || jpeg == null || jpeg.Length == 0) return;
 
+            // 限频：连点发送或脚本狂发时直接拒绝，避免持续占满局域网
+            if ((DateTime.Now - _lastImageSentAt).TotalMilliseconds < ImageMinGapMs)
+            {
+                Raise(OnLog, "发送太频繁，请稍后再发图片");
+                return;
+            }
+            _lastImageSentAt = DateTime.Now;
+
             byte[] copy = jpeg;
             string target = targetIP;
             Task.Run(() =>
             {
-                try { SendImageCore(copy, target); }
+                try { lock (_imgSendLock) { SendImageCore(copy, target); } }   // 串行：一张发完再发下一张
                 catch (Exception ex) { Raise(OnLog, "图片发送失败: " + ex.Message); }
             });
         }
@@ -96,6 +107,7 @@ namespace ChatRoom.Services
                 return;
             }
 
+            int okPackets = 0, allPackets = 0;
             for (int seq = 0; seq < total; seq++)
             {
                 int off = seq * ImageChunkSize;
@@ -105,14 +117,18 @@ namespace ChatRoom.Services
 
                 for (int r = 0; r < ImageRepeat; r++)
                 {
-                    if (string.IsNullOrEmpty(targetIP)) SendBroadcast(pkt);
-                    else SendTo(targetIP, pkt);
+                    bool sentOk = string.IsNullOrEmpty(targetIP) ? SendBroadcast(pkt) : SendTo(targetIP, pkt);
+                    allPackets++;
+                    if (sentOk) okPackets++;
 
                     if (total > 1 || ImageRepeat > 1) Thread.Sleep(8);   // 轻微错开，别把接收方缓冲打爆
                 }
             }
 
-            Raise(OnLog, "已发送图片 " + Math.Max(1, jpeg.Length / 1024) + "KB（" + total + " 块 ×" + ImageRepeat + " 次）");
+            // 如实报告：部分数据报没送出去时不再谎报成功（用户反馈图片没收到，这里就是排查入口）
+            Raise(OnLog, okPackets == allPackets
+                ? ("已发送图片 " + Math.Max(1, jpeg.Length / 1024) + "KB（" + total + " 块 ×" + ImageRepeat + " 次）")
+                : ("图片发送部分失败：" + okPackets + "/" + allPackets + " 个数据报送出，对方可能收不完整"));
         }
 
         /// <summary>
@@ -225,6 +241,9 @@ namespace ChatRoom.Services
                     {
                         double age = (now - kv.Value.LastSeen).TotalSeconds;
                         double limit = kv.Value.Completed ? ImageDoneKeepSeconds : ImageTimeoutSeconds;
+                        // 收不齐时给对方一个明确提示（原来静默丢弃，双方都不知道）
+                        if (!kv.Value.Completed && kv.Value.Received > 0 && age > limit)
+                            Raise(OnLog, "图片接收不完整（" + kv.Value.Received + "/" + kv.Value.Total + " 块），已丢弃");
                         if (age > limit)
                         {
                             if (dead == null) dead = new List<string>();
