@@ -171,6 +171,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\JiYuTrainerLogo.ico" />
+    <Resource Include="Assets\chat.png" />
     <Resource Include="Assets\JiYuTrainerLogo16.png" />
     <Resource Include="Assets\JiYuTrainerWarn.ico" />
     <Resource Include="Assets\JiYuTrainerBug.ico" />

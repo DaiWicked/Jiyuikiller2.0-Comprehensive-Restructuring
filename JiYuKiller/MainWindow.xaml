@@ -555,7 +555,7 @@
 
                         <Border Background="{StaticResource GlassCardBrush}" BorderBrush="{StaticResource GlassCardBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="20" Margin="0,0,0,10">
                             <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="💬" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <Image Source="Assets/chat.png" Width="64" Height="64" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                                 <TextBlock Text="小小聊天" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Foreground="#FF1a1a2e"/>
                                 <TextBlock Text="局域网P2P聊天，不依赖极域学生端" FontSize="12" HorizontalAlignment="Center" Foreground="#FF666680" Margin="0,4,0,16"/>
                                 <Button x:Name="BtnStartChat" Content="启动聊天" Click="BtnStartChat_Click"
