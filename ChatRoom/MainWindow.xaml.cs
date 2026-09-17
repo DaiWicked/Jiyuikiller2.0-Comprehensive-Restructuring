@@ -46,7 +46,7 @@ namespace ChatRoom
             base.OnSourceInitialized(e);
 
             _settings = ChatSettings.Load();
-            _historyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chat_history.txt");
+            _historyPath = Path.Combine(ChatSettings.DataDir, "chat_history.txt");
 
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 1; i < args.Length; i++)
@@ -138,6 +138,11 @@ namespace ChatRoom
                         if (msg.StartsWith("[图片]"))
                         {
                             string imgPath = msg.Length > 4 && msg[4] == '|' ? msg.Substring(5) : "";
+
+                            // 只信任我们自己落盘目录下的图片：历史行可以被对端伪造
+                            // （发一句 [图片]|C:\任意路径.jpg 就会被写进历史，下次启动本机去读那个文件并显示）。
+                            // 同时兼容"迁移前老数据仍在程序目录"的情况。
+                            if (!IsUnderChatImages(imgPath)) imgPath = "";
                             BitmapImage hisImg = null;
                             try { if (!string.IsNullOrEmpty(imgPath) && File.Exists(imgPath)) hisImg = ChatImageCodec.Decode(File.ReadAllBytes(imgPath)); } catch { }
 
@@ -155,6 +160,24 @@ namespace ChatRoom
                     AddMessage("系统", "--- 以下为新消息 ---", BubbleKind.Service);
             }
             catch { }
+        }
+
+        /// <summary>路径是否位于"我们自己落盘的图片目录"内（数据目录或程序目录，兼容迁移前老数据）</summary>
+        private static bool IsUnderChatImages(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return false;
+            try
+            {
+                string full = Path.GetFullPath(path);
+                foreach (string baseDir in new[] { ChatSettings.DataDir, AppDomain.CurrentDomain.BaseDirectory })
+                {
+                    string root = Path.GetFullPath(Path.Combine(baseDir, "chat_images"))
+                                      .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    if (full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return true;
+                }
+            }
+            catch { }
+            return false;
         }
 
         private void SaveHistoryLine(string sender, string message)
@@ -250,7 +273,7 @@ namespace ChatRoom
                     return;
                 }
 
-                string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chat_images");
+                string dir = Path.Combine(ChatSettings.DataDir, "chat_images");
                 string name = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff") + "_" + (from.Nickname ?? "未知");
                 string saved = ChatImageCodec.SaveTo(dir, name, jpeg);
 

@@ -21,13 +21,74 @@ namespace ChatRoom.Models
         public double WindowWidth { get; set; } = 0;
         public double WindowHeight { get; set; } = 0;
 
+        private static string _dataDir;
+
+        /// <summary>
+        /// 数据目录：优先 %APPDATA%\ChatRoom。
+        /// 原来设置/历史/图片全写程序目录 ⇒ 装到 Program Files 或非管理员运行时**写入全部静默失败**
+        /// （设置存不下、历史丢失、图片显示"已过期"）。不可写时退回程序目录（绿色版仍可用）。
+        /// </summary>
+        public static string DataDir
+        {
+            get
+            {
+                if (_dataDir != null) return _dataDir;
+                try
+                {
+                    string dir = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ChatRoom");
+                    Directory.CreateDirectory(dir);
+                    string probe = Path.Combine(dir, ".writable");
+                    File.WriteAllText(probe, "1");
+                    File.Delete(probe);
+                    _dataDir = dir;
+                }
+                catch
+                {
+                    _dataDir = AppDomain.CurrentDomain.BaseDirectory;
+                }
+                return _dataDir;
+            }
+        }
+
+        /// <summary>
+        /// 老版本数据在程序目录，升级后第一次运行搬过来（只搬一次，不覆盖已存在的新文件）。
+        /// </summary>
+        public static void MigrateLegacyData()
+        {
+            try
+            {
+                string legacyDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+                string newDir = DataDir.TrimEnd(Path.DirectorySeparatorChar);
+                if (string.Equals(legacyDir, newDir, StringComparison.OrdinalIgnoreCase)) return;   // 没换目录，不用搬
+
+                foreach (string name in new[] { "chat_settings.ini", "chat_history.txt" })
+                {
+                    string from = Path.Combine(legacyDir, name);
+                    string to = Path.Combine(newDir, name);
+                    if (File.Exists(from) && !File.Exists(to)) File.Copy(from, to);
+                }
+
+                string fromImg = Path.Combine(legacyDir, "chat_images");
+                string toImg = Path.Combine(newDir, "chat_images");
+                if (Directory.Exists(fromImg) && !Directory.Exists(toImg))
+                {
+                    Directory.CreateDirectory(toImg);
+                    foreach (string file in Directory.GetFiles(fromImg))
+                        File.Copy(file, Path.Combine(toImg, Path.GetFileName(file)));
+                }
+            }
+            catch { }
+        }
+
         private static string SettingsPath
         {
-            get { return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chat_settings.ini"); }
+            get { return Path.Combine(DataDir, "chat_settings.ini"); }
         }
 
         public static ChatSettings Load()
         {
+            MigrateLegacyData();   // 老版本数据在程序目录，升级后第一次运行搬到 %APPDATA%
             var s = new ChatSettings();
             try
             {
