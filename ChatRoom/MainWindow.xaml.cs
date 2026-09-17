@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -76,6 +76,7 @@ namespace ChatRoom
         {
             try
             {
+                // 先检查PID文件
                 if (File.Exists(_pidFilePath))
                 {
                     string pidStr = File.ReadAllText(_pidFilePath).Trim();
@@ -89,6 +90,14 @@ namespace ChatRoom
                         catch { }
                     }
                     File.Delete(_pidFilePath);
+                }
+                // 再扫描是否有其他ChatRoom进程在跑
+                var procs = System.Diagnostics.Process.GetProcessesByName("ChatRoom");
+                if (procs.Length > 0)
+                {
+                    // 有其他实例，写回PID文件指向第一个
+                    File.WriteAllText(_pidFilePath, procs[0].Id.ToString());
+                    return false;
                 }
             }
             catch { }
@@ -237,6 +246,11 @@ namespace ChatRoom
                 SendMessage();
                 e.Handled = true;
             }
+        }
+
+        private void BtnExit_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
 
         private void BtnSettings_Click(object sender, RoutedEventArgs e)
