@@ -35,13 +35,19 @@ namespace ChatRoom.Models
                 if (_dataDir != null) return _dataDir;
                 try
                 {
-                    string dir = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ChatRoom");
-                    Directory.CreateDirectory(dir);
-                    string probe = Path.Combine(dir, ".writable");
-                    File.WriteAllText(probe, "1");
-                    File.Delete(probe);
-                    _dataDir = dir;
+                    string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                    string dir = string.IsNullOrEmpty(appData) ? null : Path.Combine(appData, "ChatRoom");
+                    // 必须校验"非空且是绝对路径"：GetFolderPath 返回空串时 Path.Combine 会得到相对路径
+                    // ⇒ 数据目录会跟着"当前工作目录"跑（快捷方式起始位置不同就数据分家）。
+                    if (!string.IsNullOrEmpty(dir) && Path.IsPathRooted(dir))
+                    {
+                        Directory.CreateDirectory(dir);
+                        _dataDir = dir;
+                    }
+                    else
+                    {
+                        _dataDir = AppDomain.CurrentDomain.BaseDirectory;
+                    }
                 }
                 catch
                 {
@@ -62,21 +68,44 @@ namespace ChatRoom.Models
                 string newDir = DataDir.TrimEnd(Path.DirectorySeparatorChar);
                 if (string.Equals(legacyDir, newDir, StringComparison.OrdinalIgnoreCase)) return;   // 没换目录，不用搬
 
+                // 标记位：迁移过就不再迁。
+                // 否则 ClearOnExit=true 的用户"清空退出"后，下次启动又会把程序目录的旧历史拷回来（永久失效）。
+                string marker = Path.Combine(newDir, ".migrated");
+                if (File.Exists(marker)) return;
+
+                // 逐文件容错：单个文件被占用/失败不能中断其余（否则半拷贝会永久化）
                 foreach (string name in new[] { "chat_settings.ini", "chat_history.txt" })
                 {
-                    string from = Path.Combine(legacyDir, name);
-                    string to = Path.Combine(newDir, name);
-                    if (File.Exists(from) && !File.Exists(to)) File.Copy(from, to);
+                    try
+                    {
+                        string from = Path.Combine(legacyDir, name);
+                        string to = Path.Combine(newDir, name);
+                        if (File.Exists(from) && !File.Exists(to)) File.Copy(from, to);
+                    }
+                    catch { }
                 }
 
-                string fromImg = Path.Combine(legacyDir, "chat_images");
-                string toImg = Path.Combine(newDir, "chat_images");
-                if (Directory.Exists(fromImg) && !Directory.Exists(toImg))
+                try
                 {
-                    Directory.CreateDirectory(toImg);
-                    foreach (string file in Directory.GetFiles(fromImg))
-                        File.Copy(file, Path.Combine(toImg, Path.GetFileName(file)));
+                    string fromImg = Path.Combine(legacyDir, "chat_images");
+                    string toImg = Path.Combine(newDir, "chat_images");
+                    if (Directory.Exists(fromImg))
+                    {
+                        try { Directory.CreateDirectory(toImg); } catch { }
+                        foreach (string file in Directory.GetFiles(fromImg))
+                        {
+                            try
+                            {
+                                string to = Path.Combine(toImg, Path.GetFileName(file));
+                                if (!File.Exists(to)) File.Copy(file, to);
+                            }
+                            catch { }
+                        }
+                    }
                 }
+                catch { }
+
+                try { File.WriteAllText(marker, DateTime.Now.ToString("s")); } catch { }
             }
             catch { }
         }

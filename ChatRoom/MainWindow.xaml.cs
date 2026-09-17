@@ -28,7 +28,11 @@ namespace ChatRoom
             {
                 // 释放旧图片资源
                 var old = _messages[0];
-                if (old != null) { old.Image = null; }
+                if (old != null)
+                {
+                    old.Image = null;                              // 释放位图
+                    if (_searchView.Contains(old)) _searchView.Remove(old);   // 搜索结果视图里也去掉引用
+                }
                 _messages.RemoveAt(0);
             }
         }
@@ -364,6 +368,7 @@ namespace ChatRoom
             // 未读：自己发的不算；正看着窗口也不算；未读分隔线本身也不算
             if (kind == BubbleKind.Incoming) TrackUnread(true);   // 只计真实来消息：服务消息(上线/日志)与启动横幅不算，否则每次启动都会冒出一个未读
             AutoScroll();
+            TrimMessages();   // 500 条上限（这个方法原来定义了但从未被调用 ⇒ 上限完全没生效）
         }
 
         // === 未读 / 滚动 ===
@@ -596,8 +601,9 @@ namespace ChatRoom
 
         private void BtnExit_Click(object sender, RoutedEventArgs e)
         {
-            // 点X关闭到托盘，不退出
-            Hide();
+            // 统一走 Close()：由 OnClosing 判定"托盘可用就藏起来、托盘不可用就直接退出"。
+            // 原来这里直接 Hide() 会绕过那个判定 ⇒ 托盘失败时窗口藏了既唤不回也退不掉。
+            Close();
         }
 
         private void BtnSettings_Click(object sender, RoutedEventArgs e)
@@ -665,6 +671,7 @@ namespace ChatRoom
             // 未读：自己发的不算；正看着窗口也不算；未读分隔线本身也不算
             if (kind == BubbleKind.Incoming) TrackUnread(true);   // 只计真实来消息：服务消息(上线/日志)与启动横幅不算，否则每次启动都会冒出一个未读
             AutoScroll();
+            TrimMessages();   // 500 条上限（这个方法原来定义了但从未被调用 ⇒ 上限完全没生效）
         }
 
         /// <summary>按气泡类型从当前主题取一组颜色</summary>
@@ -713,7 +720,7 @@ namespace ChatRoom
             {
                 // 只有托盘真的可用时才"关到托盘"；托盘失败时必须放行关闭，
                 // 否则窗口藏起来又没托盘，用户既唤不回也退不掉，只能杀进程。
-                if (_tray != null)
+                if (_trayReady)
                 {
                     e.Cancel = true;
                     Hide();

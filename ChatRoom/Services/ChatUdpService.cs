@@ -174,7 +174,11 @@ namespace ChatRoom.Services
                     string nick = sep >= 0 ? payload.Substring(0, sep) : payload;   // sep>=0: 昵称为空时首字节就是 \0，用 sep>0 会把正文整段吃掉
                     string msg = sep >= 0 ? payload.Substring(sep + 1) : "";
                     if (nick.Length > 64) nick = nick.Substring(0, 64);      // 防畸形超长昵称
-                    if (msg.Length > 4096) msg = msg.Substring(0, 4096);     // 防超长正文
+                    if (msg.Length > 4096)   // 防超长正文：不能静默截断，否则对端只看到前半段还以为是完整的
+                    {
+                        msg = msg.Substring(0, 4096);
+                        Raise(OnLog, "收到超长消息（>" + 4096 + " 字符），已截断显示");
+                    }
 
                     string senderIP = remote.Address.ToString();
 

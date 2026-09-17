@@ -37,8 +37,7 @@ namespace ChatRoom.Services
                 ph = dec.Frames[0].PixelHeight;
             }
             if (pw <= 0 || ph <= 0) return null;
-            if ((long)pw * ph > MaxPixels)
-                throw new InvalidOperationException("图片像素过多（" + pw + "x" + ph + "），已拒绝处理");
+            // 本地文件不设像素硬上限（手机原图也要能发）：按目标尺寸解码即可把内存压住
 
             // 按目标尺寸解码（只设长边，保持比例）；OnLoad：读完即放，不锁文件
             var src = new BitmapImage();
@@ -49,7 +48,13 @@ namespace ChatRoom.Services
                 src.StreamSource = fs;
                 if (pw > MaxWidth || ph > MaxHeight)
                 {
-                    if (pw >= ph) src.DecodePixelWidth = MaxWidth; else src.DecodePixelHeight = MaxHeight;
+                    // 同时设宽高（按比例算），保证结果不超过 320x240：只设长边时方图会变成 320x320
+                    double s = Math.Min((double)MaxWidth / pw, (double)MaxHeight / ph);
+                    if (s < 1.0)
+                    {
+                        src.DecodePixelWidth = Math.Max(1, (int)Math.Round(pw * s));
+                        src.DecodePixelHeight = Math.Max(1, (int)Math.Round(ph * s));
+                    }
                 }
                 src.EndInit();
             }
@@ -89,7 +94,17 @@ namespace ChatRoom.Services
                     bmp.BeginInit();
                     bmp.CacheOption = BitmapCacheOption.OnLoad;
                     bmp.StreamSource = ms;
-                    if (pw >= ph) bmp.DecodePixelWidth = MaxWidth; else bmp.DecodePixelHeight = MaxHeight;
+                    // 只在需要"缩小"时设：无条件设会把远端小图放大（实测 8x8 的 659 字节 JPEG 会被放大成 320x320
+                    // = 40 万字节，等于给攻击者一个内存放大杠杆）。同时设宽高可保证不超 320x240。
+                    if (pw > MaxWidth || ph > MaxHeight)
+                    {
+                        double s = Math.Min((double)MaxWidth / pw, (double)MaxHeight / ph);
+                        if (s < 1.0)
+                        {
+                            bmp.DecodePixelWidth = Math.Max(1, (int)Math.Round(pw * s));
+                            bmp.DecodePixelHeight = Math.Max(1, (int)Math.Round(ph * s));
+                        }
+                    }
                     bmp.EndInit();
                 }
                 bmp.Freeze();

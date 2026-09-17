@@ -208,6 +208,7 @@ namespace ChatRoom
         // ==================== 托盘增强 ====================
 
         private System.Windows.Forms.NotifyIcon _tray;
+        private bool _trayReady = false;   // 只有全部装配完成才算可用（_tray != null 无法区分半成品）
         private DispatcherTimer _trayTimer;
 
         private void InitTray()
@@ -238,6 +239,7 @@ namespace ChatRoom
                     _tray.Text = _unreadCount > 0 ? ("小小聊天 · " + _unreadCount + " 条新消息") : "小小聊天";
                 };
                 _trayTimer.Start();
+                _trayReady = true;   // 走到这里才算托盘真的可用
 
                 Closed += (s, a) =>
                 {
@@ -248,6 +250,9 @@ namespace ChatRoom
             catch (Exception)
             {
                 // 托盘失败必须让用户知道：关闭到托盘会让窗口"藏了唤不回"，所以关闭逻辑会退化为直接退出
+                // 半成品托盘要清掉，否则图标会残留且没有菜单/双击
+                try { if (_tray != null) { _tray.Visible = false; _tray.Dispose(); _tray = null; } } catch { }
+                _trayReady = false;
                 // 用可见提示（ChatRoom 没有日志系统）：用户需要知道"关闭会直接退出"
                 try { AddMessage("系统", "托盘图标创建失败，关闭窗口将直接退出程序", BubbleKind.Service); } catch { }
             }
@@ -282,6 +287,7 @@ namespace ChatRoom
                     }
                 }
                 UpdateUserCount();
+                    System.Windows.Data.CollectionViewSource.GetDefaultView(_userList).Refresh();   // ChatUser 无 INPC，必须手动刷新视图
             }
             catch { }
         }
