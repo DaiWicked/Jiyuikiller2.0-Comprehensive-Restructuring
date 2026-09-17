@@ -153,7 +153,11 @@ namespace JiYuKiller
 
         private void TeacherSim_OnStateChanged(bool isRunning)
         {
-            Dispatcher.Invoke(() => UpdateTeacherSimState());
+            // 必须用 BeginInvoke：这个事件是在 TeacherSimService **持锁状态下**触发的
+            // （服务内 第 122/148/153 行，lock 从 47 行罩到方法结束）。
+            // 若这里用同步 Invoke，而 UI 线程此刻正卡在 BtnTeacherSimStop_Click -> Stop() 里等同一把锁，
+            // 就会形成"UI 等锁、服务线程等 UI"的必然死锁（窗口永久无响应、连关机都退不出去）。
+            Dispatcher.BeginInvoke(new Action(() => UpdateTeacherSimState()));
         }
 
         private void BtnTeacherSimStart_Click(object sender, RoutedEventArgs e)
