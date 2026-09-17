@@ -90,7 +90,7 @@
                     <Image Source="pack://application:,,,/学习不通;component/Assets/JiYuTrainerLogo16.png" Width="16" Height="16" Margin="0,0,8,0" />
                     <TextBlock Text="学习不通2.0" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Foreground="#FF0A0A0A" />
                     <!-- 设计期占位；运行时由 ApplySettingsToUI 用 _settings.Version 覆盖 -->
-                    <TextBlock x:Name="VersionText" Text="QD_V2.9_JiYuRebuild_MeantToBe" FontSize="12" VerticalAlignment="Center" Foreground="#FF383838" Margin="8,0,0,0" />
+                    <TextBlock x:Name="VersionText" Text="QD_V3.0_JiYuRebuild_JustForYou" FontSize="12" VerticalAlignment="Center" Foreground="#FF383838" Margin="8,0,0,0" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,0">
@@ -245,7 +245,7 @@
                             <Image Source="pack://application:,,,/学习不通;component/Assets/about.png" Width="280" Margin="0,0,0,16" Stretch="Uniform" />
                             <TextBlock Text="学习不通2.0" FontSize="24" FontWeight="Bold" Foreground="#FF0A0A0A" HorizontalAlignment="Center" />
                             <!-- 设计期占位；运行时由 ApplySettingsToUI 用 _settings.Version 覆盖 -->
-                            <TextBlock x:Name="AboutVersion" Text="QD_V2.9_JiYuRebuild_MeantToBe" FontSize="14" Foreground="#FF383838" HorizontalAlignment="Center" Margin="0,4,0,16" MouseLeftButtonDown="AboutVersion_MouseLeftButtonDown" Cursor="Hand" />
+                            <TextBlock x:Name="AboutVersion" Text="QD_V3.0_JiYuRebuild_JustForYou" FontSize="14" Foreground="#FF383838" HorizontalAlignment="Center" Margin="0,4,0,16" MouseLeftButtonDown="AboutVersion_MouseLeftButtonDown" Cursor="Hand" />
                             <TextBlock Text="基于 JiYuTrainer 重构的 C# WPF 版本" FontSize="12" Foreground="#FF262626" HorizontalAlignment="Center" />
 
                             <!-- 致谢 -->

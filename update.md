@@ -61,7 +61,7 @@
 ## QD_V2.9 正式版 - 液态玻璃底栏 + 驱动/注入判据修正
 
 ### 版本信息
-- **版本号**：QD_V2.9_JiYuRebuild_MeantToBe
+- **版本号**：QD_V3.0_JiYuRebuild_JustForYou
 - **发布日期**：2026-09-16
 - **Commit**：b3beb68 ~ 7087418（主项目）
 - **交接文档**：`docs/液态玻璃-交接说明.md`

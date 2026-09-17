@@ -72,6 +72,21 @@ namespace ChatRoom
             }
 
             ApplySettings();
+
+            // 恢复上次的窗口位置/大小（越界时夹回可见区域，避免显示器变化后窗口跑到屏幕外）
+            if (_settings.WindowWidth > 200 && _settings.WindowHeight > 150)
+            {
+                Width = _settings.WindowWidth;
+                Height = _settings.WindowHeight;
+
+                double vl = SystemParameters.VirtualScreenLeft, vt = SystemParameters.VirtualScreenTop;
+                double vr = vl + SystemParameters.VirtualScreenWidth, vb = vt + SystemParameters.VirtualScreenHeight;
+                double left = Math.Min(Math.Max(_settings.WindowLeft, vl), vr - 120);
+                double top = Math.Min(Math.Max(_settings.WindowTop, vt), vb - 60);
+                Left = left;
+                Top = top;
+                WindowStartupLocation = WindowStartupLocation.Manual;
+            }
         }
 
         private void ApplySettings()
@@ -100,10 +115,25 @@ namespace ChatRoom
                     if (parts.Length >= 3)
                     {
                         string sender = parts[1].Trim();
-                        string msg = parts[2].Trim();
+                        // 消息里本身可能含 '|'（图片占位写作 [图片]|<路径>），所以第 3 段起要拼回来
+                        string msg = parts.Length > 3 ? string.Join("|", parts.Skip(2)).Trim() : parts[2].Trim();
+                        string lineTime = parts[0].Trim().Trim('[', ']');
+
                         bool isMe = sender.StartsWith("我");
-                        AddMessage(sender, msg, isMe ? BubbleKind.Outgoing : BubbleKind.Incoming,
-                            false, parts[0].Trim().Trim('[', ']'));
+                        // 图片消息：历史行记的是 [图片]|<落盘路径>，把图还原成图片气泡
+                        if (msg.StartsWith("[图片]"))
+                        {
+                            string imgPath = msg.Length > 4 && msg[4] == '|' ? msg.Substring(5) : "";
+                            BitmapImage hisImg = null;
+                            try { if (!string.IsNullOrEmpty(imgPath) && File.Exists(imgPath)) hisImg = ChatImageCodec.Decode(File.ReadAllBytes(imgPath)); } catch { }
+
+                            if (hisImg != null)
+                                AddImageMessage(sender, hisImg, imgPath, isMe ? BubbleKind.Outgoing : BubbleKind.Incoming, lineTime);
+                            else
+                                AddMessage(sender, "[图片]（图片已过期）", isMe ? BubbleKind.Outgoing : BubbleKind.Incoming, false, lineTime);
+                            continue;
+                        }
+                        AddMessage(sender, msg, isMe ? BubbleKind.Outgoing : BubbleKind.Incoming, false, lineTime);
                     }
                 }
                 if (_messages.Count > 0)
@@ -211,7 +241,7 @@ namespace ChatRoom
 
                 string label = scope == "P" ? (from.Nickname + " [私聊图片]") : from.Nickname;
                 AddImageMessage(label, bmp, saved, BubbleKind.Incoming);
-                SaveHistoryLine(from.Nickname + (scope == "P" ? "[私聊]" : ""), "[图片]");
+                SaveHistoryLine(from.Nickname + (scope == "P" ? "[私聊]" : ""), "[图片]|" + saved);
             });
         }
 
@@ -259,7 +289,7 @@ namespace ChatRoom
         }
 
         /// <summary>追加一条图片消息（气泡样式与文字消息同一套主题）</summary>
-        private void AddImageMessage(string sender, System.Windows.Media.ImageSource image, string path, BubbleKind kind)
+        private void AddImageMessage(string sender, System.Windows.Media.ImageSource image, string path, BubbleKind kind, string time = null)
         {
             ApplyBubbleStyle(kind, out Brush bg, out Brush border, out Brush fg, out Brush secondary);
             bool right = kind == BubbleKind.Outgoing;
@@ -437,6 +467,17 @@ namespace ChatRoom
         protected override void OnClosed(EventArgs e)
         {
             _chat?.Stop();
+
+            // 记住窗口位置/大小（下次打开恢复）
+            try
+            {
+                _settings.WindowLeft = Left;
+                _settings.WindowTop = Top;
+                _settings.WindowWidth = Width;
+                _settings.WindowHeight = Height;
+                _settings.Save();
+            }
+            catch { }
 
             if (_settings.ClearOnExit)
             {

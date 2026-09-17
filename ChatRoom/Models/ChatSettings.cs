@@ -15,6 +15,12 @@ namespace ChatRoom.Models
         /// <summary>暗色模式（明暗两套配色见 Theme.cs）</summary>
         public bool DarkMode { get; set; } = false;
 
+        // 窗口几何记忆（0 = 未保存过，用 XAML 默认值并居中）
+        public double WindowLeft { get; set; } = 0;
+        public double WindowTop { get; set; } = 0;
+        public double WindowWidth { get; set; } = 0;
+        public double WindowHeight { get; set; } = 0;
+
         private static string SettingsPath
         {
             get { return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chat_settings.ini"); }
@@ -41,6 +47,10 @@ namespace ChatRoom.Models
                             case "ClearOnExit": s.ClearOnExit = val == "1"; break;
                             case "TopMost": s.TopMost = val == "1"; break;
                             case "DarkMode": s.DarkMode = val == "1"; break;
+                            case "WindowLeft": double.TryParse(val, out double wl); s.WindowLeft = wl; break;
+                            case "WindowTop": double.TryParse(val, out double wt); s.WindowTop = wt; break;
+                            case "WindowWidth": double.TryParse(val, out double ww); s.WindowWidth = ww; break;
+                            case "WindowHeight": double.TryParse(val, out double wh); s.WindowHeight = wh; break;
                         }
                     }
                 }
@@ -60,7 +70,11 @@ namespace ChatRoom.Models
                     "FontSize=" + FontSize,
                     "ClearOnExit=" + (ClearOnExit ? "1" : "0"),
                     "TopMost=" + (TopMost ? "1" : "0"),
-                    "DarkMode=" + (DarkMode ? "1" : "0")
+                    "DarkMode=" + (DarkMode ? "1" : "0"),
+                    "WindowLeft=" + WindowLeft.ToString("F0"),
+                    "WindowTop=" + WindowTop.ToString("F0"),
+                    "WindowWidth=" + WindowWidth.ToString("F0"),
+                    "WindowHeight=" + WindowHeight.ToString("F0")
                 };
                 File.WriteAllLines(SettingsPath, lines, System.Text.Encoding.UTF8);
             }
