@@ -7,6 +7,8 @@
         AllowsTransparency="True"
         WindowStyle="None"
         ResizeMode="NoResize"
+        Loaded="Extras_Loaded"
+        PreviewKeyDown="Window_PreviewKeyDown"
         UseLayoutRounding="True"
         TextOptions.TextFormattingMode="Display">
 
@@ -303,6 +305,10 @@
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
                                 Width="40" FontSize="14" Cursor="Hand" ToolTip="切换明暗主题" Style="{StaticResource IconButton}"
                                 Foreground="{DynamicResource TextSecondary}" />
+                        <Button x:Name="BtnSearch" Content="🔍" Click="BtnSearch_Click"
+                                DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
+                                Width="40" FontSize="14" Cursor="Hand" ToolTip="搜索聊天记录 (Ctrl+F)"
+                                Foreground="{DynamicResource TextSecondary}" Style="{StaticResource IconButton}" />
                         <Button x:Name="BtnSettings" Content="⚙" Click="BtnSettings_Click"
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
                                 Width="46" FontSize="16" Cursor="Hand" ToolTip="设置" Style="{StaticResource IconButton}"
@@ -384,9 +390,37 @@
                     </ItemsControl>
                 </ScrollViewer>
 
+                <!-- 搜索条：覆盖在消息区顶部（Ctrl+F / 点 🔍 出现）。
+                     用叠加而不是新增一行 Grid 定义，避免动到已有布局。 -->
+                <Border Grid.Row="1" x:Name="SearchBar" Visibility="Collapsed" VerticalAlignment="Top"
+                        Panel.ZIndex="5" Margin="8" Padding="8,6" CornerRadius="10"
+                        Background="{DynamicResource ComposerBg}" BorderBrush="{DynamicResource InputBorder}"
+                        BorderThickness="1">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="10" ShadowDepth="1" Opacity="0.22" Color="#000000" />
+                    </Border.Effect>
+                    <DockPanel LastChildFill="True">
+                        <Button x:Name="BtnSearchClose" Content="✕" Click="BtnSearchClose_Click"
+                                DockPanel.Dock="Right" Width="30" FontSize="12" Cursor="Hand"
+                                Background="Transparent" BorderThickness="0" ToolTip="关闭搜索"
+                                Foreground="{DynamicResource TextSecondary}" Style="{StaticResource IconButton}" />
+                        <TextBlock x:Name="TextSearchInfo" DockPanel.Dock="Right" VerticalAlignment="Center"
+                                   Margin="8,0" FontSize="11" Foreground="{DynamicResource TextSecondary}"
+                                   Text="输入关键词搜索聊天记录" />
+                        <TextBox x:Name="SearchBox" FontSize="13" BorderThickness="0" Background="Transparent"
+                                 VerticalContentAlignment="Center" Padding="4,2"
+                                 Foreground="{DynamicResource TextPrimary}"
+                                 TextChanged="SearchBox_TextChanged" KeyDown="SearchBox_KeyDown" />
+                    </DockPanel>
+                </Border>
+
                 <!-- 输入区（56） -->
                 <Border Grid.Row="2" Background="{DynamicResource ComposerBg}" CornerRadius="0,0,12,0">
                     <DockPanel LastChildFill="True" Margin="10,8">
+                        <Button x:Name="BtnEmoji" Content="😀" Click="BtnEmoji_Click"
+                                DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
+                                Width="40" FontSize="16" Cursor="Hand" ToolTip="表情 (Ctrl+E)"
+                                Foreground="{DynamicResource TextSecondary}" Style="{StaticResource IconButton}" />
                         <Button x:Name="BtnImage" Content="📎" Click="BtnImage_Click"
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"
                                 Width="40" FontSize="16" Cursor="Hand" ToolTip="发送图片（jpg/png/bmp/gif）" Style="{StaticResource IconButton}"
@@ -416,6 +450,18 @@
                 </Border>
             </Grid>
 
+            <!-- emoji 面板：本地 Unicode，点一下插到光标处；StaysOpen=False 点外面自动收起 -->
+            <Popup x:Name="EmojiPopup" PlacementTarget="{Binding ElementName=BtnEmoji}" Placement="Top"
+                   StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                <Border Margin="0,0,0,6" Padding="6" CornerRadius="12"
+                        Background="{DynamicResource ComposerBg}"
+                        BorderBrush="{DynamicResource InputBorder}" BorderThickness="1">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.25" Color="#000000" />
+                    </Border.Effect>
+                    <WrapPanel x:Name="EmojiPanel" Width="300" />
+                </Border>
+            </Popup>
             <!-- 顶部高光（玻璃语汇；纯视觉、不吃鼠标事件） -->
             <Border Grid.ColumnSpan="2" Height="40" VerticalAlignment="Top" IsHitTestVisible="False"
                     CornerRadius="12,12,0,0" Opacity="0.5">
