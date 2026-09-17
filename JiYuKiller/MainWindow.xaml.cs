@@ -31,10 +31,8 @@ namespace JiYuKiller
         private string _eggTempPath = null; // 彩蛋视频临时路径
         private bool _eggShowing = false; // 彩蛋是否正在显示
         private bool _eggExtracted = false; // 视频是否已释放
-        private readonly Services.ChatService _chatService = new Services.ChatService();
         private readonly Services.ScreenshotService _screenshotService = new Services.ScreenshotService();
         private readonly Services.RealtimeReplaceService _realtimeService = new Services.RealtimeReplaceService();
-        private string _chatTargetIP = "";
 
         // ===== 底栏指针柔光：跟手但带一点惯性 =====
         // 直接赋值会让反光"啪"地跳到鼠标上，像手电筒；真实玻璃反光有惯性。
@@ -50,7 +48,6 @@ namespace JiYuKiller
         // 底栏每个按钮各自的"磨砂玻璃"采样画刷（每按钮一份，见 UpdateNavButtonBackdrops）
         private readonly System.Collections.Generic.Dictionary<System.Windows.Controls.Button, System.Windows.Media.VisualBrush> _navBtnGlassBrushes
             = new System.Collections.Generic.Dictionary<System.Windows.Controls.Button, System.Windows.Media.VisualBrush>();
-        private int _chatTargetSeat = 0;
 
         // Win32 API
         [DllImport("user32.dll")]
@@ -289,6 +286,7 @@ namespace JiYuKiller
                 _teacherSimService.Stop();
                 Services.Logger.Instance.Info("已停止教师端模拟进程");
             }
+            StopChatRoom();
             _controller.Stop();
             Services.Logger.Instance.Close();
             System.Windows.Application.Current.Shutdown();

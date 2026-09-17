@@ -1,74 +1,112 @@
-﻿using System;
-using System.Threading.Tasks;
+using System;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Media.Animation;
-using Microsoft.Win32;
-using WinForms = System.Windows.Forms;
-using Drawing = System.Drawing;
 
 namespace JiYuKiller
 {
     public partial class MainWindow
     {
-        #region 小小私聊
+        #region 小小聊天 (独立进程ChatRoom.exe)
 
-        private bool _chatInitialized = false;
+        private Process _chatRoomProcess = null;
 
         private void InitChat()
         {
-            if (!_chatInitialized)
-            {
-                _chatService.OnLog += (msg) => Dispatcher.Invoke(() => { TextChatLocalInfo.Text = msg; });
-                _chatService.OnChatRecord += (msg) => Dispatcher.Invoke(() => { TextChatLog.AppendText(msg + "\n"); TextChatLog.ScrollToEnd(); });
-                _chatService.OnSendResult += (success, msg) => Dispatcher.Invoke(() => { System.Windows.MessageBox.Show(msg, success ? "发送成功" : "发送失败"); });
-                _chatInitialized = true;
-                Services.Logger.Instance.Info("[Chat] 小小私聊事件注册完成");
-            }
-            TextChatLog.Clear();
-            TextChatLog.AppendText("~~ 欢迎使用小小私聊 ~~\n");
-            TextChatLog.AppendText("原理：极域学生端不对UDP包做身份验证，可构造数据包发送消息。\n");
-            Services.ChatService.SetLayout(_settings.ChatBaseIPLast);
-            TextChatLog.AppendText("布局：5列x11排竖向排列，座位1号IP末段=" + _settings.ChatBaseIPLast + "\n");
-            _chatService.InitLocalInfo();
+            // 检查是否已有ChatRoom进程在跑
+            UpdateChatStatus();
         }
 
-        private async void BtnChatFind_Click(object sender, RoutedEventArgs e)
+        private void BtnStartChat_Click(object sender, RoutedEventArgs e)
         {
-            Services.Logger.Instance.Info("[Chat] 点击查找同学");
-            if (!int.TryParse(TextChatTargetSeat.Text, out int seatID) || seatID <= 0)
+            try
             {
-                TextChatTargetStatus.Text = "请输入有效的座位号！";
-                TextChatLog.AppendText("请输入有效的座位号！\n");
-                return;
+                string chatPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "ChatRoom.exe");
+                if (!File.Exists(chatPath))
+                {
+                    // 也可能在根目录
+                    chatPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ChatRoom.exe");
+                }
+                if (!File.Exists(chatPath))
+                {
+                    System.Windows.MessageBox.Show("找不到 ChatRoom.exe，请确认文件完整。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                string nick = string.IsNullOrEmpty(_settings.ChatNickname) ? "神秘人" : _settings.ChatNickname;
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = chatPath,
+                    Arguments = $"--nick={nick}",
+                    UseShellExecute = false
+                };
+                _chatRoomProcess = Process.Start(psi);
+                Services.Logger.Instance.Info($"[Chat] ChatRoom.exe 已启动, PID={_chatRoomProcess.Id}, 昵称={nick}");
+
+                BtnStartChat.Visibility = Visibility.Collapsed;
+                BtnStopChat.Visibility = Visibility.Visible;
+                ChatStatus.Text = "状态: 运行中";
+                ChatStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x28, 0xA7, 0x45));
             }
-            TextChatTargetStatus.Text = "查找中...";
-            var result = await _chatService.FindClassmate(seatID);
-            TextChatTargetStatus.Text = result.Item3;
-            if (result.Item1)
+            catch (Exception ex)
             {
-                _chatTargetIP = result.Item2;
-                _chatTargetSeat = seatID;
+                Services.Logger.Instance.Error("[Chat] 启动ChatRoom失败: " + ex.Message);
+                System.Windows.MessageBox.Show("启动失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private async void BtnChatSend_Click(object sender, RoutedEventArgs e)
+        private void BtnStopChat_Click(object sender, RoutedEventArgs e)
         {
-            Services.Logger.Instance.Info("[Chat] 点击发送消息");
-            await _chatService.SendMessage(_chatTargetIP, TextChatMessage.Text, _chatTargetSeat);
-            TextChatMessage.Clear();
+            StopChatRoom();
         }
 
-        private void BtnChatClear_Click(object sender, RoutedEventArgs e)
+        private void StopChatRoom()
         {
-            TextChatLog.Clear();
-            Services.Logger.Instance.Info("[Chat] 清空聊天记录");
+            try
+            {
+                if (_chatRoomProcess != null && !_chatRoomProcess.HasExited)
+                {
+                    _chatRoomProcess.CloseMainWindow();
+                    if (!_chatRoomProcess.WaitForExit(2000))
+                    {
+                        _chatRoomProcess.Kill();
+                    }
+                    Services.Logger.Instance.Info("[Chat] ChatRoom.exe 已关闭");
+                }
+                _chatRoomProcess = null;
+            }
+            catch (Exception ex)
+            {
+                Services.Logger.Instance.Error("[Chat] 关闭ChatRoom失败: " + ex.Message);
+            }
+
+            BtnStartChat.Visibility = Visibility.Visible;
+            BtnStopChat.Visibility = Visibility.Collapsed;
+            ChatStatus.Text = "状态: 未启动";
+            ChatStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x88, 0x88, 0x99));
+        }
+
+        private void UpdateChatStatus()
+        {
+            // 检查ChatRoom是否在运行
+            var procs = Process.GetProcessesByName("ChatRoom");
+            if (procs.Length > 0)
+            {
+                _chatRoomProcess = procs[0];
+                BtnStartChat.Visibility = Visibility.Collapsed;
+                BtnStopChat.Visibility = Visibility.Visible;
+                ChatStatus.Text = "状态: 运行中";
+                ChatStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x28, 0xA7, 0x45));
+            }
+            else
+            {
+                BtnStartChat.Visibility = Visibility.Visible;
+                BtnStopChat.Visibility = Visibility.Collapsed;
+                ChatStatus.Text = "状态: 未启动";
+                ChatStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x88, 0x88, 0x99));
+            }
         }
 
         private void BtnChatBack_Click(object sender, RoutedEventArgs e)

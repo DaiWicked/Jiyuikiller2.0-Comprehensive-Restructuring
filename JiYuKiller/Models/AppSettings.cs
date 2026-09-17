@@ -107,6 +107,9 @@ namespace JiYuKiller.Models
         /// <summary>每列排数</summary>
         public int ChatRowsPerColumn { get; set; } = 11;
 
+        /// <summary>聊天昵称</summary>
+        public string ChatNickname { get; set; } = "神秘人";
+
         // === 底栏液态玻璃（折射）===
         /// <summary>底栏圆角用超椭圆(squircle)而非正圆弧；false 则退化为普通圆角矩形</summary>
         public bool NavBarSquircle { get; set; } = true;
