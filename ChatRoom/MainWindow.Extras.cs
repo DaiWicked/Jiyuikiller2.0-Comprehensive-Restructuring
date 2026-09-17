@@ -212,7 +212,7 @@ namespace ChatRoom
                 menu.Items.Add("显示 / 隐藏窗口", null, (s, a) => ToggleWindowVisible());
                 menu.Items.Add("设置…", null, (s, a) => BtnSettings.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
                 menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
-                menu.Items.Add("退出", null, (s, a) => Application.Current.Shutdown());
+                menu.Items.Add("退出", null, (s, a) => { _isExiting = true; Application.Current.Shutdown(); });
                 _tray.ContextMenuStrip = menu;
 
                 _tray.DoubleClick += (s, a) => { Show(); WindowState = WindowState.Normal; Activate(); };

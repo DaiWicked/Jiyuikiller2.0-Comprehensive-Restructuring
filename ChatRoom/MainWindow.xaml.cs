@@ -549,7 +549,8 @@ namespace ChatRoom
 
         private void BtnExit_Click(object sender, RoutedEventArgs e)
         {
-            Close();
+            // 点X关闭到托盘，不退出
+            Hide();
         }
 
         private void BtnSettings_Click(object sender, RoutedEventArgs e)
@@ -651,6 +652,20 @@ namespace ChatRoom
                 ApplyBubbleStyle(item.Kind, out Brush bg, out Brush border, out Brush fg, out Brush secondary);
                 item.BgBrush = bg; item.BorderBrush = border; item.TextBrush = fg; item.SecondaryBrush = secondary;
             }
+        }
+
+        private bool _isExiting = false;
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            if (!_isExiting)
+            {
+                // 点X或最小化时不退出，藏到托盘
+                e.Cancel = true;
+                Hide();
+                return;
+            }
+            base.OnClosing(e);
         }
 
         protected override void OnClosed(EventArgs e)
