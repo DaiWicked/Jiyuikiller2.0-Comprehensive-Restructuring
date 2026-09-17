@@ -22,7 +22,7 @@
 - 图片编解码无像素上限（内存炸弹防护）
 - 发送结果如实报告
 - 托盘失败时窗口可正常关闭
-- UnInjectDll忽略等待结果修复
+- UnInjectDll忽略等待结果(首轮误记为已修, 次轮审查发现从未实施, 现已真正修复)修复
 - WM_COPYDATA长度校验
 - 主程序退出路径统一（ExitApplication/ForceExit清理一致）
 

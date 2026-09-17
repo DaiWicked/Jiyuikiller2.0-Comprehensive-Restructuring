@@ -121,6 +121,9 @@ namespace JiYuKiller
             {
                 // 失败时给出可读提示, 不要留一个纯黑窗口
                 EggMedia.Visibility = System.Windows.Visibility.Collapsed;
+                // 覆盖层也要收起：只隐藏 Media 会留下一个深色空窗（正是注释说要避免的"纯黑窗口"），
+                // 而且会出现"状态已复位但画面还在"的自相矛盾。
+                try { EggWindow.Visibility = System.Windows.Visibility.Collapsed; } catch { }
                 // 关键：复位状态。原来不复位 ⇒ _eggShowing 永远为 true，彩蛋再也点不出来（除非手动点关闭）
                 _eggShowing = false;
                 _eggClickCount = 0;

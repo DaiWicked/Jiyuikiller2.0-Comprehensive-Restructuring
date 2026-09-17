@@ -364,10 +364,21 @@ namespace JiYuKiller.Services
                     return false;
                 }
 
-                WaitForSingleObject(hThread, 5000);
+                // 必须判等待结果：超时（线程仍在运行）时退出码是 STILL_ACTIVE(259)，
+                // 直接把它当模块基址传给 FreeLibrary，目标进程会用非法地址调用 FreeLibrary 而崩溃。
+                uint wrModule = WaitForSingleObject(hThread, 5000);
                 uint hModuleExit;
                 bool gotModule = GetExitCodeThread(hThread, out hModuleExit);
                 CloseHandle(hThread);
+
+                if (wrModule != 0 || !gotModule || hModuleExit == 0 || hModuleExit == 259)
+                {
+                    // 这条路径**不释放**远程缓冲：远程线程可能仍在读它，提前释放会让目标进程 use-after-free
+                    Logger.Instance.Error(string.Format(
+                        "[Inject] 取模块基址失败（等待结果=0x{0:X}，退出码=0x{1:X}），放弃卸载: {2}", wrModule, hModuleExit, moduleName));
+                    return false;
+                }
+
                 VirtualFreeEx(hProcess, lpRemoteString, 0, MEM_RELEASE);
 
                 if (!gotModule)
@@ -398,12 +409,14 @@ namespace JiYuKiller.Services
                     return false;
                 }
 
-                WaitForSingleObject(hThread, 5000);
+                uint wrFree = WaitForSingleObject(hThread, 5000);
                 uint freeResult;
                 bool gotFreeResult = GetExitCodeThread(hThread, out freeResult);
                 CloseHandle(hThread);
 
-                if (!gotFreeResult || freeResult == 0)
+                // 同样必须判等待结果：超时得到 STILL_ACTIVE(259)，它 != 0 会恰好绕过下面那条判据，
+                // 把"模块仍驻留在目标进程"谎报成"卸载成功"。
+                if (wrFree != 0 || !gotFreeResult || freeResult == 0 || freeResult == 259)
                 {
                     Logger.Instance.Warn(string.Format(
                         "[Inject] FreeLibrary 返回 {0}, 模块可能仍驻留在目标进程: {1}",

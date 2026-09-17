@@ -118,7 +118,9 @@ foreach ($step in @(2, 20, 26, 30)) {
     $c2 = Centroid $on  0 40 1
     # 该台阶深度(相对玻璃左边缘 x=24): depth = step - 24 (负数表示在玻璃外)
     $depth = $step - 24
-    $edge = if ($depth -gt 0) { [Math]::Pow([Math]::Max(0, 1 - $depth/21), 2) } else { 1.0 }
+        # 必须用双精度字面量：写成 Max(0, 1 - $depth/21) 会被 PowerShell 选中 Max(int,int) 重载，
+    # 0.905 被取整成 1 ⇒ edge 恒为 1.0，这一列（也正是要验证的边缘因子）完全测不到。
+    $edge = if ($depth -gt 0) { [Math]::Pow([Math]::Max(0.0, 1.0 - $depth/21.0), 2) } else { 1.0 }
     # 注意：折射方向已在 c5941fb 由"向内"改为"向外"，位移符号随之取正（这里曾写作 -10*edge 已过期）
     "台阶x={0,3}  depth={1,4}  edge={2:F3}  理论位移={3,6:F2}px   实测位移={4,6:F2}px" -f $step, $depth, $edge, (10*$edge), ($c2-$c1)
 }

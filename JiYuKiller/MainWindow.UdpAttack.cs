@@ -124,9 +124,12 @@ namespace JiYuKiller
             var svc = Services.UdpAttackService.Instance;
             // 幂等订阅：UdpAttackService 是静态单例，原来每点一次"扫描局域网"就追加一个捕获本窗口的处理器
             // ⇒ 单例一直持有窗口（无法回收），点 N 次后一次扫描触发 N 遍（重复清列表/重复写日志）。
-            if (_udpScanRegistered) return;
-            _udpScanRegistered = true;
-            svc.OnScanComplete += (hosts) => Dispatcher.Invoke(() =>
+            // ⚠ 只跳过"重复订阅"，**绝不能早退跳过 ScanNetwork()** —— 上一版把 return 放在扫描之前，
+            //    导致第二次点击起"扫描局域网"永久失效（按钮静默无反应）。
+            if (!_udpScanRegistered)
+            {
+                _udpScanRegistered = true;
+                svc.OnScanComplete += (hosts) => Dispatcher.Invoke(() =>
             {
                 ListUdpScanResult.Items.Clear();
                 foreach (var host in hosts)
@@ -134,7 +137,9 @@ namespace JiYuKiller
                     ListUdpScanResult.Items.Add(host);
                 }
                 TextUdpLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + $" 扫描完成，发现 {hosts.Count} 台主机，点击列表选择目标\n");
-            });
+                });
+            }
+
             svc.ScanNetwork();
         }
 

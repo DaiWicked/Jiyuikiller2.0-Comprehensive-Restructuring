@@ -221,14 +221,21 @@ namespace JiYuKiller
                     COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(lParam, typeof(COPYDATASTRUCT));
                     // 必须校验长度：源缓冲区若不是 NUL 结尾，PtrToStringUni(IntPtr) 会越界读，
                     // 可能抛不可捕获的 AccessViolationException（同用户任意进程都能发这条消息）。
-                    if (cds.lpData != IntPtr.Zero && cds.cbData > 0 && cds.cbData <= 4096)
+                    // 上限放宽到 64KB：4096 字节会把超长但合法的 DLL 回调**整条静默丢弃**（改动前这类消息还会被处理）。
+                    // 但仍要有界，避免不信任来源给出异常长度导致越界读。
+                    if (cds.lpData != IntPtr.Zero && cds.cbData > 0 && cds.cbData <= 65536)
                     {
-                        string message = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2);
+                        string message = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2).TrimEnd('\0');
                         if (!string.IsNullOrEmpty(message))
                         {
                             Services.Logger.Instance.Info("[DLL回调] " + message);
                             HandleDllCallback(message);
                         }
+                    }
+                    else if (cds.lpData != IntPtr.Zero)
+                    {
+                        // 长度异常要留痕，否则"消息被吞"完全查不出来
+                        Services.Logger.Instance.Warn("[DLL回调] 收到长度异常的消息, cbData=" + cds.cbData + "，已忽略");
                     }
                     handled = true;
                 }

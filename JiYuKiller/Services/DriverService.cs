@@ -689,7 +689,10 @@ namespace JiYuKiller.Services
 
                         if (!DeleteService(hService))
                         {
+                            // 删除失败必须返回失败：否则调用方会打印"驱动已卸载"，而服务其实还在，
+                            // 下次 CreateService 会返回 ERROR_SERVICE_MARKED_FOR_DELETE，重装/真卸载都做不了。
                             Logger.Instance.Error("[Driver] 删除驱动服务失败, 错误码: " + Marshal.GetLastWin32Error());
+                            return false;
                         }
                         else
                         {
@@ -715,10 +718,8 @@ namespace JiYuKiller.Services
 
             // 删除服务后必须清掉注册表残留, 否则下次 CreateService 会返回
             // ERROR_SERVICE_MARKED_FOR_DELETE 而无法重新加载驱动。
-            if (deleted)
-            {
-                DeleteServiceRegKeys();
-            }
+            // 服务不存在时也要清注册表残留：原来那句必须做的清理被 deleted 挡住了。
+            DeleteServiceRegKeys();
 
             IsDriverLoaded = false;
             return true;

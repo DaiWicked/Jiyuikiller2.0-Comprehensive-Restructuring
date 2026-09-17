@@ -163,21 +163,15 @@ namespace JiYuKiller
             {
                 _teacherSimService.Channel = channel;
             }
-            // Start() 内部有 Thread.Sleep(500) 的重试循环（最多等 15 秒）。原来直接在 UI 线程调用
-            // ⇒ 整窗口冻结 15 秒、DispatcherTimer 停摆、所有后台 Invoke 回调被挂起，用户会当成卡死。
-            // 改为后台执行，完成后回 UI 刷新状态。
-            System.Threading.Tasks.Task.Run(() =>
-            {
-                try
-                {
-                    _teacherSimService.Start();
-                }
-                catch (Exception ex)
-                {
-                    Services.Logger.Instance.Error("[教师端模拟] 启动异常: " + ex.Message);
-                }
-                Dispatcher.BeginInvoke(new Action(() => UpdateTeacherSimState()));
-            });
+            // ⚠ 这里必须留在 UI 线程调用！
+            // 曾尝试挪到 Task.Run 以消除"最多 15 秒的界面冻结"，但那会造成**永久死锁**：
+            //   · TeacherSimService.Start() 全程持 lock(_lock)，且成功路径会在锁内 sleep 满 15 秒；
+            //   · 它的 OnLogOutput/OnStateChanged 回调在**持锁状态下**同步 Dispatcher.Invoke；
+            //   · 而本窗口的"停止模拟"按钮仍在 UI 线程同步调 Stop() → 抢同一把锁；
+            //   ⇒ UI 线程等锁、后台线程等 UI 线程，互相等待。
+            // 真正的修法是改服务本身（别在锁内 sleep、回调改 BeginInvoke、Stop 也放后台），
+            // 那属于 TeacherSimService.cs（由豆包负责），已写入报告请她处理。
+            _teacherSimService.Start();
         }
 
         private void BtnTeacherSimStop_Click(object sender, RoutedEventArgs e)

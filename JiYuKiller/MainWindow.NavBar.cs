@@ -490,10 +490,21 @@ namespace JiYuKiller
                         var bottomBrush = TryFindResource("NavIndicatorBrushBottom") as System.Windows.Media.SolidColorBrush;
                         if (topBrush != null && bottomBrush != null)
                         {
-                            // 新建自己的渐变（不改动被冻结的资源画刷），这样后续调色/动画才安全
+                            // 新建自己的渐变（不改动被冻结的资源画刷），后续调色/动画才安全
                             var built = new System.Windows.Media.LinearGradientBrush();
+                            built.StartPoint = new Point(0, 0);
+                            built.EndPoint = new Point(0, 1);   // 与 XAML 一致；默认 (1,1) 是斜向
                             built.GradientStops.Add(new System.Windows.Media.GradientStop(topBrush.Color, 0));
                             built.GradientStops.Add(new System.Windows.Media.GradientStop(bottomBrush.Color, 1));
+
+                            // ★ 必须真的挂到元素上：只把 stops 存字段是"取到了但没用" ——
+                            //   动画作用在一个从未参与渲染的画刷上，画面不会有任何变化（上一版就是这样，
+                            //   日志显示"已取得"其实是个假阳性）。
+                            //   渐变所在的 Border = NavIndicator -> Grid -> 第二个子 Border。
+                            var grid = (NavIndicator.Child as Grid);
+                            var gradBorder = (grid != null && grid.Children.Count > 1) ? grid.Children[1] as Border : null;
+                            if (gradBorder != null) gradBorder.Background = built;
+
                             lg = built;
                         }
                     }
