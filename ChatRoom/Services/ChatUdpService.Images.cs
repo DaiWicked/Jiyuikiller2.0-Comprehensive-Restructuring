@@ -107,6 +107,16 @@ namespace ChatRoom.Services
                 return;
             }
 
+            // 自适应重复：多块图片把每块重复降到 2 次（省 1/3 流量）；单块体积小，保持 3 次
+            int repeat = total > 1 ? 2 : ImageRepeat;
+
+            // 群聊目标只在开始时快照一次（原来每个分块、每次重复都重新快照 + 克隆全部用户，5 块×3=15 次）
+            var peers = new List<ChatUser>();
+            if (string.IsNullOrEmpty(targetIP))
+            {
+                foreach (var u in SnapshotUsers()) { if (!u.IsMe) peers.Add(u); }
+            }
+
             int okPackets = 0, allPackets = 0;
             for (int seq = 0; seq < total; seq++)
             {
@@ -115,15 +125,13 @@ namespace ChatRoom.Services
                 string body = imgId + ":" + seq + ":" + total + ":" + scope + ":" + b64.Substring(off, len);
                 byte[] pkt = EncodePacket("CIMG", Nickname, body);
 
-                for (int r = 0; r < ImageRepeat; r++)
+                for (int r = 0; r < repeat; r++)
                 {
                     if (string.IsNullOrEmpty(targetIP))
                     {
-                        // 群聊：逐个单播给在线用户，不广播(避免抢局域网带宽)
-                        var users = SnapshotUsers();
-                        foreach (var u in users)
+                        // 群聊：逐个单播给在线用户，不广播（避免抢占局域网，用户实测发图时浏览器视频会卡）
+                        foreach (var u in peers)
                         {
-                            if (u.IsMe) continue;
                             bool sentOk = SendTo(u.IP, pkt);
                             allPackets++;
                             if (sentOk) okPackets++;
@@ -136,13 +144,16 @@ namespace ChatRoom.Services
                         if (sentOk) okPackets++;
                     }
 
-                    if (total > 1 || ImageRepeat > 1) Thread.Sleep(8);   // 轻微错开，别把接收方缓冲打爆
+                    if (total > 1 || repeat > 1) Thread.Sleep(8);   // 轻微错开，别把接收方缓冲打爆
                 }
             }
 
             // 如实报告：部分数据报没送出去时不再谎报成功（用户反馈图片没收到，这里就是排查入口）
+            string who = string.IsNullOrEmpty(targetIP)
+                ? ("单播给 " + peers.Count + " 位在线用户")
+                : "私聊";
             Raise(OnLog, okPackets == allPackets
-                ? ("已发送图片 " + Math.Max(1, jpeg.Length / 1024) + "KB（" + total + " 块 ×" + ImageRepeat + " 次）")
+                ? ("已发送图片 " + Math.Max(1, jpeg.Length / 1024) + "KB（" + total + " 块 ×" + repeat + " 次，" + who + "）")
                 : ("图片发送部分失败：" + okPackets + "/" + allPackets + " 个数据报送出，对方可能收不完整"));
         }
 
