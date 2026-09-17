@@ -278,19 +278,8 @@ namespace JiYuKiller
             Services.Logger.Instance.ButtonClick("退出软件", "TrayMenu");
             _isExiting = true;
             Services.Logger.Instance.Info("正在退出程序");
-            _trayIcon.Visible = false;
-            _trayIcon.Dispose();
-            // 停止教师端模拟进程
-            if (_teacherSimService != null && _teacherSimService.IsRunning)
-            {
-                _teacherSimService.Stop();
-                Services.Logger.Instance.Info("已停止教师端模拟进程");
-            }
-            StopChatRoom();
-            _controller.Stop();
-            try { _glassyManager?.Dispose(); } catch { }
-            Services.Logger.Instance.Close();
-            System.Windows.Application.Current.Shutdown();
+            // 所有清理统一在 OnClosed 里做
+            Close();
         }
 
         #endregion

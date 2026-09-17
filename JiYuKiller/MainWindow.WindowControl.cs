@@ -53,8 +53,24 @@ namespace JiYuKiller
             Services.Logger.Instance.WindowEvent("MainWindow", "OnClosed");
             if (_isExiting)
             {
-                _controller.Stop();
-                Services.Logger.Instance.Close();
+                // 统一清理：所有退出路径都会经过这里
+                try { _controller.Stop(); } catch { }
+                try
+                {
+                    if (_teacherSimService != null && _teacherSimService.IsRunning)
+                        _teacherSimService.Stop();
+                } catch { }
+                try { StopChatRoom(); } catch { }
+                try { _glassyManager?.Dispose(); } catch { }
+                try
+                {
+                    if (_trayIcon != null)
+                    {
+                        _trayIcon.Visible = false;
+                        _trayIcon.Dispose();
+                    }
+                } catch { }
+                try { Services.Logger.Instance.Close(); } catch { }
             }
             base.OnClosed(e);
         }
@@ -205,40 +221,9 @@ namespace JiYuKiller
         private void ForceExit()
         {
             Services.Logger.Instance.Info("强制退出应用程序");
-
-            // 关键: 必须置位。OnClosing 在 _isExiting==false 时会 e.Cancel=true 并把窗口隐藏到托盘,
-            // 原先这条路径没有置位, 关机/重启流程里窗口的关闭会被取消。
             _isExiting = true;
-
-            try { _controller.Stop(); } catch { }
-
-            try
-            {
-                if (_teacherSimService != null && _teacherSimService.IsRunning)
-                {
-                    _teacherSimService.Stop();
-                }
-            }
-            catch (Exception ex)
-            {
-                Services.Logger.Instance.Warn("停止教师端模拟进程失败: " + ex.Message);
-            }
-
-            StopChatRoom();
-
-            try { _glassyManager?.Dispose(); } catch { }
-
-            try
-            {
-                if (_trayIcon != null)
-                {
-                    _trayIcon.Visible = false;
-                    _trayIcon.Dispose();
-                }
-            }
-            catch { }
-            try { Services.Logger.Instance.Close(); } catch { }
-            System.Windows.Application.Current.Shutdown();
+            // 所有清理统一在 OnClosed 里做
+            Close();
         }
 
         #endregion

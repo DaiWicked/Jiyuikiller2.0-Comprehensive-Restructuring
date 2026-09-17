@@ -84,7 +84,7 @@ namespace JiYuKiller
 
         private void TeacherSim_OnLogOutput(string message)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 TextTeacherSimConsole.AppendText(message + Environment.NewLine);
                 TextTeacherSimConsole.ScrollToEnd();
@@ -111,15 +111,15 @@ namespace JiYuKiller
                         _parsingStudentList = false;
                     }
                 }
-            });
+            }));
         }
         private void TeacherSim_OnLogFileOutput(string message)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 TextTeacherSimLog.AppendText(message + Environment.NewLine);
                 TextTeacherSimLog.ScrollToEnd();
-            });
+            }));
         }
 
         private void BtnTeacherSimClearLog_Click(object sender, RoutedEventArgs e)
