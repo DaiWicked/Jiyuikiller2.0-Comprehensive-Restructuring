@@ -321,7 +321,6 @@ namespace ChatRoom
 
         private int _unreadCount = 0;
         private bool _unreadSeparatorShown = false;
-        private bool _addingServiceLine = false;
 
         /// <summary>
         /// 未读计数：只在用户"没在看"时累加（最小化或窗口不在前台）。
@@ -340,10 +339,8 @@ namespace ChatRoom
             if (!_unreadSeparatorShown)
             {
                 _unreadSeparatorShown = true;
-                _addingServiceLine = true;                                   // 防止分隔线自己被算成未读
-                try { AddMessage("系统", "── 以下为新消息 ──", BubbleKind.Service); }
-                finally { _addingServiceLine = false; }
-            }
+                // 分隔线本身是服务消息，而服务消息不计未读，所以不会自增计数
+                AddMessage("系统", "── 以下为新消息 ──", BubbleKind.Service);            }
         }
 
         private void ClearUnread()
