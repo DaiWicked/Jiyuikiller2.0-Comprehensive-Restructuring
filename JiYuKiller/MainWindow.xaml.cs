@@ -288,6 +288,7 @@ namespace JiYuKiller
             }
             StopChatRoom();
             _controller.Stop();
+            try { _glassyManager?.Dispose(); } catch { }
             Services.Logger.Instance.Close();
             System.Windows.Application.Current.Shutdown();
         }

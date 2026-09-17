@@ -212,7 +212,6 @@ namespace JiYuKiller
 
             try { _controller.Stop(); } catch { }
 
-            // 与 ExitApplication 保持一致: 教师端模拟进程也需要停止
             try
             {
                 if (_teacherSimService != null && _teacherSimService.IsRunning)
@@ -224,6 +223,8 @@ namespace JiYuKiller
             {
                 Services.Logger.Instance.Warn("停止教师端模拟进程失败: " + ex.Message);
             }
+
+            StopChatRoom();
 
             try { _glassyManager?.Dispose(); } catch { }
 
