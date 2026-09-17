@@ -479,13 +479,23 @@ namespace JiYuKiller
                 // 滑动指示器渐变：同理
                 if (NavIndicator != null)
                 {
-                    // XAML 里 NavIndicator 自身没设 Background，两个 GradientStop 在它的子 Border 上，
-                    // 所以原来取 NavIndicator.Background 恒为 null ⇒ 指示器配色自适应一直是死代码。
+                    // XAML 结构（MainWindow.xaml:1240 起）：
+                    //   NavIndicator(自身无 Background) -> Grid -> Border(VisualBrush) + Border(LinearGradientBrush)
+                    // 那个渐变的两个 GradientStop 颜色**绑定到静态资源** NavIndicatorBrushTop / NavIndicatorBrushBottom，
+                    // 所以直接取资源最稳（不依赖可视树层级；上一版取"第一个子 Border"取到的是 Grid，恒为 null）。
                     var lg = NavIndicator.Background as System.Windows.Media.LinearGradientBrush;
-                    if (lg == null && VisualTreeHelper.GetChildrenCount(NavIndicator) > 0)
+                    if (lg == null)
                     {
-                        var child = VisualTreeHelper.GetChild(NavIndicator, 0) as Border;
-                        if (child != null) lg = child.Background as System.Windows.Media.LinearGradientBrush;
+                        var topBrush = TryFindResource("NavIndicatorBrushTop") as System.Windows.Media.SolidColorBrush;
+                        var bottomBrush = TryFindResource("NavIndicatorBrushBottom") as System.Windows.Media.SolidColorBrush;
+                        if (topBrush != null && bottomBrush != null)
+                        {
+                            // 新建自己的渐变（不改动被冻结的资源画刷），这样后续调色/动画才安全
+                            var built = new System.Windows.Media.LinearGradientBrush();
+                            built.GradientStops.Add(new System.Windows.Media.GradientStop(topBrush.Color, 0));
+                            built.GradientStops.Add(new System.Windows.Media.GradientStop(bottomBrush.Color, 1));
+                            lg = built;
+                        }
                     }
 
                     if (lg != null && lg.GradientStops.Count >= 2)
