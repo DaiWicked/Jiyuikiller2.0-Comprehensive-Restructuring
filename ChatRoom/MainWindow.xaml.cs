@@ -433,7 +433,7 @@ namespace ChatRoom
             if (viewingThisConv) return;
 
             Conversation c = EnsureConversation(key,
-                key == Conversation.GroupKey ? "群聊" : key, key == Conversation.GroupKey, "");
+                key == Conversation.GroupKey ? "群聊" : NicknameOfConvKey(key), key == Conversation.GroupKey, "");
             c.Unread++;
 
             if (!c.IsGroup) SetPeerUnread(c.PeerIP, c.Unread);   // 侧栏那一行的未读徽标
