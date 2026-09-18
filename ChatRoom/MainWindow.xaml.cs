@@ -198,7 +198,7 @@ namespace ChatRoom
         {
             try
             {
-                string line = $"[{DateTime.Now:HH:mm}] | conv={_currentConvKey} | {sender} | {message}";
+                string line = $"[{DateTime.Now:HH:mm}] | conv={_addConvKey ?? _currentConvKey} | {sender} | {message}";   // 必须用消息所属会话，不是当前会话
                 File.AppendAllText(_historyPath, line + Environment.NewLine, System.Text.Encoding.UTF8);
             }
             catch { }
@@ -253,8 +253,8 @@ namespace ChatRoom
             {
                 _addConvKey = Conversation.GroupKey;   // 群聊消息固定归群聊会话
                 AddMessage(from.Nickname, msg, BubbleKind.Incoming);
-                _addConvKey = null;
                 SaveHistoryLine(from.Nickname, msg);
+                _addConvKey = null;   // 写历史必须用消息所属会话
             });
         }
 
@@ -266,7 +266,6 @@ namespace ChatRoom
                 {
                     _addConvKey = Conversation.PeerKey(from.IP);   // 私聊消息归该会话
                     AddMessage(from.Nickname + " [私聊]", msg, BubbleKind.Incoming);
-                    _addConvKey = null;
                 }
                 else
                 {
@@ -274,7 +273,9 @@ namespace ChatRoom
                     AddMessage("📩 " + from.Nickname, msg, BubbleKind.Incoming);
                     _addConvKey = null;
                 }
+                _addConvKey = Conversation.PeerKey(from.IP);   // 写历史必须用消息所属会话
                 SaveHistoryLine(from.Nickname + "[私聊]", msg);
+                _addConvKey = null;
             });
         }
 
@@ -304,8 +305,10 @@ namespace ChatRoom
                 string label = scope == "P" ? (from.Nickname + " [私聊图片]") : from.Nickname;
                 _addConvKey = IncomingConvKey(scope, from.IP);   // 图片按 scope 归会话
                 AddImageMessage(label, bmp, saved, BubbleKind.Incoming);
-                _addConvKey = null;
+                _addConvKey = IncomingConvKey(scope, from.IP);   // 写历史必须用消息所属会话
                 SaveHistoryLine(from.Nickname + (scope == "P" ? "[私聊]" : ""), "[图片]|" + saved);
+                _addConvKey = null;
+                _addConvKey = null;
             });
         }
 
