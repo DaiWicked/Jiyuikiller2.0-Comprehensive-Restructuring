@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -284,15 +284,39 @@ namespace ChatRoom
             try
             {
                 var live = _chat.SnapshotUsers();
+                bool changed = false;
                 foreach (ChatUser u in _userList)
                 {
                     foreach (ChatUser s in live)
                     {
-                        if (s.IP == u.IP) { u.LastSeen = s.LastSeen; u.Nickname = s.Nickname; break; }
+                        if (s.IP == u.IP)
+                        {
+                            if (u.LastSeen != s.LastSeen || u.Nickname != s.Nickname || u.Unread != s.Unread)
+                            {
+                                u.LastSeen = s.LastSeen; u.Nickname = s.Nickname;
+                                changed = true;
+                            }
+                            break;
+                        }
                     }
                 }
+                // 检查有没有新上线的人需要加入列表
+                foreach (ChatUser s in live)
+                {
+                    bool found = false;
+                    foreach (ChatUser u in _userList) { if (u.IP == s.IP) { found = true; break; } }
+                    if (!found) { _userList.Add(s); changed = true; }
+                }
+                // 检查有没有人下线需要移除
+                for (int i = _userList.Count - 1; i >= 0; i--)
+                {
+                    bool still = false;
+                    foreach (ChatUser s in live) { if (s.IP == _userList[i].IP) { still = true; break; } }
+                    if (!still) { _userList.RemoveAt(i); changed = true; }
+                }
                 UpdateUserCount();
-                    System.Windows.Data.CollectionViewSource.GetDefaultView(_userList).Refresh();   // ChatUser 无 INPC，必须手动刷新视图
+                if (changed)
+                    System.Windows.Data.CollectionViewSource.GetDefaultView(_userList).Refresh();
             }
             catch { }
         }
