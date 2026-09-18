@@ -39,6 +39,7 @@ namespace ChatRoom
             EnsureConversation(Conversation.GroupKey, "群聊", true, "");
             RefreshConversationView();
             StartUserSync();
+            ApplyWallpaper();   // 需求#7：启动时恢复聊天区壁纸
             // 系统关机/注销时必须放行关闭，否则会被"此程序阻止关机"卡住
             Application.Current.SessionEnding += (s, a) => { _isExiting = true; };
         }

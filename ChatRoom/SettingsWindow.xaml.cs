@@ -26,6 +26,47 @@ namespace ChatRoom
 
             CheckTopMost.IsChecked = Settings.TopMost;
             CheckClearOnExit.IsChecked = Settings.ClearOnExit;
+            SliderWallpaper.Value = Settings.WallpaperOpacity;
+            TextWallpaper.Text = string.IsNullOrEmpty(Settings.WallpaperPath) ? "未设置" : System.IO.Path.GetFileName(Settings.WallpaperPath);
+            TextWallpaperOpacity.Text = (int)System.Math.Round(Settings.WallpaperOpacity * 100) + "%";
+        }
+
+        /// <summary>选择壁纸（需求#7）：复制进数据目录并立即应用</summary>
+        private void BtnPickWallpaper_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "选择聊天区壁纸",
+                Filter = "图片文件|*.jpg;*.jpeg;*.png;*.bmp;*.gif"
+            };
+            if (dlg.ShowDialog() != true) return;
+            if (Settings.SetWallpaper(dlg.FileName))
+            {
+                Settings.Save();
+                TextWallpaper.Text = System.IO.Path.GetFileName(Settings.WallpaperPath);
+                var mw = Owner as MainWindow;
+                if (mw != null) mw.ApplyWallpaper();
+            }
+            else System.Windows.MessageBox.Show("这张图片无法读取，换一张试试。", "提示");
+        }
+
+        private void BtnClearWallpaper_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.ClearWallpaper();
+            Settings.Save();
+            TextWallpaper.Text = "未设置";
+            var mw = Owner as MainWindow;
+            if (mw != null) mw.ApplyWallpaper();
+        }
+
+        /// <summary>透明度滑杆：实时生效（0~100%）</summary>
+        private void SliderWallpaper_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (Settings == null || TextWallpaperOpacity == null) return;
+            Settings.WallpaperOpacity = e.NewValue;
+            TextWallpaperOpacity.Text = (int)System.Math.Round(e.NewValue * 100) + "%";
+            var mw = Owner as MainWindow;
+            if (mw != null) mw.ApplyWallpaper();
         }
 
         private void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -40,6 +81,7 @@ namespace ChatRoom
             Settings.ClearOnExit = CheckClearOnExit.IsChecked == true;
             Settings.Save();
 
+            (Owner as MainWindow)?.ApplyWallpaper();
             DialogResult = true;
             Close();
         }

@@ -15,6 +15,35 @@ namespace ChatRoom.Models
         /// <summary>暗色模式（明暗两套配色见 Theme.cs）</summary>
         public bool DarkMode { get; set; } = false;
 
+        /// <summary>聊天区壁纸路径（空=用默认半透明灰）；由 SetWallpaper 复制到数据目录，避免原图被挪走后失效</summary>
+        public string WallpaperPath { get; set; } = "";
+
+        /// <summary>壁纸透明度 0~1（豆包需求 #7：可调；气泡始终不透明保证可读性）</summary>
+        public double WallpaperOpacity { get; set; } = 0.35;
+
+        /// <summary>把选中的图片复制进数据目录并记下路径（返回是否成功）</summary>
+        public bool SetWallpaper(string sourcePath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath)) return false;
+                string ext = Path.GetExtension(sourcePath);
+                if (string.IsNullOrEmpty(ext)) ext = ".jpg";
+                string target = Path.Combine(DataDir, "wallpaper" + ext.ToLowerInvariant());
+                if (!string.Equals(Path.GetFullPath(sourcePath), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase))
+                    File.Copy(sourcePath, target, true);
+                WallpaperPath = target;
+                return true;
+            }
+            catch { return false; }
+        }
+
+        public void ClearWallpaper()
+        {
+            try { if (!string.IsNullOrEmpty(WallpaperPath) && File.Exists(WallpaperPath)) File.Delete(WallpaperPath); } catch { }
+            WallpaperPath = "";
+        }
+
         /// <summary>是否已完成首次注册（豆包需求 #2：首次启动弹注册页，之后不再弹，除非在设置里重置）</summary>
         public bool Registered { get; set; } = false;
 
@@ -169,6 +198,8 @@ namespace ChatRoom.Models
                             case "TopMost": s.TopMost = val == "1"; break;
                             case "DarkMode": s.DarkMode = val == "1"; break;
                             case "Registered": s.Registered = val == "1"; break;
+                            case "WallpaperPath": s.WallpaperPath = val; break;
+                            case "WallpaperOpacity": double.TryParse(val, out double wo); s.WallpaperOpacity = wo; break;
                             case "WindowLeft": double.TryParse(val, out double wl); s.WindowLeft = wl; break;
                             case "WindowTop": double.TryParse(val, out double wt); s.WindowTop = wt; break;
                             case "WindowWidth": double.TryParse(val, out double ww); s.WindowWidth = ww; break;
@@ -194,6 +225,8 @@ namespace ChatRoom.Models
                     "TopMost=" + (TopMost ? "1" : "0"),
                     "DarkMode=" + (DarkMode ? "1" : "0"),
                     "Registered=" + (Registered ? "1" : "0"),
+                    "WallpaperPath=" + WallpaperPath,
+                    "WallpaperOpacity=" + WallpaperOpacity.ToString("F2"),
                     "WindowLeft=" + WindowLeft.ToString("F0"),
                     "WindowTop=" + WindowTop.ToString("F0"),
                     "WindowWidth=" + WindowWidth.ToString("F0"),

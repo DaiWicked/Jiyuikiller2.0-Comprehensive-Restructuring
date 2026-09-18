@@ -18,6 +18,35 @@ namespace ChatRoom
     /// </summary>
     public partial class MainWindow
     {
+        /// <summary>
+        /// 应用聊天区壁纸（豆包需求 #7）。
+        /// 壁纸画在消息区背景上：气泡本身不透明，所以文字可读性不受影响；
+        /// 透明度由设置里的 WallpaperOpacity 控制。没有壁纸时回退到主题的半透明灰。
+        /// </summary>
+        public void ApplyWallpaper()
+        {
+            try
+            {
+                string p = _settings != null ? _settings.WallpaperPath : null;
+                if (!string.IsNullOrEmpty(p) && System.IO.File.Exists(p))
+                {
+                    var bmp = new System.Windows.Media.Imaging.BitmapImage();
+                    bmp.BeginInit();
+                    bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                    bmp.UriSource = new Uri(p, UriKind.Absolute);
+                    bmp.EndInit();
+                    bmp.Freeze();
+                    ChatScroll.Background = new System.Windows.Media.ImageBrush(bmp)
+                    {
+                        Stretch = System.Windows.Media.Stretch.UniformToFill,
+                        Opacity = Math.Max(0.0, Math.Min(1.0, _settings.WallpaperOpacity))
+                    };
+                    return;
+                }
+            }
+            catch { }
+            ChatScroll.Background = Theme.Get("ChatBg");   // 默认：半透明灰（跟随主题）
+        }
         private readonly Dictionary<string, Conversation> _conversations = new Dictionary<string, Conversation>();
         private string _currentConvKey = Conversation.GroupKey;
         private CollectionView _messagesView;
