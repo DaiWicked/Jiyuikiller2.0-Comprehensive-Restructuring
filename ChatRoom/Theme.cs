@@ -56,6 +56,10 @@ namespace ChatRoom
             { "GhostHover",       "#14000000", "#22FFFFFF" },   // 图标按钮悬停底
             { "GhostPressed",     "#22000000", "#38FFFFFF" },   // 图标按钮按下底
             { "ScrollThumb",      "#40000000", "#40FFFFFF" },   // 细滚动条滑块
+            // —— 玻璃拟态（豆包 Q2 规格：卡片/侧栏/弹窗 85% 不透明 + 1px 主色 20% 微光边框 + 圆角 12）——
+            { "GlassPanel",       "#D9FFFFFF", "#D917212B" },   // 85% 不透明面板
+            { "GlassBorder",      "#335B8DEF", "#335B8DEF" },   // 主色 20% 微光边框
+            { "GlassPanelHover",  "#E6FFFFFF", "#E61C2836" },   // 玻璃卡片悬停
         };
 
         public static void Apply(bool dark)

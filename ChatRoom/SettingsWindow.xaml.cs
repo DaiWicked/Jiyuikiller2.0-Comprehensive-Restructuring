@@ -44,6 +44,13 @@ namespace ChatRoom
             Close();
         }
 
+        /// <summary>无边框窗口拖动</summary>
+        private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ButtonState != System.Windows.Input.MouseButtonState.Pressed) return;
+            try { DragMove(); } catch (System.InvalidOperationException) { }
+        }
+
         /// <summary>关于（豆包需求 #4）</summary>
         private void BtnAbout_Click(object sender, RoutedEventArgs e)
         {
