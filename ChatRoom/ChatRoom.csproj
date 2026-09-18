@@ -60,11 +60,16 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Resource Include="Assets\chat.ico" />
+    <Resource Include="Assets\chat.png" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="SettingsWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="AboutWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -82,12 +87,17 @@
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="AboutWindow.xaml.cs">
+      <DependentUpon>AboutWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Services\ChatUdpService.cs" />
     <Compile Include="Services\ChatUdpService.Images.cs" />
     <Compile Include="Services\ChatImageCodec.cs" />
     <Compile Include="Models\ChatUser.cs" />
     <Compile Include="Models\Conversation.cs" />
     <Compile Include="Theme.cs" />
+    <Compile Include="AppInfo.cs" />
     <Compile Include="Models\ChatSettings.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

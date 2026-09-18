@@ -82,10 +82,15 @@ namespace ChatRoom
             ChatTitle.Text = c.IsGroup ? "# 群聊" : ("私聊: " + c.Title);
         }
 
-        /// <summary>未读徽标：显示"当前会话"的未读数（会话分离后不再全局混算）</summary>
+        /// <summary>
+        /// 未读徽标：显示**所有会话**的未读总和（侧栏保持在线用户列表，没有逐会话徽标位置）。
+        /// 切进某个会话时该会话的未读清零，总和随之减少。
+        /// </summary>
         private void UpdateUnreadBadge()
         {
-            int n = CurrentConversation.Unread;
+            int n = 0;
+            foreach (var c in _conversations.Values) n += c.Unread;
+            _unreadCount = n;                       // 托盘提示也用这个数
             TextUnread.Text = n + " 条新消息";
             BtnUnread.Visibility = n > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
