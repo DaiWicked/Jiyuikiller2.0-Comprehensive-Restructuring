@@ -199,6 +199,7 @@ namespace ChatRoom.Services
                 FileAssembly asm;
                 if (!_files.TryGetValue(key, out asm))
                 {
+                    if (!AcceptTransferFrom(ip)) return;   // 同一发送者发得太频繁（与图片共用同一个限频器）
                     if (_files.Count >= FileMaxAssemblies) return;
 
                     int pending = 0;

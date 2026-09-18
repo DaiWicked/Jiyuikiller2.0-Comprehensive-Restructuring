@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -57,6 +57,30 @@ namespace ChatRoom.Services
 
         /// <summary>收到一张完整图片：from=发送者，jpeg=图片字节，scope=G 群聊 / P 私聊</summary>
         public event Action<ChatUser, byte[], string> OnImageReceived;
+
+        // === 接收侧按发送者限频（豆包 Q12-1）===
+        // 为什么要它：分块上限、组装上限只防"单张过大"，防不住"同一个对端持续不断地发" ——
+        // 消息条数上限 500 只管 _messages，图片解码后常驻内存，长期被灌同样会 OOM。
+        // 只对"新建一次传输"计时（不是每个分片），所以正常的多块图片/文件不受影响。
+        private readonly Dictionary<string, DateTime> _lastAcceptAt = new Dictionary<string, DateTime>();
+        private const int AcceptMinGapMs = 1000;
+
+        /// <summary>同一个发送者的两次"新传输"至少间隔 1 秒；返回 false 表示这次应当丢弃</summary>
+        private bool AcceptTransferFrom(string ip)
+        {
+            if (string.IsNullOrEmpty(ip)) return true;
+            lock (_lastAcceptAt)
+            {
+                DateTime last;
+                if (_lastAcceptAt.TryGetValue(ip, out last) &&
+                    (DateTime.Now - last).TotalMilliseconds < AcceptMinGapMs)
+                    return false;
+
+                _lastAcceptAt[ip] = DateTime.Now;
+                if (_lastAcceptAt.Count > 256) _lastAcceptAt.Clear();   // 防字典无限增长
+                return true;
+            }
+        }
 
         /// <summary>一张图的分块组装状态</summary>
         private sealed class ImageAssembly
@@ -195,6 +219,7 @@ namespace ChatRoom.Services
                 ImageAssembly asm;
                 if (!_images.TryGetValue(key, out asm))
                 {
+                    if (!AcceptTransferFrom(ip)) return;   // 同一发送者发得太频繁：整次传输丢弃
                     if (_images.Count >= ImageMaxAssemblies) return;
 
                     int pending = 0;

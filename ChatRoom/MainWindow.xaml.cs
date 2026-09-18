@@ -124,6 +124,7 @@ namespace ChatRoom
         {
             try
             {
+                RotateHistoryIfNeeded();   // 先轮转再读：防止历史文件无限增长
                 if (!File.Exists(_historyPath)) return;
                 var lines = File.ReadAllLines(_historyPath, System.Text.Encoding.UTF8);
                 var recent = lines.Skip(Math.Max(0, lines.Length - 100)).ToList();
@@ -205,6 +206,36 @@ namespace ChatRoom
                 _addConvKey = null;
             }
         }
+
+        /// <summary>
+        /// 聊天记录轮转（豆包 Q12-1）：文件超过 512KB 时，把较早的行归档到 chat_history.1.txt，
+        /// 本文件只留最近 2000 行。备份是**覆盖式**写入，所以总量恒定在"512KB + 2000 行"以内，
+        /// 不会像"每次追加一个备份"那样越滚越多。
+        /// </summary>
+        private void RotateHistoryIfNeeded()
+        {
+            try
+            {
+                if (!File.Exists(_historyPath)) return;
+
+                long len = new FileInfo(_historyPath).Length;
+                if (len < HistoryRotateBytes) return;
+
+                string[] lines = File.ReadAllLines(_historyPath, System.Text.Encoding.UTF8);
+                if (lines.Length <= HistoryKeepLines) return;
+
+                int cut = lines.Length - HistoryKeepLines;
+                File.WriteAllLines(Path.Combine(ChatSettings.DataDir, "chat_history.1.txt"),
+                                   lines.Take(cut), System.Text.Encoding.UTF8);
+                File.WriteAllLines(_historyPath, lines.Skip(cut), System.Text.Encoding.UTF8);
+
+                AddMessage("系统", "聊天记录超过上限，较早的 " + cut + " 条已归档到 chat_history.1.txt", BubbleKind.Service);
+            }
+            catch { }
+        }
+
+        private const long HistoryRotateBytes = 512 * 1024;
+        private const int HistoryKeepLines = 2000;
 
         /// <summary>路径是否位于"我们自己落盘的图片目录"内（数据目录或程序目录，兼容迁移前老数据）</summary>
         private static bool IsUnderChatImages(string path)
