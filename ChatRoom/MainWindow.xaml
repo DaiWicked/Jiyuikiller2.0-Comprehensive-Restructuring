@@ -32,12 +32,12 @@
                             <Grid.RenderTransform>
                                 <ScaleTransform x:Name="sc" ScaleX="1" ScaleY="1" />
                             </Grid.RenderTransform>
-                            <Border x:Name="bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                            <Border x:Name="bd" CornerRadius="5" Background="{TemplateBinding Background}"
                                     Padding="{TemplateBinding Padding}">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-                            <Border x:Name="hoverLayer" CornerRadius="8" Background="#26FFFFFF" Opacity="0" IsHitTestVisible="False" />
-                            <Border x:Name="pressLayer" CornerRadius="8" Background="#33000000" Opacity="0" IsHitTestVisible="False" />
+                            <Border x:Name="hoverLayer" CornerRadius="5" Background="#26FFFFFF" Opacity="0" IsHitTestVisible="False" />
+                            <Border x:Name="pressLayer" CornerRadius="5" Background="#33000000" Opacity="0" IsHitTestVisible="False" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -453,7 +453,7 @@
                                                    TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
                                     <!-- 未读徽标（会话分离后用于提示"谁给我发了消息"） -->
-                                    <Border Grid.Column="3" Background="{DynamicResource Accent}" CornerRadius="8"
+                                    <Border Grid.Column="3" Background="{DynamicResource Accent}" CornerRadius="5"
                                             MinWidth="16" Height="16" Padding="4,0" Margin="6,0,0,0"
                                             VerticalAlignment="Center"
                                             Visibility="{Binding UnreadVisibility}">
@@ -539,7 +539,7 @@
                                 <ImageBrush x:Name="WallpaperBrush" Stretch="UniformToFill" />
                             </Border.Background>
                             <Border.Effect>
-                                <BlurEffect x:Name="WallpaperBlurEffect" Radius="8"
+                                <BlurEffect x:Name="WallpaperBlurEffect" Radius="5"
                                             KernelType="Gaussian" RenderingBias="Performance" />
                             </Border.Effect>
                         </Border>
