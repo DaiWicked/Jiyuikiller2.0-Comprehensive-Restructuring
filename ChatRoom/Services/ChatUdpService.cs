@@ -276,6 +276,16 @@ namespace ChatRoom.Services
                 {
                     SendBroadcast(EncodePacket("CHAT", Nickname, ""));
 
+                    // 刷新"我自己"那条的 LastSeen：所有处理器对自己 IP 都是直接 return、
+                    // 清理循环又跳过 IsMe，所以它永远不会被更新 —— 8 秒后 IsOnline 就变 false，
+                    // 任何按"在线"过滤/消费 SnapshotUsers 的地方都会看到"本机离线"这种自相矛盾的状态。
+                    // （UI 侧已经不再把自己列进侧栏，这里是让模型本身保持诚实。）
+                    lock (_userLock)
+                    {
+                        ChatUser me;
+                        if (_users.TryGetValue(LocalIP, out me) && me != null) me.LastSeen = DateTime.Now;
+                    }
+
                     // 定期清理图片组装缓存：不放在这里的话，"收不齐"要等到下一块到来才被发现，
                     // 而残缺图片之后往往再没有块 —— 用户就永远看不到任何提示（实测踩到过）。
                     CleanupImageAssemblies();

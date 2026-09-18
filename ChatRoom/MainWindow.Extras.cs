@@ -315,6 +315,14 @@ namespace ChatRoom
                 // 新上线的人加入列表
                 foreach (ChatUser s in live)
                 {
+                    // ★ 侧栏只列**别人**：服务侧的 _users 里有一条 IsMe 的"我自己"
+                    //   （启动时为了标识本机加进去的），这里必须过滤掉，
+                    //   否则会出现"登录后侧栏冒出自己、过 8 秒又消失"（用户实测反馈）。
+                    //   为什么会消失：自己那条的 LastSeen 只在启动时设过一次、之后无人刷新
+                    //   （所有处理器对自己 IP 都是直接 return，清理循环也跳过 IsMe），
+                    //   于是 8 秒后 IsOnline 变 false，UI 的"移除离线用户"就把它删了。
+                    if (s.IsMe) continue;
+
                     bool found = false;
                     foreach (ChatUser u in _userList) { if (u.IP == s.IP) { found = true; break; } }
                     if (!found)
@@ -339,17 +347,22 @@ namespace ChatRoom
                     }
                 }
 
-                // 离线超时的人从列表移除
+                // 离线超时的人从列表移除；自己那条（IsMe）永远不该在侧栏里，一并兜底清掉
                 for (int i = _userList.Count - 1; i >= 0; i--)
                 {
-                    if (!_userList[i].IsOnline) { _userList.RemoveAt(i); needRefresh = true; countChanged = true; }
+                    if (_userList[i].IsMe || !_userList[i].IsOnline)
+                    {
+                        _userList.RemoveAt(i); needRefresh = true; countChanged = true;
+                    }
                 }
 
                 if (countChanged) UpdateUserCount();
                 if (needRefresh)
                     System.Windows.Data.CollectionViewSource.GetDefaultView(_userList).Refresh();
 
-                // 动效 4：同步各行未读跑马灯（ChatUser 没有 INPC，只能在这里对齐）
+                // 动效 4：同步各行未读跑马灯
+                // （未读变化时 UpdateUnreadBadge 已经会即时对齐，这里兜底一次，
+                //   覆盖"行刚被创建/移除"这类不经过未读逻辑的变化）
                 SyncMarquees();
             }
             catch { }

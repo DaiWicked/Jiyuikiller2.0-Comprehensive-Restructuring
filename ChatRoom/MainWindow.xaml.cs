@@ -294,6 +294,9 @@ namespace ChatRoom
         {
             OnUI(() =>
             {
+                // 自己那条（IsMe）不进侧栏 —— 服务侧启动时会把自己放进 _users 用于标识本机
+                if (user == null || user.IsMe) return;
+
                 bool isNew = !_userList.Any(u => u.IP == user.IP);
                 if (isNew)
                 {
@@ -326,7 +329,8 @@ namespace ChatRoom
 
         private void UpdateUserCount()
         {
-            int count = _userList.Count(u => u.IsOnline);
+            // 只数**别人**（自己那条 IsMe 不进侧栏，也不能算进在线人数）
+            int count = _userList.Count(u => u.IsOnline && !u.IsMe);
             UserCount.Text = $"({count})";
         }
 
