@@ -68,7 +68,11 @@ namespace ChatRoom
                 c = new Conversation { Key = key, Title = title, IsGroup = isGroup, PeerIP = peerIP ?? "" };
                 _conversations[key] = c;
             }
-            else if (!string.IsNullOrEmpty(title)) c.Title = title;
+            else
+            {
+                if (!string.IsNullOrEmpty(title)) c.Title = title;
+                if (string.IsNullOrEmpty(c.PeerIP) && !string.IsNullOrEmpty(peerIP)) c.PeerIP = peerIP;
+            }
             return c;
         }
 
