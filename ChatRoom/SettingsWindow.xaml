@@ -219,16 +219,23 @@
                             Margin="0,0,8,0"/>
                     <Button Content="关于" Click="BtnAbout_Click" Style="{StaticResource GhostBtn}"/>
                     <Button Content="重置昵称" Click="BtnResetNick_Click" Style="{StaticResource GhostBtn}" Margin="8,0,0,0"/>
-                    <TextBlock Text="{x:Static local:AppInfo.Version}" FontSize="10"
-                               Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"
-                               HorizontalAlignment="Right" Margin="10,0,0,0"/>
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
-                    <Button Content="取消" Click="BtnCancel_Click" Style="{StaticResource GhostBtn}"
-                            Width="76" Margin="0,0,8,0"/>
-                    <Button Content="保存" Click="BtnSave_Click" Style="{StaticResource AccentBtn}" Width="88"/>
-                </StackPanel>
+                <!-- 页脚：左侧版本号 + 右侧按钮，用 Grid 两列。
+                     ★ 版本号不能单独占一行：整个内容是纵向 StackPanel，多一行会把页脚整体顶出窗口
+                       （实测「取消/保存」被裁到窗口外）。
+                     ★ 也不能把 HorizontalAlignment="Right" 放进横向 StackPanel（那是无效的，
+                       文字会紧贴"重置昵称"冲出窗口右边被裁）。 -->
+                <Grid Margin="0,18,0,0">
+                    <TextBlock Text="{x:Static local:AppInfo.Version}" FontSize="10"
+                               Foreground="{DynamicResource TextSecondary}"
+                               HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="取消" Click="BtnCancel_Click" Style="{StaticResource GhostBtn}"
+                                Width="76" Margin="0,0,8,0"/>
+                        <Button Content="保存" Click="BtnSave_Click" Style="{StaticResource AccentBtn}" Width="88"/>
+                    </StackPanel>
+                </Grid>
             </StackPanel>
         </Grid>
     </Border>
