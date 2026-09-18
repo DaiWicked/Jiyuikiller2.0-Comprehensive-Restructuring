@@ -148,10 +148,12 @@ namespace ChatRoom
             if (UserList == null) return;
             try
             {
+                var seen = new HashSet<ListBoxItem>();
                 for (int i = 0; i < UserList.Items.Count; i++)
                 {
                     var item = UserList.ItemContainerGenerator.ContainerFromIndex(i) as ListBoxItem;
                     if (item == null) continue;                       // 未实现（虚拟化外）的行跳过
+                    seen.Add(item);
                     var user = UserList.Items[i] as ChatUser;
                     bool need = user != null && user.Unread > 0;
 
@@ -180,6 +182,12 @@ namespace ChatRoom
                         tr.X = 0;
                     }
                 }
+
+                // ★ 第三轮审查（这条是我自己引入的）：行被移除/容器被回收后，
+                //   _marqueeRunning 会一直攥着那些 ListBoxItem —— 既漏内存，
+                //   又让"已经在滚"的判断对**复用出来的新行**失效（新行被当成旧的，永远不滚）。
+                if (_marqueeRunning.Count > seen.Count)
+                    _marqueeRunning.RemoveWhere(it => !seen.Contains(it));
             }
             catch { }
         }

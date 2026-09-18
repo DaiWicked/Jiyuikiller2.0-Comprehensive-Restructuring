@@ -42,7 +42,9 @@ namespace ChatRoom
             ApplyWallpaper();   // 需求#7：启动时恢复聊天区壁纸
             Anim.ApplyTo(this);  // 动效总开关（豆包 Q7）：附加属性设一次，子元素靠继承拿到
             // 系统关机/注销时必须放行关闭，否则会被"此程序阻止关机"卡住
-            Application.Current.SessionEnding += (s, a) => { _isExiting = true; };
+            // ★ 用具名方法而不是 lambda：Application.SessionEnding 是静态事件，
+            //   匿名订阅没法退订，会让已关闭的窗口一直被 Application 引用（第三轮审查）
+            Application.Current.SessionEnding += OnSessionEnding;
         }
 
         private void BtnSearch_Click(object sender, RoutedEventArgs e)
@@ -261,6 +263,12 @@ namespace ChatRoom
                 // 用可见提示（ChatRoom 没有日志系统）：用户需要知道"关闭会直接退出"
                 try { AddMessage("系统", "托盘图标创建失败，关闭窗口将直接退出程序", BubbleKind.Service); } catch { }
             }
+        }
+
+        /// <summary>系统关机/注销：放行关闭，避免"此程序阻止关机"</summary>
+        private void OnSessionEnding(object sender, SessionEndingCancelEventArgs e)
+        {
+            _isExiting = true;
         }
 
         private DispatcherTimer _userSyncTimer;

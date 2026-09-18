@@ -31,6 +31,7 @@ namespace ChatRoom
                 if (old != null)
                 {
                     old.Image = null;                              // 释放位图
+                    old.FileBytes = null;                          // 释放收到的文件字节（每条最多 50KB，之前漏了）
                     if (_searchView.Contains(old)) _searchView.Remove(old);   // 搜索结果视图里也去掉引用
                 }
                 _messages.RemoveAt(0);
@@ -274,8 +275,17 @@ namespace ChatRoom
         private void OnUI(Action action)
         {
             if (action == null) return;
-            if (Dispatcher.CheckAccess()) { action(); return; }
-            Dispatcher.BeginInvoke(new Action(action));
+            // ★ 第三轮审查修复：关闭过程中调度器已经在关，此时网络线程再来事件，
+            //   BeginInvoke 会抛 TaskCanceledException/InvalidOperationException —— 异常发生在**网络接收线程**上，
+            //   会被 RecvLoop 的 catch 记成"接收错误"刷日志，看起来像网络故障，其实是关机竞态。
+            try
+            {
+                if (Dispatcher == null || Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+                if (Dispatcher.CheckAccess()) { action(); return; }
+                Dispatcher.BeginInvoke(new Action(action));
+            }
+            catch (System.Threading.Tasks.TaskCanceledException) { }   // 关闭中排队失败：正常，忽略
+            catch (InvalidOperationException) { }    // 同上
         }
 
         // === 聊天服务事件 ===
@@ -1081,6 +1091,30 @@ namespace ChatRoom
         protected override void OnClosed(EventArgs e)
         {
             _chat?.Stop();
+
+            // === 第三轮审查：释放 UI 侧资源 ===
+            // 托盘图标/1s 托盘定时器已经在 InitTray 的 Closed 里停掉并 Dispose 了，这里补上剩下的：
+            // ① 提醒窗的定时器与窗口本身（Topmost 小窗，不主动关要等进程退出才消失）
+            // ② 静态事件 Application.SessionEnding 的退订（它是**静态**事件，
+            //    订阅了不退订会让已关闭的窗口被 Application 一直引用）
+            try { if (_toastTimer != null) { _toastTimer.Stop(); _toastTimer = null; } } catch { }
+            try { if (_toastWindow != null) { _toastWindow.Close(); _toastWindow = null; } } catch { }
+            try { if (Application.Current != null) Application.Current.SessionEnding -= OnSessionEnding; } catch { }
+            // ③ 退订服务事件（Stop() 已经先停掉了线程，这里是双保险）
+            try
+            {
+                if (_chat != null)
+                {
+                    _chat.OnUserJoined -= OnUserJoined;
+                    _chat.OnUserLeft -= OnUserLeft;
+                    _chat.OnGroupMessage -= OnGroupMessage;
+                    _chat.OnPrivateMessage -= OnPrivateMessage;
+                    _chat.OnLog -= OnServiceLog;
+                    _chat.OnImageReceived -= OnImageReceived;
+                    _chat.OnFileReceived -= OnFileReceived;
+                }
+            }
+            catch { }
 
             // 记住窗口位置/大小（下次打开恢复）
             try
