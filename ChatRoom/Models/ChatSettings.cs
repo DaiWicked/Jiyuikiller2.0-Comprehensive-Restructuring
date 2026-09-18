@@ -18,8 +18,12 @@ namespace ChatRoom.Models
         /// <summary>聊天区壁纸路径（空=用默认半透明灰）；由 SetWallpaper 复制到数据目录，避免原图被挪走后失效</summary>
         public string WallpaperPath { get; set; } = "";
 
-        /// <summary>壁纸透明度 0~1（豆包需求 #7：可调；气泡始终不透明保证可读性）</summary>
-        public double WallpaperOpacity { get; set; } = 0.35;
+        /// <summary>
+        /// 壁纸模糊度（豆包修正需求 #7）：0 = 壁纸清晰，30 = 很糊（磨砂感），默认 15。
+        /// ★ 注意：早期版本这里是"透明度"（WallpaperOpacity），用户要的其实是模糊 ——
+        ///   壁纸**始终完全不透明**显示，滑块调的是磨砂程度，不是可见度。
+        /// </summary>
+        public double WallpaperBlur { get; set; } = 15;
 
         /// <summary>新消息弹窗提醒（豆包需求 #5：设置里可开关此功能；关掉只是不弹窗，未读红点照常）</summary>
         public bool ToastEnabled { get; set; } = true;
@@ -212,7 +216,7 @@ namespace ChatRoom.Models
                             case "DarkMode": s.DarkMode = val == "1"; break;
                             case "Registered": s.Registered = val == "1"; break;
                             case "WallpaperPath": s.WallpaperPath = val; break;
-                            case "WallpaperOpacity": double.TryParse(val, out double wo); s.WallpaperOpacity = wo; break;
+                            case "WallpaperBlur": double.TryParse(val, out double wb); s.WallpaperBlur = wb; break;
                             case "ToastEnabled": s.ToastEnabled = val != "0"; break;
                             case "Animations": s.Animations = val != "0"; break;
                             case "WindowLeft": double.TryParse(val, out double wl); s.WindowLeft = wl; break;
@@ -243,7 +247,7 @@ namespace ChatRoom.Models
                     "DarkMode=" + (DarkMode ? "1" : "0"),
                     "Registered=" + (Registered ? "1" : "0"),
                     "WallpaperPath=" + WallpaperPath,
-                    "WallpaperOpacity=" + WallpaperOpacity.ToString("F2"),
+                    "WallpaperBlur=" + WallpaperBlur.ToString("0.#"),
                     "ToastEnabled=" + (ToastEnabled ? "1" : "0"),
                     "Animations=" + (Animations ? "1" : "0"),
                     "WindowLeft=" + WindowLeft.ToString("F0"),

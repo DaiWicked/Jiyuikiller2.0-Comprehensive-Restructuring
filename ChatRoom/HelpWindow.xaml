@@ -312,7 +312,7 @@
 
                             <TextBlock Text="聊天区能换背景吗" Style="{StaticResource HelpH2}"/>
                             <TextBlock Style="{StaticResource HelpBody}"
-                                       Text="设置 →「聊天区壁纸」→ 选择图片，并可调透明度 0~100%（气泡始终不透明，保证字看得清）。同一处点「清除」恢复默认。"/>
+                                       Text="设置 →「聊天区壁纸」→ 选择图片，再用「模糊度」滑杆调磨砂程度（0 = 清晰，15 = 中等，30 = 很糊）。壁纸始终完整显示，滑块调的是模糊而不是明暗。同一处点「清除」恢复默认背景。"/>
                         </StackPanel>
                     </ScrollViewer>
 

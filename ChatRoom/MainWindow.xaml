@@ -525,12 +525,27 @@
                     </DockPanel>
                 </Border>
 
-                <!-- 消息区：底色与白色来消息气泡刻意拉开（原来白气泡压在 #FAFAFA 上几乎看不见）。
-                     ★ 这里必须有一层**不透明**底：外壳各层现在是半透明玻璃，
-                       而壁纸用的是 35% 不透明度的 ImageBrush —— 若这层底也是玻璃，
-                       桌面就会从消息区透出来（豆包要求消息区始终不透明）。 -->
-                <Border Grid.Row="1" Background="{DynamicResource ChatBg}" />
-                <ScrollViewer Grid.Row="1" x:Name="ChatScroll" Background="{DynamicResource ChatBg}"
+                <!-- 消息区（三层，自下而上）：
+                     ① ChatBase 不透明主题底 —— 没壁纸时就是它，同时保证桌面不会从消息区透出来；
+                     ② WallpaperLayer 壁纸层（完全不透明），**模糊只加在这一层** ——
+                        绝不能加在 ChatScroll 上，否则气泡和文字会被一起糊掉；
+                        加负 Margin 让模糊边缘溢出到可视区之外，再由外层 ClipToBounds 裁掉（避免四周出现发白虚边）。
+                     ③ ChatScroll 透明背景，只负责放气泡/文字，保持清晰。 -->
+                <Border Grid.Row="1" ClipToBounds="True">
+                    <Grid>
+                        <Border x:Name="ChatBase" Background="{DynamicResource ChatBg}" />
+                        <Border x:Name="WallpaperLayer" Margin="-32" Visibility="Collapsed">
+                            <Border.Background>
+                                <ImageBrush x:Name="WallpaperBrush" Stretch="UniformToFill" />
+                            </Border.Background>
+                            <Border.Effect>
+                                <BlurEffect x:Name="WallpaperBlurEffect" Radius="15"
+                                            KernelType="Gaussian" RenderingBias="Performance" />
+                            </Border.Effect>
+                        </Border>
+                    </Grid>
+                </Border>
+                <ScrollViewer Grid.Row="1" x:Name="ChatScroll" Background="Transparent"
                               VerticalScrollBarVisibility="Auto">
                     <ScrollViewer.Resources>
                         <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScrollBar}" />

@@ -31,9 +31,9 @@ namespace ChatRoom
             CheckClearOnExit.IsChecked = Settings.ClearOnExit;
             CheckToast.IsChecked = Settings.ToastEnabled;
             CheckAnim.IsChecked = Settings.Animations;
-            SliderWallpaper.Value = Settings.WallpaperOpacity;
+            SliderWallpaper.Value = Settings.WallpaperBlur;
             TextWallpaper.Text = string.IsNullOrEmpty(Settings.WallpaperPath) ? "未设置" : System.IO.Path.GetFileName(Settings.WallpaperPath);
-            TextWallpaperOpacity.Text = (int)System.Math.Round(Settings.WallpaperOpacity * 100) + "%";
+            TextWallpaperBlur.Text = ((int)System.Math.Round(Settings.WallpaperBlur)).ToString();
         }
 
         /// <summary>选择壁纸（需求#7）：复制进数据目录并立即应用</summary>
@@ -64,12 +64,12 @@ namespace ChatRoom
             if (mw != null) mw.ApplyWallpaper();
         }
 
-        /// <summary>透明度滑杆：实时生效（0~100%）</summary>
+        /// <summary>模糊度滑杆：实时生效（0=清晰，30=很糊）</summary>
         private void SliderWallpaper_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (Settings == null || TextWallpaperOpacity == null) return;
-            Settings.WallpaperOpacity = e.NewValue;
-            TextWallpaperOpacity.Text = (int)System.Math.Round(e.NewValue * 100) + "%";
+            if (Settings == null || TextWallpaperBlur == null) return;
+            Settings.WallpaperBlur = e.NewValue;
+            TextWallpaperBlur.Text = ((int)System.Math.Round(e.NewValue)).ToString();
             var mw = Owner as MainWindow;
             if (mw != null) mw.ApplyWallpaper();
         }

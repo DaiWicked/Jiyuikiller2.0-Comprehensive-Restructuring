@@ -209,14 +209,18 @@
                                Foreground="{DynamicResource TextSecondary}" Text="未设置"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="2,10,0,0">
-                    <TextBlock Text="透明度" FontSize="12" VerticalAlignment="Center"
+                    <!-- 豆包修正需求：滑块调的是**模糊度**（0=清晰，30=很糊），不是透明度。
+                         壁纸始终完全不透明显示。 -->
+                    <TextBlock Text="模糊度" FontSize="12" VerticalAlignment="Center"
                                Foreground="{DynamicResource TextSecondary}"/>
-                    <Slider x:Name="SliderWallpaper" Minimum="0" Maximum="1" Value="0.35" Width="180"
+                    <Slider x:Name="SliderWallpaper" Minimum="0" Maximum="30" Value="15" Width="180"
                             Margin="10,0,0,0" VerticalAlignment="Center" IsSnapToTickEnabled="True"
-                            TickFrequency="0.05" ValueChanged="SliderWallpaper_ValueChanged"
+                            TickFrequency="1" ValueChanged="SliderWallpaper_ValueChanged"
                             Foreground="{DynamicResource Accent}"/>
-                    <TextBlock x:Name="TextWallpaperOpacity" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"
-                               Foreground="{DynamicResource TextSecondary}" Text="35%"/>
+                    <TextBlock x:Name="TextWallpaperBlur" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"
+                               Foreground="{DynamicResource TextSecondary}" Text="15"/>
+                    <TextBlock Text="（0 清晰 → 30 最糊）" FontSize="10" VerticalAlignment="Center" Margin="6,0,0,0"
+                               Foreground="{DynamicResource TextSecondary}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <Button Content="使用教程" Click="BtnHelp_Click" Style="{StaticResource GhostBtn}"

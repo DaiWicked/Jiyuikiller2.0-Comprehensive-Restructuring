@@ -19,9 +19,12 @@ namespace ChatRoom
     public partial class MainWindow
     {
         /// <summary>
-        /// 应用聊天区壁纸（豆包需求 #7）。
-        /// 壁纸画在消息区背景上：气泡本身不透明，所以文字可读性不受影响；
-        /// 透明度由设置里的 WallpaperOpacity 控制。没有壁纸时回退到主题的半透明灰。
+        /// 应用聊天区壁纸（豆包需求 #7，按她的修正版实现）。
+        ///
+        /// ★ 语义修正：滑块调的是**模糊度**，不是透明度。
+        ///   壁纸始终完全不透明显示（不再设 ImageBrush.Opacity），模糊只加在壁纸层上；
+        ///   气泡和输入区在壁纸层之上、保持不透明与清晰。
+        ///   没有壁纸时不加模糊，直接用主题色。
         /// </summary>
         public void ApplyWallpaper()
         {
@@ -36,16 +39,18 @@ namespace ChatRoom
                     bmp.UriSource = new Uri(p, UriKind.Absolute);
                     bmp.EndInit();
                     bmp.Freeze();
-                    ChatScroll.Background = new System.Windows.Media.ImageBrush(bmp)
-                    {
-                        Stretch = System.Windows.Media.Stretch.UniformToFill,
-                        Opacity = Math.Max(0.0, Math.Min(1.0, _settings.WallpaperOpacity))
-                    };
+
+                    WallpaperBrush.ImageSource = bmp;
+                    WallpaperBlurEffect.Radius = Math.Max(0, Math.Min(30, _settings.WallpaperBlur));
+                    WallpaperLayer.Visibility = Visibility.Visible;
                     return;
                 }
             }
             catch { }
-            ChatScroll.Background = Theme.Get("ChatBg");   // 默认：半透明灰（跟随主题）
+
+            // 没壁纸（或图片读不出来）：隐藏壁纸层 ⇒ 模糊自然不生效，露出主题色底
+            WallpaperLayer.Visibility = Visibility.Collapsed;
+            WallpaperBrush.ImageSource = null;
         }
         private readonly Dictionary<string, Conversation> _conversations = new Dictionary<string, Conversation>();
         private string _currentConvKey = Conversation.GroupKey;
