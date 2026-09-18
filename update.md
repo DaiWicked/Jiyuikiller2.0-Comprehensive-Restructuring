@@ -1,4 +1,28 @@
 ﻿
+## QD_V3.0 ChatRoom 修复迭代（2026-09-19）
+
+### 侧栏闪烁修复
+- **问题**：每2秒定时器无条件 `CollectionView.Refresh()` 导致整个侧栏ListBox重绘闪烁
+- **修复**：只在在线状态翻转（绿灯↔灰灯）、昵称变化、有人上下线时才Refresh()
+- 心跳更新LastSeen静默进行，不触发UI重绘
+
+### 未读计数器修复
+- **问题1**：`ClearUnread()`只清全局徽标UI，不清各会话Unread字段，下次UpdateUnreadBadge从旧数据累加回来
+- **修复**：遍历所有会话清零Unread，同时调SetPeerUnread清零侧栏红点
+- **问题2**：收到私聊消息时`TrackUnread`创建会话传PeerIP为空字符串，后续点用户切会话时EnsureConversation只更新标题不补PeerIP，导致ClearPeerUnread用空IP找不到用户，红点消不掉
+- **修复**：EnsureConversation在PeerIP为空时自动补上
+
+### 壁纸模糊度调整
+- 模糊范围从0~30改为**0~10**，默认**5**
+- 壁纸始终完全不透明（不是调透明度），滑块控制BlurEffect.Radius模糊程度
+- 提示文字："0 清晰 → 10 最糊"
+
+### 待办（交给deepseek）
+- 动效剩余4项：发送成功光点扩散、对方上线3s淡出、图片模糊→清晰0.2s、2px未读跑马灯
+- ChatRoom全面代码审查
+
+---
+
 ## QD_V3.0 更新 - ChatRoom独立聊天 + 全面代码审查（2026-09-18）
 
 ### ChatRoom独立P2P聊天（全新）
