@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -188,6 +188,7 @@ namespace ChatRoom.Services
                         case "GBRD": HandleGroupMessage(senderIP, nick, msg); break;
                         case "PMSG": HandlePrivateMessage(senderIP, nick, msg); break;
                         case "CIMG": HandleImageChunk(senderIP, nick, msg); break;   // 图片分块（见 ChatUdpService.Images.cs）
+                        case "CFIL": HandleFileChunk(senderIP, nick, msg); break;    // 文件分块（见 ChatUdpService.Files.cs）
                     }
                 }
                 catch (SocketException)

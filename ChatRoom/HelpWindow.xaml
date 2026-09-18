@@ -180,6 +180,18 @@
                             <TextBlock Style="{StaticResource HelpNote}"
                                        Text="收到别人发的图片会存在本机数据目录里，不会自动弹窗打开。"/>
 
+                            <TextBlock Text="发文件" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 还是同一个 📎 按钮：选图片就发图片，选别的文件就发文件，程序按扩展名自动判断。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 单个文件上限 50KB。超过会直接在聊天里用红字提示「未发送」，不会发出一半。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 收到文件时气泡显示文件名和大小，点一下自己选保存位置（默认停在「下载」目录）。程序不会自动保存。"/>
+                            <TextBlock Style="{StaticResource HelpNote}"
+                                       Text="安全提示：.exe / .bat / .cmd / .scr 这类可执行文件会用红字标出并追加一条警告，保存或运行前请先确认来源可信。"/>
+                            <TextBlock Style="{StaticResource HelpNote}"
+                                       Text="聊天记录里只保留文件名和大小、不保留文件内容，所以重启程序后再点旧的那条文件气泡，会提示「内容不在本机」，需要对方重发。"/>
+
                             <TextBlock Text="表情" Style="{StaticResource HelpH2}"/>
                             <TextBlock Style="{StaticResource HelpBody}"
                                        Text="· 点输入框右边的 😀 打开表情面板，点一下插入到输入框。"/>
@@ -290,6 +302,10 @@
                             <TextBlock Style="{StaticResource HelpBody}"
                                        Text="UDP 是「发出即不管」的协议，程序不保证送达。若对方显示离线，消息不会补发；恢复在线后重发即可。"/>
 
+                            <TextBlock Text="收到的文件点不动 / 提示内容不在本机" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="文件默认不落盘（要你自己点气泡选位置），所以程序一重启，内存里的内容就没了，聊天记录里只剩文件名和大小。让对方重发一次即可。"/>
+
                             <TextBlock Text="想改昵称 / 想重新注册" Style="{StaticResource HelpH2}"/>
                             <TextBlock Style="{StaticResource HelpBody}"
                                        Text="设置里改「昵称」后保存即可；点「重置昵称」会清空记录并在下次启动时重新弹出注册界面。"/>
@@ -319,6 +335,12 @@
                                        Text="只有聊天文字、图片分片和在线心跳，走局域网 UDP，不经过任何服务器。"/>
                             <TextBlock Style="{StaticResource HelpNote}"
                                        Text="注意：消息是明文且不加密的，同一局域网内抓包可以看到内容，请不要用它传敏感信息。"/>
+
+                            <TextBlock Text="文件大小限制" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="单个文件上限 50KB。这是机房环境下的带宽与稳定性取舍：UDP 分片越大越容易丢。"/>
+                            <TextBlock Style="{StaticResource HelpNote}"
+                                       Text="收到的文件不会自动落盘（除非你自己点它保存），所以删掉数据目录里也找不到别人的文件。"/>
 
                             <TextBlock Text="怎么彻底清理" Style="{StaticResource HelpH2}"/>
                             <TextBlock Style="{StaticResource HelpBody}"

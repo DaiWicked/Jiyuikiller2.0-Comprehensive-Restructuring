@@ -67,6 +67,7 @@ namespace ChatRoom
             _chat.OnPrivateMessage += OnPrivateMessage;
             _chat.OnLog += OnServiceLog;
             _chat.OnImageReceived += OnImageReceived;
+            _chat.OnFileReceived += OnFileReceived;
 
             // 单实例判定 = "能否绑定 47060"，由操作系统仲裁。
             // 旧实现靠扫进程名 + PID 文件：被僵尸进程误判（2026-09-17 实测有 8 个不可杀的旧实例，
@@ -165,6 +166,25 @@ namespace ChatRoom
                                 AddMessage(sender, "[图片]（图片已过期）", isMe ? BubbleKind.Outgoing : BubbleKind.Incoming, false, lineTime);
                             _addConvKey = null;   // ★ 图片分支原来漏了这句：continue 会跳过循环尾的复位，
                             continue;             //   于是"以下为新消息"分隔线会被记到这条图片所属的会话里（显示错会话）
+                        }
+                        // 文件消息：历史行记的是 [文件]|<文件名>|<字节数>。
+                        // ★ 故意**不记路径**：历史行可以被对端伪造，若记路径，
+                        //   对方发一句 [文件]|x|1|C:\Windows\System32\calc.exe 就能让本机去打开那个本地文件。
+                        if (msg.StartsWith("[文件]"))
+                        {
+                            string rest = msg.Length > 4 && msg[4] == '|' ? msg.Substring(5) : "";
+                            string fname = rest;
+                            long fsize = 0;
+                            int bar = rest.IndexOf('|');
+                            if (bar >= 0)
+                            {
+                                fname = rest.Substring(0, bar);
+                                long.TryParse(rest.Substring(bar + 1), out fsize);
+                            }
+                            AddFileMessage(sender, fname, fsize, null, "",
+                                isMe ? BubbleKind.Outgoing : BubbleKind.Incoming);
+                            _addConvKey = null;   // continue 会跳过循环尾的复位（同图片分支，必须在这里清）
+                            continue;
                         }
                         AddMessage(sender, msg, isMe ? BubbleKind.Outgoing : BubbleKind.Incoming, false, lineTime);
                 _addConvKey = null;
@@ -322,18 +342,67 @@ namespace ChatRoom
             });
         }
 
+        // === 图片 / 文件 ===
+
+        /// <summary>按扩展名判定"这是图片"的集合（其余一律走文件通道）</summary>
+        private static readonly string[] ImageExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif" };
+        /// <summary>收到这些扩展名要红色警告（豆包 Q5 点名的四种）</summary>
+        private static readonly string[] RiskyExtensions = { ".exe", ".bat", ".cmd", ".scr" };
+
+        /// <summary>
+        /// 📎 按钮：一个入口同时发图片和文件（豆包 Q5 选 A），按扩展名自动分流。
+        /// 图片走压缩→CIMG；其余走原字节→CFIL。
+        /// </summary>
         private void BtnImage_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "选择要发送的图片",
-                Filter = "图片文件|*.jpg;*.jpeg;*.png;*.bmp;*.gif"
+                Title = "选择要发送的图片或文件",
+                Filter = "图片或文件|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.txt;*.log;*.json;*.xml;*.csv;*.pdf;*.doc;*.docx;*.xls;*.xlsx;*.ppt;*.pptx;*.zip;*.rar;*.7z|所有文件|*.*"
             };
             if (dlg.ShowDialog() != true) return;
 
+            string ext = "";
+            try { ext = Path.GetExtension(dlg.FileName).ToLowerInvariant(); } catch { }
+
+            if (Array.IndexOf(ImageExtensions, ext) >= 0) SendImageFile(dlg.FileName);
+            else SendDataFile(dlg.FileName);
+        }
+
+        /// <summary>把 50KB 这类字节数说成"12.3 KB"</summary>
+        private static string FormatSize(long bytes)
+        {
+            if (bytes < 1024) return bytes + " B";
+            if (bytes < 1024 * 1024) return (bytes / 1024.0).ToString("0.#") + " KB";
+            return (bytes / 1048576.0).ToString("0.#") + " MB";
+        }
+
+        private static bool IsRiskyFile(string name)
+        {
+            string ext = "";
+            try { ext = Path.GetExtension(name ?? "").ToLowerInvariant(); } catch { }
+            return Array.IndexOf(RiskyExtensions, ext) >= 0;
+        }
+
+        /// <summary>取安全的文件名：只留文件名部分 + 去掉非法字符（防止对方用 "..\..\x.exe" 这类名字做路径穿越）</summary>
+        private static string SafeFileName(string name)
+        {
             try
             {
-                byte[] jpeg = ChatImageCodec.EncodeFile(dlg.FileName);
+                string n = Path.GetFileName(name ?? "");
+                foreach (char c in Path.GetInvalidFileNameChars()) n = n.Replace(c, '_');
+                n = (n ?? "").Trim();
+                return n.Length == 0 ? "file" : n;
+            }
+            catch { return "file"; }
+        }
+
+        /// <summary>把图片压缩后经 CIMG 发出</summary>
+        private void SendImageFile(string path)
+        {
+            try
+            {
+                byte[] jpeg = ChatImageCodec.EncodeFile(path);
                 if (jpeg == null || jpeg.Length == 0) { MessageBox.Show("图片读取失败。", "提示"); return; }
 
                 if (jpeg.Length / 3 * 4 > ChatUdpService.ImageMaxChars)
@@ -364,6 +433,158 @@ namespace ChatRoom
             {
                 MessageBox.Show("发送图片失败：" + ex.Message, "错误");
             }
+        }
+
+        /// <summary>
+        /// 把文件原字节经 CFIL 发出。上限 50KB（豆包 Q4 选 A：**发送前直接拒绝 + 红字提示**，不发分片）。
+        /// </summary>
+        private void SendDataFile(string path)
+        {
+            try
+            {
+                var fi = new FileInfo(path);
+                if (!fi.Exists) { MessageBox.Show("文件读不到。", "提示"); return; }
+                if (fi.Length == 0) { MessageBox.Show("这是个空文件，没有内容可发。", "提示"); return; }
+
+                if (fi.Length > ChatUdpService.FileMaxBytes)
+                {
+                    AddMessage("系统",
+                        "文件「" + fi.Name + "」" + FormatSize(fi.Length) + " 超过 " +
+                        (ChatUdpService.FileMaxBytes / 1024) + "KB 上限，未发送",
+                        BubbleKind.Warning);
+                    return;
+                }
+
+                string target = _currentTarget != null ? _currentTarget.IP : null;
+                if (_currentTarget != null && !_currentTarget.IsOnline)
+                {
+                    var ask = MessageBox.Show(
+                        _currentTarget.Nickname + " 似乎已离线。是否改为群发这个文件？",
+                        "对方离线", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (ask != MessageBoxResult.Yes) return;
+                    target = null;
+                }
+
+                byte[] data = File.ReadAllBytes(path);
+                string name = Path.GetFileName(path);
+                _chat.SendFile(data, name, target);
+
+                string label = target == null ? "我（群发）" : ("我 → " + _currentTarget.Nickname);
+                AddFileMessage(label, name, data.Length, null, path, BubbleKind.Outgoing);
+                SaveHistoryLine("我", "[文件]|" + name + "|" + data.Length);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("发送文件失败：" + ex.Message, "错误");
+            }
+        }
+
+        /// <summary>收到一个完整文件（豆包 #6）：显示文件卡片，**不自动落盘**，等用户点它再自己选位置</summary>
+        private void OnFileReceived(ChatUser from, string fileName, byte[] data, string scope)
+        {
+            OnUI(() =>
+            {
+                string label = scope == "P" ? (from.Nickname + " [私聊文件]") : from.Nickname;
+                _addConvKey = IncomingConvKey(scope, from.IP);   // 文件按 scope 归会话
+
+                AddFileMessage(label, fileName, data.Length, data, "", BubbleKind.Incoming);
+                SaveHistoryLine(from.Nickname + (scope == "P" ? "[私聊]" : ""),
+                    "[文件]|" + fileName + "|" + data.Length);
+
+                // 可执行文件：追加一条红色警告（豆包 Q5 要求"红色警告"）
+                if (IsRiskyFile(fileName))
+                    AddMessage("系统", "⚠ 收到可执行文件「" + fileName + "」，请确认来源可信后再保存/运行", BubbleKind.Warning);
+
+                _addConvKey = null;
+            });
+        }
+
+        /// <summary>追加一条文件消息（气泡里显示文件名 + 大小 + 提示；可执行文件名标红）</summary>
+        private void AddFileMessage(string sender, string fileName, long sizeBytes, byte[] bytes, string localPath, BubbleKind kind)
+        {
+            ApplyBubbleStyle(kind, out Brush bg, out Brush border, out Brush fg, out Brush secondary);
+            bool right = kind == BubbleKind.Outgoing;
+            bool risky = IsRiskyFile(fileName);
+            string safe = SafeFileName(fileName);
+            string sizeText = FormatSize(sizeBytes);
+
+            string hint = bytes != null && bytes.Length > 0 ? "点击另存为…"
+                        : (!string.IsNullOrEmpty(localPath) && File.Exists(localPath)) ? "点击打开"
+                        : "内容不在本机（历史只保留文件名和大小）";
+
+            _messages.Add(new ChatMessageItem
+            {
+                Sender = sender,
+                Message = "[文件] " + safe + " (" + sizeText + ")",
+                IsFile = true,
+                FileName = safe,
+                FileSizeText = sizeText,
+                FileBytes = bytes,
+                FilePath = !string.IsNullOrEmpty(localPath) && File.Exists(localPath) ? localPath : "",
+                FileIsRisky = risky,
+                FileHint = hint,
+                FileNameBrush = risky ? Theme.Get("WarnFg") : fg,
+                FileCardBg = Theme.Get("FileCardBg"),
+                FileCardBorder = Theme.Get("FileCardBorder"),
+                IsHistory = _loadingHistory,
+                ConvKey = _addConvKey ?? _currentConvKey,
+                FontSize = _settings.FontSize,
+                Kind = kind,
+                BgBrush = bg,
+                BorderBrush = border,
+                TextBrush = fg,
+                SecondaryBrush = secondary,
+                Time = DateTime.Now.ToString("HH:mm"),
+                Align = right ? HorizontalAlignment.Right : HorizontalAlignment.Left,
+                Margin = new Thickness(right ? 100 : 0, 4, right ? 0 : 100, 4)
+            });
+
+            if (kind == BubbleKind.Incoming) TrackUnread(true);
+            AutoScroll();
+            TrimMessages();
+        }
+
+        /// <summary>点文件卡片：收到的文件→弹出"另存为"让用户自己选位置；自己发的→打开；历史条目→如实提示</summary>
+        private void File_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            ChatMessageItem item = (sender as FrameworkElement)?.DataContext as ChatMessageItem;
+            if (item == null || !item.IsFile) return;
+            e.Handled = true;   // 别让这次点击再穿透到气泡本身
+
+            if (item.FileBytes != null && item.FileBytes.Length > 0)
+            {
+                var dlg = new Microsoft.Win32.SaveFileDialog
+                {
+                    Title = "保存收到的文件",
+                    FileName = SafeFileName(item.FileName),
+                    Filter = "所有文件|*.*",
+                    AddExtension = false
+                };
+                try
+                {
+                    string dl = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                    if (Directory.Exists(dl)) dlg.InitialDirectory = dl;
+                }
+                catch { }
+                if (dlg.ShowDialog() != true) return;
+
+                try
+                {
+                    File.WriteAllBytes(dlg.FileName, item.FileBytes);
+                    AddMessage("系统", "已保存到 " + dlg.FileName, BubbleKind.Service);
+                }
+                catch (Exception ex) { MessageBox.Show("保存失败：" + ex.Message, "提示"); }
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(item.FilePath) && File.Exists(item.FilePath))
+            {
+                try { System.Diagnostics.Process.Start(item.FilePath); }
+                catch (Exception ex) { MessageBox.Show("打开文件失败：" + ex.Message, "提示"); }
+                return;
+            }
+
+            MessageBox.Show("这个文件的内容不在本机（历史记录只保留文件名和大小）。\n需要的话请让对方重发一次。", "提示");
         }
 
         /// <summary>点图片用系统查看器打开（发送端已缩到 320x240，线上没有更高分辨率的原图）</summary>
@@ -765,6 +986,11 @@ namespace ChatRoom
                     bg = Theme.Get("ServiceBg"); border = Theme.Get("ServiceBg"); fg = Theme.Get("ServiceFg");
                     secondary = Theme.Get("ServiceFg");
                     break;
+                case BubbleKind.Warning:
+                    // 警告行（文件超限、收到可执行文件）：底同服务消息，文字走红色
+                    bg = Theme.Get("ServiceBg"); border = Theme.Get("ServiceBg"); fg = Theme.Get("WarnFg");
+                    secondary = Theme.Get("WarnFg");
+                    break;
                 default:
                     bg = Theme.Get("BubbleInBg"); border = Theme.Get("BubbleInBorder"); fg = Theme.Get("BubbleInFg");
                     break;
@@ -832,7 +1058,7 @@ namespace ChatRoom
     }
 
     /// <summary>气泡类型：决定用主题里的哪一组颜色</summary>
-    public enum BubbleKind { Incoming, Outgoing, Service }
+    public enum BubbleKind { Incoming, Outgoing, Service, Warning }
 
     public class ChatMessageItem
     {
@@ -855,6 +1081,23 @@ namespace ChatRoom
         public System.Windows.Media.ImageSource Image { get; set; }
         /// <summary>落盘路径（点开查看用；自己发出的那条本地显示没有路径）</summary>
         public string ImagePath { get; set; } = "";
+
+        // === 文件分享（豆包需求 #6）===
+        /// <summary>是否文件消息（气泡模板据此显示文件卡片、并隐藏正文）</summary>
+        public bool IsFile { get; set; }
+        public string FileName { get; set; } = "";
+        public string FileSizeText { get; set; } = "";
+        /// <summary>收到的文件内容。**只存在内存里**（豆包 Q3：不自动落盘，等用户点气泡自己选位置）</summary>
+        public byte[] FileBytes { get; set; }
+        /// <summary>自己发出的文件在本机的路径（仅本次运行；历史行不写路径，避免"历史可被伪造成本地任意文件"）</summary>
+        public string FilePath { get; set; } = "";
+        /// <summary>可执行文件（.exe/.bat/.cmd/.scr）：文件名标红 + 追加一条红色警告行</summary>
+        public bool FileIsRisky { get; set; }
+        /// <summary>卡片第二行的提示文案：点击另存为 / 点击打开 / 内容不在本机</summary>
+        public string FileHint { get; set; } = "";
+        public Brush FileNameBrush { get; set; }
+        public Brush FileCardBg { get; set; }
+        public Brush FileCardBorder { get; set; }
         public HorizontalAlignment Align { get; set; }
         public Thickness Margin { get; set; }
     }

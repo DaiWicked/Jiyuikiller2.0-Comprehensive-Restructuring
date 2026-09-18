@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Media;
 
 namespace ChatRoom
@@ -60,6 +60,10 @@ namespace ChatRoom
             { "GlassPanel",       "#D9FFFFFF", "#D917212B" },   // 85% 不透明面板
             { "GlassBorder",      "#335B8DEF", "#335B8DEF" },   // 主色 20% 微光边框
             { "GlassPanelHover",  "#E6FFFFFF", "#E61C2836" },   // 玻璃卡片悬停
+            // —— 文件分享（豆包需求 #6）——
+            { "WarnFg",           "#FFD93025", "#FFFF6B6B" },   // 警告红字（可执行文件、超限提示）
+            { "FileCardBg",       "#0F000000", "#14FFFFFF" },   // 文件卡片底（与气泡拉开一点层次）
+            { "FileCardBorder",   "#24000000", "#2BFFFFFF" },   // 文件卡片描边
         };
 
         public static void Apply(bool dark)
