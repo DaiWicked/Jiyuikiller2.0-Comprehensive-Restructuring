@@ -291,11 +291,12 @@ namespace ChatRoom
                     {
                         if (s.IP == u.IP)
                         {
-                            if (u.LastSeen != s.LastSeen || u.Nickname != s.Nickname || u.Unread != s.Unread)
+                            if (u.Nickname != s.Nickname)
                             {
-                                u.LastSeen = s.LastSeen; u.Nickname = s.Nickname;
+                                u.Nickname = s.Nickname;
                                 changed = true;
                             }
+                            u.LastSeen = s.LastSeen;  // 静默更新，不触发刷新
                             break;
                         }
                     }
