@@ -77,6 +77,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MainWindow.Extras.cs" />
+    <Compile Include="MainWindow.Conversations.cs" />
     <Compile Include="SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -85,6 +86,7 @@
     <Compile Include="Services\ChatUdpService.Images.cs" />
     <Compile Include="Services\ChatImageCodec.cs" />
     <Compile Include="Models\ChatUser.cs" />
+    <Compile Include="Models\Conversation.cs" />
     <Compile Include="Theme.cs" />
     <Compile Include="Models\ChatSettings.cs" />
   </ItemGroup>

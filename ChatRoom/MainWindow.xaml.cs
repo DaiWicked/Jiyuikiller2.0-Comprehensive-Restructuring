@@ -132,10 +132,19 @@ namespace ChatRoom
                 string[] parts = line.Split('|');
                     if (parts.Length >= 3)
                     {
-                        string sender = parts[1].Trim();
-                        // 消息里本身可能含 '|'（图片占位写作 [图片]|<路径>），所以第 3 段起要拼回来
-                        string msg = parts.Length > 3 ? string.Join("|", parts.Skip(2)).Trim() : parts[2].Trim();
+                        // 新格式: [HH:mm] | conv=<key> | 发送者 | 正文 ；旧格式没有 conv 字段 ⇒ 归入群聊（老历史不丢）
+                        int ci = 1;
+                        string convKey = Conversation.GroupKey;
+                        if (parts.Length > 1 && parts[1].Trim().StartsWith("conv="))
+                        {
+                            convKey = parts[1].Trim().Substring(5);
+                            ci = 2;
+                        }
+                        if (parts.Length <= ci) continue;
+                        string sender = parts[ci].Trim();
+                        string msg = parts.Length > ci + 1 ? string.Join("|", parts.Skip(ci + 1)).Trim() : "";
                         string lineTime = parts[0].Trim().Trim('[', ']');
+                        _addConvKey = convKey;
 
                         bool isMe = sender.StartsWith("我");
                         // 图片消息：历史行记的是 [图片]|<落盘路径>，把图还原成图片气泡
@@ -157,6 +166,7 @@ namespace ChatRoom
                             continue;
                         }
                         AddMessage(sender, msg, isMe ? BubbleKind.Outgoing : BubbleKind.Incoming, false, lineTime);
+                _addConvKey = null;
                     }
                 }
                 _loadingHistory = false;   // 必须复位！否则启动后所有新消息都被标记成历史，入场动画永久失效
@@ -188,7 +198,7 @@ namespace ChatRoom
         {
             try
             {
-                string line = $"[{DateTime.Now:HH:mm}] | {sender} | {message}";
+                string line = $"[{DateTime.Now:HH:mm}] | conv={_currentConvKey} | {sender} | {message}";
                 File.AppendAllText(_historyPath, line + Environment.NewLine, System.Text.Encoding.UTF8);
             }
             catch { }
@@ -241,7 +251,9 @@ namespace ChatRoom
         {
             OnUI(() =>
             {
+                _addConvKey = Conversation.GroupKey;   // 群聊消息固定归群聊会话
                 AddMessage(from.Nickname, msg, BubbleKind.Incoming);
+                _addConvKey = null;
                 SaveHistoryLine(from.Nickname, msg);
             });
         }
@@ -251,9 +263,17 @@ namespace ChatRoom
             OnUI(() =>
             {
                 if (_currentTarget != null && _currentTarget.IP == from.IP)
+                {
+                    _addConvKey = Conversation.PeerKey(from.IP);   // 私聊消息归该会话
                     AddMessage(from.Nickname + " [私聊]", msg, BubbleKind.Incoming);
+                    _addConvKey = null;
+                }
                 else
+                {
+                    _addConvKey = Conversation.PeerKey(from.IP);
                     AddMessage("📩 " + from.Nickname, msg, BubbleKind.Incoming);
+                    _addConvKey = null;
+                }
                 SaveHistoryLine(from.Nickname + "[私聊]", msg);
             });
         }
@@ -282,7 +302,9 @@ namespace ChatRoom
                 string saved = ChatImageCodec.SaveTo(dir, name, jpeg);
 
                 string label = scope == "P" ? (from.Nickname + " [私聊图片]") : from.Nickname;
+                _addConvKey = IncomingConvKey(scope, from.IP);   // 图片按 scope 归会话
                 AddImageMessage(label, bmp, saved, BubbleKind.Incoming);
+                _addConvKey = null;
                 SaveHistoryLine(from.Nickname + (scope == "P" ? "[私聊]" : ""), "[图片]|" + saved);
             });
         }
@@ -352,6 +374,7 @@ namespace ChatRoom
                 Message = "[图片]",
                 IsImage = true,
                 IsHistory = _loadingHistory,
+                ConvKey = _addConvKey ?? _currentConvKey,
                 Image = image,
                 ImagePath = path,
                 FontSize = _settings.FontSize,
@@ -568,12 +591,14 @@ namespace ChatRoom
             var user = UserList.SelectedItem as ChatUser;
             if (user == null || user.IsMe) return;
             _currentTarget = user;
+            SwitchConversation(Conversation.PeerKey(user.IP), user.Nickname, false, user.IP);   // 会话分离：切换到这个私聊
             ChatTitle.Text = $"私聊: {user.Nickname}";
         }
 
         private void BtnGroupChat_Click(object sender, RoutedEventArgs e)
         {
             _currentTarget = null;
+            SwitchConversation(Conversation.GroupKey, "群聊", true, "");   // 会话分离：切回群聊
             ChatTitle.Text = "# 群聊";
             UserList.SelectedItem = null;
         }
@@ -659,6 +684,7 @@ namespace ChatRoom
                 FontSize = _settings.FontSize,
                 Kind = kind,
                 IsHistory = _loadingHistory,
+                ConvKey = _addConvKey ?? _currentConvKey,
                 BgBrush = bg,
                 BorderBrush = border,
                 TextBrush = fg,
@@ -770,6 +796,9 @@ namespace ChatRoom
         /// <summary>是否图片消息（气泡模板据此显示缩略图并隐藏文字）</summary>
         /// <summary>历史加载出来的条目：不播放入场动画（否则启动时上百条一起飞入）</summary>
         public bool IsHistory { get; set; }
+
+        /// <summary>所属会话键（"group" 或 "peer:IP"）——会话分离用</summary>
+        public string ConvKey { get; set; } = Models.Conversation.GroupKey;
         public bool IsImage { get; set; }
         public System.Windows.Media.ImageSource Image { get; set; }
         /// <summary>落盘路径（点开查看用；自己发出的那条本地显示没有路径）</summary>

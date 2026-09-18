@@ -35,6 +35,9 @@ namespace ChatRoom
         {
             BuildEmojiPanel();
             InitTray();
+            // 会话分离：启动即建立群聊会话并套用过滤，避免启动时显示全部会话的消息
+            EnsureConversation(Conversation.GroupKey, "群聊", true, "");
+            RefreshConversationView();
             StartUserSync();
             // 系统关机/注销时必须放行关闭，否则会被"此程序阻止关机"卡住
             Application.Current.SessionEnding += (s, a) => { _isExiting = true; };
