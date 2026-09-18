@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -163,7 +163,8 @@ namespace ChatRoom
                                 AddImageMessage(sender, hisImg, imgPath, isMe ? BubbleKind.Outgoing : BubbleKind.Incoming, lineTime);
                             else
                                 AddMessage(sender, "[图片]（图片已过期）", isMe ? BubbleKind.Outgoing : BubbleKind.Incoming, false, lineTime);
-                            continue;
+                            _addConvKey = null;   // ★ 图片分支原来漏了这句：continue 会跳过循环尾的复位，
+                            continue;             //   于是"以下为新消息"分隔线会被记到这条图片所属的会话里（显示错会话）
                         }
                         AddMessage(sender, msg, isMe ? BubbleKind.Outgoing : BubbleKind.Incoming, false, lineTime);
                 _addConvKey = null;
@@ -174,6 +175,15 @@ namespace ChatRoom
                     AddMessage("系统", "--- 以下为新消息 ---", BubbleKind.Service);
             }
             catch { }
+            finally
+            {
+                // ★ 异常路径也要复位：这里原来只在 try 正常结束时复位，
+                //   一旦中途出异常（比如某条历史行触发了某个边界情况），
+                //   _loadingHistory 会永久停在 true —— 之后所有真实消息都被当成历史（不播入场动画），
+                //   而 _addConvKey 也会一直指着最后那条历史行的会话。
+                _loadingHistory = false;
+                _addConvKey = null;
+            }
         }
 
         /// <summary>路径是否位于"我们自己落盘的图片目录"内（数据目录或程序目录，兼容迁移前老数据）</summary>
@@ -428,6 +438,12 @@ namespace ChatRoom
         {
             if (!incoming) return;
 
+            // ★ 历史回放不是"新消息"：LoadHistory 也走 AddMessage，所以必须在这里显式挡住。
+            //   之前这里没有这道判断，启动时是否冒出幽灵未读完全取决于"加载那一刻 IsActive 是不是 false、
+            //   以及随后 SwitchConversation 有没有清掉当前会话"—— 实测结果是 0（正确），
+            //   但那是时序巧合，任何一处改动都可能让用户每次启动都看到一堆假未读。现在把它写死。
+            if (_loadingHistory) return;
+
             string key = _addConvKey ?? _currentConvKey;
             bool viewingThisConv = (key == _currentConvKey) && IsActive && WindowState != WindowState.Minimized;
             if (viewingThisConv) return;
@@ -436,7 +452,9 @@ namespace ChatRoom
                 key == Conversation.GroupKey ? "群聊" : NicknameOfConvKey(key), key == Conversation.GroupKey, "");
             c.Unread++;
 
-            if (!c.IsGroup) SetPeerUnread(c.PeerIP, c.Unread);   // 侧栏那一行的未读徽标
+            // 私聊要同步侧栏那一行的徽标。IP 从会话键反解，不能读 c.PeerIP：
+            // 首次收到某人私聊时会话是这一行才建的，PeerIP 还是空串，用它等于没更新。
+            if (!c.IsGroup) SetPeerUnread(Conversation.PeerIpOf(c.Key), c.Unread);
             c.SeparatorShown = true;
             UpdateUnreadBadge();
             PopElement(BtnUnread);

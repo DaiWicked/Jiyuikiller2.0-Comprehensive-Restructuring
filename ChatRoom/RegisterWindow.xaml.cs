@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -48,6 +48,8 @@ namespace ChatRoom
             ChatSettings.ClearNeedRegister();   // 注册完成，清掉"需要重新注册"标记
 
             // 完成后窗口淡出（她要求"完成后窗口淡出切换到主界面"）
+            // 动效总开关关闭时不做动画，直接进主界面（不能只跳过动画而不给 DialogResult，否则会卡在注册页）
+            if (!ChatSettings.AnimationsOn) { DialogResult = true; return; }
             var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(260));
             fade.Completed += (a, b) => { DialogResult = true; };
             BeginAnimation(OpacityProperty, fade);

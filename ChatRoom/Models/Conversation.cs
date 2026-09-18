@@ -38,5 +38,15 @@ namespace ChatRoom.Models
         {
             return "peer:" + (ip ?? "");
         }
+
+        /// <summary>
+        /// 从会话键反解私聊对象的 IP（群聊返回空串）。
+        /// 为什么需要它：刚收到一条陌生人的私聊时，会话是**那一刻才建**的，
+        /// 建的时候只传了 key 没传 IP，PeerIP 是空的 —— 直接拿 PeerIP 去更新侧栏徽标会拿不到东西。
+        /// </summary>
+        public static string PeerIpOf(string key)
+        {
+            return (!string.IsNullOrEmpty(key) && key.StartsWith("peer:")) ? key.Substring(5) : "";
+        }
     }
 }
