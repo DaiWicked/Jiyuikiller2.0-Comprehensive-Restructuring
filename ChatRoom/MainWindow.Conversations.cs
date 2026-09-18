@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Data;
@@ -167,6 +167,10 @@ namespace ChatRoom
         /// </summary>
         private void ShowToast(string convKey, string title, string preview)
         {
+            // 豆包需求 #5：设置里可关闭弹窗。只拦"弹窗"这一层，未读红点/托盘计数照常更新
+            //（TrackUnread 在调本方法之前就已经加过未读，所以这里直接返回不会丢未读）。
+            if (_settings != null && !_settings.ToastEnabled) return;
+
             Conversation c = EnsureConversation(convKey, title, convKey == Conversation.GroupKey, "");
             _toastConvKey = convKey;
             string line = c.IsGroup ? ("群聊 · " + c.Unread + " 条新消息") : (title + " · " + c.Unread + " 条新消息");
@@ -183,8 +187,17 @@ namespace ChatRoom
             TextToastTitle.Text = line;
             TextToastText.Text = preview ?? "";
             ToastCard.Visibility = Visibility.Visible;
-            var fade = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180));
-            ToastCard.BeginAnimation(OpacityProperty, fade);
+            if (Models.ChatSettings.AnimationsOn)
+            {
+                var fade = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180));
+                ToastCard.BeginAnimation(OpacityProperty, fade);
+            }
+            else
+            {
+                // 动效总开关关闭：清掉可能在跑的动画，直接落到终态
+                ToastCard.BeginAnimation(OpacityProperty, null);
+                ToastCard.Opacity = 1;
+            }
             if (_toastTimer == null)
             {
                 _toastTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(3500) };

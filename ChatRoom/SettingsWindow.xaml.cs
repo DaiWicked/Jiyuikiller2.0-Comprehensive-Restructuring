@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using ChatRoom.Models;
 
 namespace ChatRoom
@@ -26,6 +26,8 @@ namespace ChatRoom
 
             CheckTopMost.IsChecked = Settings.TopMost;
             CheckClearOnExit.IsChecked = Settings.ClearOnExit;
+            CheckToast.IsChecked = Settings.ToastEnabled;
+            CheckAnim.IsChecked = Settings.Animations;
             SliderWallpaper.Value = Settings.WallpaperOpacity;
             TextWallpaper.Text = string.IsNullOrEmpty(Settings.WallpaperPath) ? "未设置" : System.IO.Path.GetFileName(Settings.WallpaperPath);
             TextWallpaperOpacity.Text = (int)System.Math.Round(Settings.WallpaperOpacity * 100) + "%";
@@ -79,6 +81,8 @@ namespace ChatRoom
             Settings.FontSize = RadioSmall.IsChecked == true ? 11 : (RadioLarge.IsChecked == true ? 15 : 13);
             Settings.TopMost = CheckTopMost.IsChecked == true;
             Settings.ClearOnExit = CheckClearOnExit.IsChecked == true;
+            Settings.ToastEnabled = CheckToast.IsChecked == true;
+            Settings.Animations = CheckAnim.IsChecked == true;
             Settings.Save();
 
             (Owner as MainWindow)?.ApplyWallpaper();
@@ -116,14 +120,10 @@ namespace ChatRoom
             new AboutWindow { Owner = this }.ShowDialog();
         }
 
-        /// <summary>使用教程（豆包需求 #3）—— 内容页随后补上</summary>
+        /// <summary>使用教程（豆包需求 #3）：打开内容页（基础操作 / 快捷键 / 常见问题 / 数据与隐私）</summary>
         private void BtnHelp_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.MessageBox.Show(
-                "基础操作：\n  输入文字后回车发送；点 📎 发图片/文件；点 😀 选表情。\n\n" +
-                "快捷键：\n  Ctrl+F 搜索聊天记录\n  Ctrl+E 表情面板\n  Esc 逐级关闭（表情 → 搜索 → 清空输入）\n\n" +
-                "常见问题：\n  收不到消息：确认在同一网段、且两端 ChatRoom 版本一致。",
-                "使用教程", MessageBoxButton.OK, MessageBoxImage.Information);
+            new HelpWindow { Owner = this }.ShowDialog();
         }
 
         private void BtnCancel_Click(object sender, RoutedEventArgs e)

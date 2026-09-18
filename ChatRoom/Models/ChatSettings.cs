@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Windows;
 
@@ -20,6 +20,19 @@ namespace ChatRoom.Models
 
         /// <summary>壁纸透明度 0~1（豆包需求 #7：可调；气泡始终不透明保证可读性）</summary>
         public double WallpaperOpacity { get; set; } = 0.35;
+
+        /// <summary>新消息弹窗提醒（豆包需求 #5：设置里可开关此功能；关掉只是不弹窗，未读红点照常）</summary>
+        public bool ToastEnabled { get; set; } = true;
+
+        /// <summary>界面动效总开关（豆包 Q7：一个开关控制全部淡入/滑动；关闭后直接显示终态）</summary>
+        public bool Animations { get; set; } = true;
+
+        /// <summary>
+        /// 动效开关的进程内镜像（豆包 Q7）。
+        /// 各处动画（提醒窗滑动、各窗口淡入、呼吸光）都要读它，但并不是每处都拿得到 Settings 实例，
+        /// 所以 Load/Save 时同步这一个静态位，动画代码只读它。
+        /// </summary>
+        public static bool AnimationsOn { get; set; } = true;
 
         /// <summary>把选中的图片复制进数据目录并记下路径（返回是否成功）</summary>
         public bool SetWallpaper(string sourcePath)
@@ -200,6 +213,8 @@ namespace ChatRoom.Models
                             case "Registered": s.Registered = val == "1"; break;
                             case "WallpaperPath": s.WallpaperPath = val; break;
                             case "WallpaperOpacity": double.TryParse(val, out double wo); s.WallpaperOpacity = wo; break;
+                            case "ToastEnabled": s.ToastEnabled = val != "0"; break;
+                            case "Animations": s.Animations = val != "0"; break;
                             case "WindowLeft": double.TryParse(val, out double wl); s.WindowLeft = wl; break;
                             case "WindowTop": double.TryParse(val, out double wt); s.WindowTop = wt; break;
                             case "WindowWidth": double.TryParse(val, out double ww); s.WindowWidth = ww; break;
@@ -209,11 +224,13 @@ namespace ChatRoom.Models
                 }
             }
             catch { }
+            AnimationsOn = s.Animations;   // 同步动效总开关的静态镜像
             return s;
         }
 
         public void Save()
         {
+            AnimationsOn = Animations;
             try
             {
                 var lines = new[]
@@ -227,6 +244,8 @@ namespace ChatRoom.Models
                     "Registered=" + (Registered ? "1" : "0"),
                     "WallpaperPath=" + WallpaperPath,
                     "WallpaperOpacity=" + WallpaperOpacity.ToString("F2"),
+                    "ToastEnabled=" + (ToastEnabled ? "1" : "0"),
+                    "Animations=" + (Animations ? "1" : "0"),
                     "WindowLeft=" + WindowLeft.ToString("F0"),
                     "WindowTop=" + WindowTop.ToString("F0"),
                     "WindowWidth=" + WindowWidth.ToString("F0"),

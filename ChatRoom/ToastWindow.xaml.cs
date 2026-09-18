@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
@@ -44,14 +44,26 @@ namespace ChatRoom
             Top = wa.Bottom - Height - 16;
 
             if (!IsVisible) Show();
-            Activate();                 // 只把本提醒窗置前（不动主窗口），且不抢键盘焦点
-            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220));
-            var slide = new DoubleAnimation(16, 0, TimeSpan.FromMilliseconds(260))
+            // ★ 这里**不能**调 Activate()：Activate 会把本窗设为活动窗口，等于抢走用户正在打字的焦点，
+            //   与需求 #5「不抢焦点」直接冲突（ShowActivated=False 只管首次显示不激活）。
+            //   置前交给 Topmost=True，不需要激活。
+            if (Models.ChatSettings.AnimationsOn)
             {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            Card.BeginAnimation(OpacityProperty, fade);
-            CardTranslate.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, slide);
+                var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220));
+                var slide = new DoubleAnimation(16, 0, TimeSpan.FromMilliseconds(260))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                Card.BeginAnimation(OpacityProperty, fade);
+                CardTranslate.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, slide);
+            }
+            else
+            {
+                Card.BeginAnimation(OpacityProperty, null);
+                CardTranslate.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, null);
+                Card.Opacity = 1;
+                CardTranslate.Y = 0;
+            }
 
             _timer.Stop();
             _timer.Start();
@@ -60,6 +72,7 @@ namespace ChatRoom
         private void HideAnimated()
         {
             _timer.Stop();
+            if (!Models.ChatSettings.AnimationsOn) { Card.BeginAnimation(OpacityProperty, null); Hide(); return; }
             var fade = new DoubleAnimation(Card.Opacity, 0, TimeSpan.FromMilliseconds(200));
             fade.Completed += (s, e) => { Hide(); };
             Card.BeginAnimation(OpacityProperty, fade);

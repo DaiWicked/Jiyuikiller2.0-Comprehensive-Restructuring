@@ -1,0 +1,332 @@
+<Window x:Class="ChatRoom.HelpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="使用教程" Height="540" Width="760"
+        WindowStartupLocation="CenterOwner"
+        Background="Transparent"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        UseLayoutRounding="True"
+        FontFamily="Microsoft YaHei UI, Microsoft YaHei, SimSun"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+    <Window.Resources>
+        <!-- 关闭键：与关于页/设置页统一（默认按钮模板会画系统灰底） -->
+        <Style x:Key="WinGhostButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="8" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource GhostHover}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 左侧子导航项：选中态 = 淡底 + 左侧 3px 主色条（与主程序帮助页的子导航同一套视觉） -->
+        <Style x:Key="HelpNavItem" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="bd" CornerRadius="7" Background="Transparent" Padding="0" Height="36">
+                            <Grid>
+                                <Border x:Name="bar" Width="3" HorizontalAlignment="Left" Margin="3,8,0,8"
+                                        CornerRadius="2" Background="Transparent"/>
+                                <ContentPresenter Margin="16,0,10,0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource GhostHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource RowSelectedBg}"/>
+                                <Setter TargetName="bar" Property="Background" Value="{DynamicResource Accent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HelpH1" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="HelpH2" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+            <Setter Property="Margin" Value="0,16,0,6"/>
+        </Style>
+        <Style x:Key="HelpBody" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="LineHeight" Value="21"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="HelpNote" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="LineHeight" Value="19"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="KeyCap" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource GhostHover}"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="7,3"/>
+            <Setter Property="MinWidth" Value="92"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+        <Style x:Key="KeyText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontFamily" Value="Consolas, Microsoft YaHei UI"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <!-- 玻璃拟态外壳（与关于页/设置页同一套：85% 不透明 + 1px 主色 20% 微光边框 + 圆角 12） -->
+    <Border CornerRadius="12" Background="{DynamicResource GlassPanel}"
+            BorderBrush="{DynamicResource GlassBorder}" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.22" Color="#000000" />
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="52"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- 顶栏 -->
+            <Grid Grid.Row="0" Background="Transparent">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
+                    <TextBlock Text="使用教程" FontSize="15" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                    <TextBlock Text="ChatRoom" FontSize="11" Margin="8,1,0,0"
+                               Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Content="✕" Click="BtnClose_Click" Width="34" Height="30"
+                        Style="{StaticResource WinGhostButton}"
+                        HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
+                        FontSize="13"/>
+            </Grid>
+
+            <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom"
+                    Background="{DynamicResource Divider}"/>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 左侧子导航 -->
+                <StackPanel Grid.Column="0" Margin="10,12,4,12">
+                    <RadioButton x:Name="NavIntro" Content="基础操作" GroupName="HelpNav"
+                                 Style="{StaticResource HelpNavItem}" IsChecked="True" Checked="Nav_Checked" Tag="intro"/>
+                    <RadioButton x:Name="NavKey" Content="快捷键" GroupName="HelpNav"
+                                 Style="{StaticResource HelpNavItem}" Margin="0,2,0,0" Checked="Nav_Checked" Tag="key"/>
+                    <RadioButton x:Name="NavFaq" Content="常见问题" GroupName="HelpNav"
+                                 Style="{StaticResource HelpNavItem}" Margin="0,2,0,0" Checked="Nav_Checked" Tag="faq"/>
+                    <RadioButton x:Name="NavData" Content="数据与隐私" GroupName="HelpNav"
+                                 Style="{StaticResource HelpNavItem}" Margin="0,2,0,0" Checked="Nav_Checked" Tag="data"/>
+                </StackPanel>
+
+                <Border Grid.Column="0" Width="1" HorizontalAlignment="Right"
+                        Background="{DynamicResource Divider}" Margin="0,12,0,12"/>
+
+                <!-- 右侧内容：四块面板互相切换（与主程序帮助页同一做法） -->
+                <Grid Grid.Column="1">
+
+                    <!-- ========== 1. 基础操作 ========== -->
+                    <ScrollViewer x:Name="PageIntro" VerticalScrollBarVisibility="Auto" Padding="20,14,16,16">
+                        <StackPanel>
+                            <TextBlock Text="基础操作" Style="{StaticResource HelpH1}"/>
+                            <TextBlock Style="{StaticResource HelpNote}"
+                                       Text="聊天室走局域网直连：同一网段内打开程序即可互相看到，不需要服务器，也不需要登录。"/>
+
+                            <TextBlock Text="发消息" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 在底部输入框打字，按 Enter 发送（可在设置里改成 Ctrl+Enter 发送）。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 默认发给「在线用户」里选中的人；点左上角「群聊广播」则发给所有在线用户。"/>
+
+                            <TextBlock Text="发图片" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 点输入框右边的 📎 选一张图片，选完立刻发出。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 图片会自动压到 320×240 以内再发（机房带宽有限），所以对方收到的会比原图小。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 点气泡里的图片，会用系统默认看图程序打开本机收到的那份文件。"/>
+                            <TextBlock Style="{StaticResource HelpNote}"
+                                       Text="收到别人发的图片会存在本机数据目录里，不会自动弹窗打开。"/>
+
+                            <TextBlock Text="表情" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 点输入框右边的 😀 打开表情面板，点一下插入到输入框。"/>
+                            <TextBlock Style="{StaticResource HelpNote}"
+                                       Text="Windows 7 没有彩色 emoji 字体，程序会自动改用符号表情，保证 Win7 上也能正常显示。"/>
+
+                            <TextBlock Text="会话与未读" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 群聊和每个私聊对象各自独立：切换会话时只显示该会话的记录，不会串在一起。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 没在看的会话来了消息，侧栏会显示红色未读数，顶部也有总数徽标，点徽标可直接跳到有未读的会话。"/>
+
+                            <TextBlock Text="聊天记录" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 记录按会话分别保存，重启后自动接着显示，并插入「以下为新消息」分隔线。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 右键气泡可复制文字、引用回复、删除单条（只删本地）。"/>
+                            <TextBlock Style="{StaticResource HelpNote}"
+                                       Text="在设置里勾选「关闭时清空聊天记录」后，退出程序会清空本地记录。"/>
+
+                            <TextBlock Text="托盘与后台提醒" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 程序常驻托盘：双击图标显示/隐藏窗口，右键菜单可打开设置或退出。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 窗口最小化或被盖住时，新消息会在屏幕右下角弹一个小提醒（不抢焦点、不闪任务栏、无声音）。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 点提醒会唤回窗口并跳到对应会话；同一会话连续来消息只合并成「N 条新消息」，不会刷屏。"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- ========== 2. 快捷键 ========== -->
+                    <ScrollViewer x:Name="PageKey" VerticalScrollBarVisibility="Auto" Padding="20,14,16,16"
+                                  Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock Text="快捷键" Style="{StaticResource HelpH1}"/>
+                            <TextBlock Style="{StaticResource HelpNote}"
+                                       Text="下面这些在聊天窗口任意位置都生效（光标在输入框里也生效）。"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <Border Style="{StaticResource KeyCap}"><TextBlock Text="Ctrl + F" Style="{StaticResource KeyText}"/></Border>
+                                <TextBlock Text="打开/关闭聊天记录搜索" Style="{StaticResource HelpBody}"
+                                           VerticalAlignment="Center" Margin="12,0,0,0"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Border Style="{StaticResource KeyCap}"><TextBlock Text="Ctrl + E" Style="{StaticResource KeyText}"/></Border>
+                                <TextBlock Text="打开/关闭表情面板" Style="{StaticResource HelpBody}"
+                                           VerticalAlignment="Center" Margin="12,0,0,0"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Border Style="{StaticResource KeyCap}"><TextBlock Text="Enter" Style="{StaticResource KeyText}"/></Border>
+                                <TextBlock Text="发送消息（设置里切成 Ctrl+Enter 时，Enter 改为换行）" Style="{StaticResource HelpBody}"
+                                           VerticalAlignment="Center" Margin="12,0,0,0"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Border Style="{StaticResource KeyCap}"><TextBlock Text="Esc" Style="{StaticResource KeyText}"/></Border>
+                                <TextBlock Text="逐级关闭：表情面板 → 搜索 → 清空输入框" Style="{StaticResource HelpBody}"
+                                           VerticalAlignment="Center" Margin="12,0,0,0"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Border Style="{StaticResource KeyCap}"><TextBlock Text="↑ / ↓" Style="{StaticResource KeyText}"/></Border>
+                                <TextBlock Text="循环切换「在线用户」里选中的人（光标在输入框里时不抢这两个键）" Style="{StaticResource HelpBody}"
+                                           VerticalAlignment="Center" Margin="12,0,0,0"/>
+                            </StackPanel>
+
+                            <TextBlock Text="鼠标" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 双击托盘图标：显示/隐藏聊天窗口。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 右键消息气泡：复制文字 / 引用回复 / 删除本条（本地）/ 导出聊天记录。"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="· 单击图片气泡：用系统默认看图程序打开该图片。"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- ========== 3. 常见问题 ========== -->
+                    <ScrollViewer x:Name="PageFaq" VerticalScrollBarVisibility="Auto" Padding="20,14,16,16"
+                                  Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock Text="常见问题" Style="{StaticResource HelpH1}"/>
+
+                            <TextBlock Text="收不到别人的消息" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="① 确认两台机器在同一网段（IP 前三段相同，例如都是 192.168.3.x）；"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="② 确认两边的 ChatRoom 是同一份构建（版本号在设置页底部与关于页可见）——老版本不认新协议的图片消息；"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="③ 确认没有被 Windows 防火墙拦（首次运行要允许「专用网络」）；"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="④ 底部状态栏会打印本机端口与昵称，正常应显示「聊天服务已启动，端口 47060」。"/>
+
+                            <TextBlock Text="对方看不到我，我也看不到对方" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="校园网/机房常见的「客户端隔离」会禁止同一网段内的机器互相通信，这种网络下程序无法工作，换一个不隔离的网络即可。"/>
+
+                            <TextBlock Text="提示「图片接收不完整」" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="图片分片传输，网络抖动时可能丢片。程序会自动提示，让对方重发一次即可；频繁出现说明链路质量差，建议改用文字。"/>
+
+                            <TextBlock Text="表情显示成方块" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="Windows 7 不带彩色 emoji 字体。程序已内置识别：在 Win7 上自动改用符号表情，Win10/11 才用彩色 emoji。"/>
+
+                            <TextBlock Text="后台/最小化时没有提醒" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="检查设置里「收到新消息时弹窗提醒」是否被取消勾选；另外提醒只在「当前没在看那个会话」时出现，正在看的会话不会打扰你。"/>
+
+                            <TextBlock Text="消息发出去对方没收到" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="UDP 是「发出即不管」的协议，程序不保证送达。若对方显示离线，消息不会补发；恢复在线后重发即可。"/>
+
+                            <TextBlock Text="想改昵称 / 想重新注册" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="设置里改「昵称」后保存即可；点「重置昵称」会清空记录并在下次启动时重新弹出注册界面。"/>
+
+                            <TextBlock Text="聊天区能换背景吗" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="设置 →「聊天区壁纸」→ 选择图片，并可调透明度 0~100%（气泡始终不透明，保证字看得清）。同一处点「清除」恢复默认。"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- ========== 4. 数据与隐私 ========== -->
+                    <ScrollViewer x:Name="PageData" VerticalScrollBarVisibility="Auto" Padding="20,14,16,16"
+                                  Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock Text="数据与隐私" Style="{StaticResource HelpH1}"/>
+
+                            <TextBlock Text="数据存在哪" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="全部在本机用户目录下：%APPDATA%\ChatRoom"/>
+                            <TextBlock Style="{StaticResource HelpNote}"
+                                       Text="chat_settings.ini 设置 · chat_history.txt 聊天记录 · chat_images\ 收到的图片 · wallpaper.* 壁纸"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="老版本把数据放在程序目录，升级后第一次运行会自动搬迁过来（原文件保留，不会删）。"/>
+
+                            <TextBlock Text="网络上传输什么" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="只有聊天文字、图片分片和在线心跳，走局域网 UDP，不经过任何服务器。"/>
+                            <TextBlock Style="{StaticResource HelpNote}"
+                                       Text="注意：消息是明文且不加密的，同一局域网内抓包可以看到内容，请不要用它传敏感信息。"/>
+
+                            <TextBlock Text="怎么彻底清理" Style="{StaticResource HelpH2}"/>
+                            <TextBlock Style="{StaticResource HelpBody}"
+                                       Text="退出程序后直接删除 %APPDATA%\ChatRoom 整个目录即可；下次启动会当作首次使用，重新走注册流程。"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
