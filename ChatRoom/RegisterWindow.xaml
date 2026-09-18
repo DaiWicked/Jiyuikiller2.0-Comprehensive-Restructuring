@@ -16,7 +16,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" CornerRadius="9" Background="Transparent">
+                        <!-- 与设置窗的次要按钮统一：静息时也带一层极淡底色（GhostHover），悬停加深 -->
+                        <Border x:Name="bd" CornerRadius="9" Background="{DynamicResource GhostHover}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
