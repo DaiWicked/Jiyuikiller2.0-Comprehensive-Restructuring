@@ -284,39 +284,42 @@ namespace ChatRoom
             try
             {
                 var live = _chat.SnapshotUsers();
-                bool changed = false;
+                bool needRefresh = false;
+                bool countChanged = false;
+
+                // 更新已有用户
                 foreach (ChatUser u in _userList)
                 {
+                    bool wasOnline = u.IsOnline;
                     foreach (ChatUser s in live)
                     {
                         if (s.IP == u.IP)
                         {
-                            if (u.Nickname != s.Nickname)
-                            {
-                                u.Nickname = s.Nickname;
-                                changed = true;
-                            }
-                            u.LastSeen = s.LastSeen;  // 静默更新，不触发刷新
+                            u.LastSeen = s.LastSeen;
+                            if (u.Nickname != s.Nickname) { u.Nickname = s.Nickname; needRefresh = true; }
                             break;
                         }
                     }
+                    // 在线状态翻转才需要刷新（绿灯变灰/灰变绿）
+                    if (u.IsOnline != wasOnline) needRefresh = true;
                 }
-                // 检查有没有新上线的人需要加入列表
+
+                // 新上线的人加入列表
                 foreach (ChatUser s in live)
                 {
                     bool found = false;
                     foreach (ChatUser u in _userList) { if (u.IP == s.IP) { found = true; break; } }
-                    if (!found) { _userList.Add(s); changed = true; }
+                    if (!found) { _userList.Add(s); needRefresh = true; countChanged = true; }
                 }
-                // 检查有没有人下线需要移除
+
+                // 离线超时的人从列表移除
                 for (int i = _userList.Count - 1; i >= 0; i--)
                 {
-                    bool still = false;
-                    foreach (ChatUser s in live) { if (s.IP == _userList[i].IP) { still = true; break; } }
-                    if (!still) { _userList.RemoveAt(i); changed = true; }
+                    if (!_userList[i].IsOnline) { _userList.RemoveAt(i); needRefresh = true; countChanged = true; }
                 }
-                UpdateUserCount();
-                if (changed)
+
+                if (countChanged) UpdateUserCount();
+                if (needRefresh)
                     System.Windows.Data.CollectionViewSource.GetDefaultView(_userList).Refresh();
             }
             catch { }
