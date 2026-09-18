@@ -413,6 +413,17 @@ namespace ChatRoom
         /// 判定语义（之前写错过，用户实测踩到）：**这条消息不属于我正在看的那个会话**就算未读，
         /// 与"窗口是否在前台"无关 —— 原来只判前台，导致"我在群聊里聊天时别人私聊我"既不计数也不提示。
         /// </summary>
+        /// <summary>把会话键翻成给人看的标题：群聊 -> 群聊，peer:IP -> 该用户昵称（找不到就退回 IP）</summary>
+        private string NicknameOfConvKey(string key)
+        {
+            if (string.IsNullOrEmpty(key) || key == Conversation.GroupKey) return "群聊";
+            string ip = key.StartsWith("peer:") ? key.Substring(5) : key;
+            foreach (ChatUser u in _userList) { if (u.IP == ip) return u.Nickname; }
+            foreach (ChatUser u in _chat != null ? _chat.SnapshotUsers() : new System.Collections.Generic.List<ChatUser>())
+                if (u.IP == ip) return u.Nickname;
+            return ip;
+        }
+
         private void TrackUnread(bool incoming)
         {
             if (!incoming) return;

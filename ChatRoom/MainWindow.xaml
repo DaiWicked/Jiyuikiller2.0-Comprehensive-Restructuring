@@ -249,6 +249,8 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <!-- 头像：昵称首字 + 由 IP 稳定派生的底色 -->
                                     <Grid Width="40" Height="40" VerticalAlignment="Center">
@@ -264,14 +266,14 @@
                                                    TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
                                     <!-- 未读徽标（会话分离后用于提示"谁给我发了消息"） -->
-                                    <Border Grid.Column="2" Background="{DynamicResource Accent}" CornerRadius="8"
+                                    <Border Grid.Column="3" Background="{DynamicResource Accent}" CornerRadius="8"
                                             MinWidth="16" Height="16" Padding="4,0" Margin="6,0,0,0"
                                             VerticalAlignment="Center"
                                             Visibility="{Binding UnreadVisibility}">
                                         <TextBlock Text="{Binding UnreadText}" FontSize="10" Foreground="White"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <Ellipse Grid.Column="2" Width="9" Height="9" VerticalAlignment="Center" Margin="6,0,0,0">
+                                    <Ellipse Grid.Column="4" Width="9" Height="9" VerticalAlignment="Center" Margin="6,0,0,0">
                                         <Ellipse.Style>
                                             <Style TargetType="Ellipse">
                                                 <Setter Property="Fill" Value="#FFB0B0B6" />
