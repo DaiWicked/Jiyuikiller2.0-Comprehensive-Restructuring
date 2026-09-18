@@ -15,6 +15,9 @@ namespace ChatRoom.Models
         /// <summary>暗色模式（明暗两套配色见 Theme.cs）</summary>
         public bool DarkMode { get; set; } = false;
 
+        /// <summary>是否已完成首次注册（豆包需求 #2：首次启动弹注册页，之后不再弹，除非在设置里重置）</summary>
+        public bool Registered { get; set; } = false;
+
         // 窗口几何记忆（0 = 未保存过，用 XAML 默认值并居中）
         public double WindowLeft { get; set; } = 0;
         public double WindowTop { get; set; } = 0;
@@ -137,6 +140,7 @@ namespace ChatRoom.Models
                             case "ClearOnExit": s.ClearOnExit = val == "1"; break;
                             case "TopMost": s.TopMost = val == "1"; break;
                             case "DarkMode": s.DarkMode = val == "1"; break;
+                            case "Registered": s.Registered = val == "1"; break;
                             case "WindowLeft": double.TryParse(val, out double wl); s.WindowLeft = wl; break;
                             case "WindowTop": double.TryParse(val, out double wt); s.WindowTop = wt; break;
                             case "WindowWidth": double.TryParse(val, out double ww); s.WindowWidth = ww; break;
@@ -161,6 +165,7 @@ namespace ChatRoom.Models
                     "ClearOnExit=" + (ClearOnExit ? "1" : "0"),
                     "TopMost=" + (TopMost ? "1" : "0"),
                     "DarkMode=" + (DarkMode ? "1" : "0"),
+                    "Registered=" + (Registered ? "1" : "0"),
                     "WindowLeft=" + WindowLeft.ToString("F0"),
                     "WindowTop=" + WindowTop.ToString("F0"),
                     "WindowWidth=" + WindowWidth.ToString("F0"),

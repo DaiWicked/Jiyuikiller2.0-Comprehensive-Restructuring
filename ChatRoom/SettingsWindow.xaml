@@ -198,6 +198,7 @@
                     <Button Content="使用教程" Click="BtnHelp_Click" Style="{StaticResource GhostBtn}"
                             Margin="0,0,8,0"/>
                     <Button Content="关于" Click="BtnAbout_Click" Style="{StaticResource GhostBtn}"/>
+                    <Button Content="重置昵称" Click="BtnResetNick_Click" Style="{StaticResource GhostBtn}" Margin="8,0,0,0"/>
                     <TextBlock Text="{x:Static local:AppInfo.Version}" FontSize="10"
                                Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"
                                HorizontalAlignment="Right" Margin="10,0,0,0"/>

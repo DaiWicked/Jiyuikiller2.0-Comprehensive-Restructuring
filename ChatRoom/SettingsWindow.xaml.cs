@@ -44,6 +44,20 @@ namespace ChatRoom
             Close();
         }
 
+        /// <summary>重置昵称：清掉注册标记，下次启动会重新弹注册页（豆包需求 #2）</summary>
+        private void BtnResetNick_Click(object sender, RoutedEventArgs e)
+        {
+            var r = System.Windows.MessageBox.Show("重置后将清空昵称，并在下次启动时重新弹出注册界面。继续？",
+                "重置昵称", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (r != MessageBoxResult.Yes) return;
+            ChatRoom.Models.ChatSettings s = ChatRoom.Models.ChatSettings.Load();
+            s.Nickname = "";
+            s.Registered = false;
+            s.Save();
+            InputNickname.Text = "";
+            System.Windows.MessageBox.Show("已重置，重启程序后生效。", "提示");
+        }
+
         /// <summary>无边框窗口拖动</summary>
         private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {

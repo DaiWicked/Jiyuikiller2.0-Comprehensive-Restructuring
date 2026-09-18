@@ -15,7 +15,15 @@ namespace ChatRoom
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            Theme.Apply(Models.ChatSettings.Load().DarkMode);
+            var first = Models.ChatSettings.Load();
+            Theme.Apply(first.DarkMode);
+
+            // 首次使用：先完成注册（豆包需求 #2），否则不进入主界面
+            if (!first.Registered)
+            {
+                var reg = new RegisterWindow();
+                if (reg.ShowDialog() != true) { Shutdown(); return; }
+            }
         }
     }
 }
