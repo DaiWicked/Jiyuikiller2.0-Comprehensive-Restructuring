@@ -95,6 +95,7 @@
     </Compile>
     <Compile Include="MainWindow.Extras.cs" />
     <Compile Include="MainWindow.Conversations.cs" />
+    <Compile Include="MainWindow.Animations.cs" />
     <Compile Include="SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

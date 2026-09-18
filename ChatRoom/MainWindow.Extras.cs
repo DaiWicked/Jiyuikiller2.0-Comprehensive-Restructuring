@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -321,6 +321,9 @@ namespace ChatRoom
                 if (countChanged) UpdateUserCount();
                 if (needRefresh)
                     System.Windows.Data.CollectionViewSource.GetDefaultView(_userList).Refresh();
+
+                // 动效 4：同步各行未读跑马灯（ChatUser 没有 INPC，只能在这里对齐）
+                SyncMarquees();
             }
             catch { }
         }

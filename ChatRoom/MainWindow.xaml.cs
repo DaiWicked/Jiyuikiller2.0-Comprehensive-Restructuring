@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -284,8 +284,12 @@ namespace ChatRoom
         {
             OnUI(() =>
             {
-                if (!_userList.Any(u => u.IP == user.IP))
+                bool isNew = !_userList.Any(u => u.IP == user.IP);
+                if (isNew)
+                {
                     _userList.Add(user);
+                    MarkJustJoined(user.IP);   // 动效 2：这一行播放 3s 渐入
+                }
                 UpdateUserCount();
                 AddMessage("系统", $"{user.Nickname} 加入了聊天", BubbleKind.Service);
             });
@@ -970,6 +974,9 @@ namespace ChatRoom
                 AddMessage("我", msg, BubbleKind.Outgoing);
                 SaveHistoryLine("我", msg);
             }
+
+            // 动效 1：气泡出现时从「发送」按钮位置扩一圈光圈（总开关关闭时内部直接返回）
+            PlaySendRipple();
 
             // 发送失败要给可见反馈（对端离线、正文超过单个 UDP 包上限等 ⇒ 原来静默丢失）
             if (!sentOk) AddMessage("系统", "消息发送失败（对方可能已离线，或内容过长超过单个 UDP 包上限）", BubbleKind.Service);
