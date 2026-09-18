@@ -19,7 +19,7 @@ namespace ChatRoom
             InitializeComponent();
             InputNickname.TextChanged += Validate;
             InputVerify.TextChanged += Validate;
-            Loaded += (s, e) => InputNickname.Focus();
+            Loaded += (s, e) => { WindowPlacement.ClampToWorkArea(this); InputNickname.Focus(); };
         }
 
         private void Validate(object sender, TextChangedEventArgs e)

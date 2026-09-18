@@ -12,6 +12,9 @@ namespace ChatRoom
             InitializeComponent();
             Settings = settings;
             LoadToUI();
+            // CenterOwner 不会把窗口限制在工作区内：主窗被拖到屏幕下半部时，
+            // 居中出来的设置窗底部会跑到屏幕外/任务栏后面（表现为"按钮和文字被遮挡"）
+            Loaded += (s, e) => WindowPlacement.ClampToWorkArea(this);
         }
 
         private void LoadToUI()

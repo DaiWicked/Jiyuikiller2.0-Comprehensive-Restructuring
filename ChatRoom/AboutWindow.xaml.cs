@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -19,7 +19,7 @@ namespace ChatRoom
         {
             InitializeComponent();
             TextVersion.Text = AppInfo.Version;
-            Loaded += (s, e) => PlayIntro();
+            Loaded += (s, e) => { WindowPlacement.ClampToWorkArea(this); PlayIntro(); };
         }
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
