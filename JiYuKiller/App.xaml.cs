@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 
 namespace JiYuKiller
@@ -83,62 +83,83 @@ namespace JiYuKiller
 
         private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            // 生成错误报告（功能异常，非致命）
-            string reportPath = Services.CrashReportService.GenerateReport(
-                e.Exception,
-                "UI线程",
-                "未处理UI异常",
-                isFatal: false);
+            // ★ 处理函数自身必须包 try/catch（豆包 Q12-2）：
+            //   这已经在"未处理异常"路径上了，如果 GenerateReport / ShowErrorDialog 自己再抛
+            //   （磁盘满、渲染路径复抛…），异常会从处理函数里逃出去 —— 轻则弹不出报告，
+            //   重则递归崩溃。catch 里刻意不做任何"可能再抛"的事（不写文件、不弹窗）。
+            try
+            {
+                // 生成错误报告（功能异常，非致命）
+                string reportPath = Services.CrashReportService.GenerateReport(
+                    e.Exception,
+                    "UI线程",
+                    "未处理UI异常",
+                    isFatal: false);
 
-            // 显示错误弹窗
-            Services.CrashReportService.ShowErrorDialog(
-                e.Exception,
-                "UI线程",
-                "未处理UI异常",
-                reportPath,
-                isFatal: false);
-
-            // 尝试继续运行，不崩溃
-            e.Handled = true;
+                // 显示错误弹窗
+                Services.CrashReportService.ShowErrorDialog(
+                    e.Exception,
+                    "UI线程",
+                    "未处理UI异常",
+                    reportPath,
+                    isFatal: false);
+            }
+            catch
+            {
+                // 连报告/弹窗都失败：只能保证程序别在这里再崩一次
+            }
+            finally
+            {
+                // 尝试继续运行，不崩溃（原来这行在 try 之外、且没有 try 保护）
+                try { e.Handled = true; } catch { }
+            }
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Exception ex = e.ExceptionObject as Exception;
-            string moduleName = "非UI线程";
-            string functionName = "未处理非UI异常";
-
-            if (ex != null)
+            // 同 App_DispatcherUnhandledException：处理函数自身必须有 try/catch
+            try
             {
-                // 生成错误报告（致命错误，可能导致程序终止）
-                string reportPath = Services.CrashReportService.GenerateReport(
-                    ex,
-                    moduleName,
-                    functionName,
-                    isFatal: e.IsTerminating);
+                Exception ex = e.ExceptionObject as Exception;
+                string moduleName = "非UI线程";
+                string functionName = "未处理非UI异常";
 
-                // 显示错误弹窗
-                Services.CrashReportService.ShowErrorDialog(
-                    ex,
-                    moduleName,
-                    functionName,
-                    reportPath,
-                    isFatal: e.IsTerminating);
+                if (ex != null)
+                {
+                    // 生成错误报告（致命错误，可能导致程序终止）
+                    string reportPath = Services.CrashReportService.GenerateReport(
+                        ex,
+                        moduleName,
+                        functionName,
+                        isFatal: e.IsTerminating);
+
+                    // 显示错误弹窗
+                    Services.CrashReportService.ShowErrorDialog(
+                        ex,
+                        moduleName,
+                        functionName,
+                        reportPath,
+                        isFatal: e.IsTerminating);
+                }
+                else
+                {
+                    // 非Exception类型的异常
+                    string reportPath = Services.CrashReportService.GenerateReport(
+                        new Exception($"非异常对象: {e.ExceptionObject}"),
+                        moduleName,
+                        functionName,
+                        isFatal: e.IsTerminating);
+
+                    System.Windows.MessageBox.Show(
+                        $"模块: {moduleName}\n功能: {functionName}\n\n异常对象: {e.ExceptionObject}\n\n错误报告已保存至:\n{reportPath}",
+                        e.IsTerminating ? "程序致命错误" : "功能异常",
+                        MessageBoxButton.OK,
+                        e.IsTerminating ? MessageBoxImage.Stop : MessageBoxImage.Error);
+                }
             }
-            else
+            catch
             {
-                // 非Exception类型的异常
-                string reportPath = Services.CrashReportService.GenerateReport(
-                    new Exception($"非异常对象: {e.ExceptionObject}"),
-                    moduleName,
-                    functionName,
-                    isFatal: e.IsTerminating);
-
-                System.Windows.MessageBox.Show(
-                    $"模块: {moduleName}\n功能: {functionName}\n\n异常对象: {e.ExceptionObject}\n\n错误报告已保存至:\n{reportPath}",
-                    e.IsTerminating ? "程序致命错误" : "功能异常",
-                    MessageBoxButton.OK,
-                    e.IsTerminating ? MessageBoxImage.Stop : MessageBoxImage.Error);
+                // 处理函数自身失败：不再做任何可能再抛的事
             }
         }
 

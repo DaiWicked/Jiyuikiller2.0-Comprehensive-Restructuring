@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace JiYuKiller.Games
@@ -256,7 +257,7 @@ namespace JiYuKiller.Games
                 _gameOver = true;
                 RevealAllMines(r, c);
                 StopTimer();
-                ShowMessage("游戏结束", "💥 你踩到雷了！\n\n用时: " + _elapsedSeconds + " 秒");
+                ShowMessage("游戏结束", "你踩到雷了！\n\n用时: " + _elapsedSeconds + " 秒");
                 return;
             }
 
@@ -402,12 +403,69 @@ namespace JiYuKiller.Games
             }
 
             UpdateMineText();
-            ShowMessage("恭喜胜利", "🎉 全部排雷完成！\n\n用时: " + _elapsedSeconds + " 秒");
+            ShowMessage("恭喜胜利", "全部排雷完成！\n\n用时: " + _elapsedSeconds + " 秒");
         }
 
         #endregion
 
         #region 显示刷新
+
+        // === 格子图标改成矢量绘制（豆包 Q12-3）===
+        // 原来用 emoji（💣 🚩 ❌）：Win7 没有对应的彩色 emoji 字体，会显示成方框（豆腐块）——
+        // 与用户反馈的"Win7 表情看不到"同源。数字仍然用文本（数字不需要字体之外的码位）。
+        // 注意：一个 UIElement 只能有一个父级，所以每次都新建实例，不能做静态缓存共享。
+        private static UIElement CreateMineIcon()
+        {
+            var cv = new Canvas { Width = 18, Height = 18 };
+            for (int i = 0; i < 8; i++)
+            {
+                cv.Children.Add(new Line
+                {
+                    X1 = 9, Y1 = 1.5, X2 = 9, Y2 = 16.5,
+                    Stroke = Brushes.Black, StrokeThickness = 1.4,
+                    RenderTransform = new RotateTransform(i * 22.5, 9, 9)
+                });
+            }
+            var core = new Ellipse { Width = 10, Height = 10, Fill = Brushes.Black };
+            Canvas.SetLeft(core, 4);
+            Canvas.SetTop(core, 4);
+            cv.Children.Add(core);
+            return cv;
+        }
+
+        private static UIElement CreateFlagIcon()
+        {
+            var cv = new Canvas { Width = 18, Height = 18 };
+            cv.Children.Add(new Line { X1 = 5, Y1 = 3, X2 = 5, Y2 = 15, Stroke = Brushes.Black, StrokeThickness = 1.8 });
+            cv.Children.Add(new Line { X1 = 3, Y1 = 15, X2 = 12, Y2 = 15, Stroke = Brushes.Black, StrokeThickness = 1.8 });
+            var tri = new Polygon { Fill = Brushes.Red };
+            tri.Points.Add(new Point(6, 3));
+            tri.Points.Add(new Point(14, 6));
+            tri.Points.Add(new Point(6, 9));
+            cv.Children.Add(tri);
+            return cv;
+        }
+
+        private static UIElement CreateWrongIcon()
+        {
+            var cv = new Canvas { Width = 18, Height = 18 };
+            cv.Children.Add(new Line { X1 = 4, Y1 = 4, X2 = 14, Y2 = 14, Stroke = Brushes.Firebrick, StrokeThickness = 2.4 });
+            cv.Children.Add(new Line { X1 = 14, Y1 = 4, X2 = 4, Y2 = 14, Stroke = Brushes.Firebrick, StrokeThickness = 2.4 });
+            return cv;
+        }
+
+        /// <summary>Border 只有一个 Child：图标与文本互斥，切换时替换 Child</summary>
+        private static void SetCellContent(Border cell, TextBlock text, UIElement icon)
+        {
+            if (icon == null)
+            {
+                if (!ReferenceEquals(cell.Child, text)) cell.Child = text;
+            }
+            else if (!ReferenceEquals(cell.Child, icon))
+            {
+                cell.Child = icon;
+            }
+        }
 
         private void ShowCell(int r, int c)
         {
@@ -421,9 +479,8 @@ namespace JiYuKiller.Games
                 cell.Background = ExplodedBrush;
                 cell.BorderBrush = RevealedBorderBrush;
                 cell.Cursor = Cursors.Arrow;
-                text.Text = "💣";
-                text.FontSize = 13;
-                text.Foreground = Brushes.Black;
+                text.Text = "";
+                SetCellContent(cell, text, CreateMineIcon());
                 return;
             }
 
@@ -433,9 +490,8 @@ namespace JiYuKiller.Games
                 cell.Background = WrongFlagBrush;
                 cell.BorderBrush = RevealedBorderBrush;
                 cell.Cursor = Cursors.Arrow;
-                text.Text = "❌";
-                text.FontSize = 12;
-                text.Foreground = Brushes.Black;
+                text.Text = "";
+                SetCellContent(cell, text, CreateWrongIcon());
                 return;
             }
 
@@ -447,18 +503,19 @@ namespace JiYuKiller.Games
 
                 if (_isMine[r, c])
                 {
-                    text.Text = "💣";
-                    text.FontSize = 13;
-                    text.Foreground = Brushes.Black;
+                    text.Text = "";
+                    SetCellContent(cell, text, CreateMineIcon());
                 }
                 else if (_adjacent[r, c] > 0)
                 {
+                    SetCellContent(cell, text, null);
                     text.Text = _adjacent[r, c].ToString();
                     text.FontSize = 15;
                     text.Foreground = NumberBrushes[Math.Min(_adjacent[r, c], 8)];
                 }
                 else
                 {
+                    SetCellContent(cell, text, null);
                     text.Text = "";
                 }
             }
@@ -467,7 +524,8 @@ namespace JiYuKiller.Games
                 cell.Background = UnrevealedBrush;
                 cell.BorderBrush = UnrevealedBorderBrush;
                 cell.Cursor = Cursors.Hand;
-                text.Text = _flagged[r, c] ? "🚩" : "";
+                text.Text = "";
+                SetCellContent(cell, text, _flagged[r, c] ? CreateFlagIcon() : null);
                 text.FontSize = 13;
                 text.Foreground = Brushes.Black;
             }

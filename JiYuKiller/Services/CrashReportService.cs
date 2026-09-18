@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
@@ -206,6 +206,7 @@ namespace JiYuKiller.Services
                     sb.AppendLine("========================================");
 
                     File.WriteAllText(reportPath, sb.ToString(), new UTF8Encoding(false));
+                    PruneOldReports(exeDir, 20);   // 豆包 Q12-2：报告按数量保留最近 20 份
 
                     // 同时记录到日志
                     if (Logger.Instance.Enabled)
@@ -235,6 +236,32 @@ namespace JiYuKiller.Services
         /// <summary>
         /// 显示错误弹窗
         /// </summary>
+        /// <summary>
+        /// 只保留最近 <paramref name="keep"/> 份错误报告（豆包 Q12-2）。
+        /// 为什么需要：报告是"每次异常新建一个文件"，一旦某条渲染路径反复复抛，
+        /// 几秒钟就能把 exe 目录刷满 —— 磁盘写满之后连日志和报告本身都写不进去。
+        /// 按最后写入时间排序，删最旧的；单个删不掉（被占用）不影响其它，整体也包了 try/catch。
+        /// </summary>
+        private static void PruneOldReports(string dir, int keep)
+        {
+            try
+            {
+                FileInfo[] files = new DirectoryInfo(dir).GetFiles("i.chaoxing_*.txt");
+                if (files.Length <= keep) return;
+
+                Array.Sort(files, delegate (FileInfo a, FileInfo b)
+                {
+                    return a.LastWriteTimeUtc.CompareTo(b.LastWriteTimeUtc);
+                });
+
+                for (int i = 0; i < files.Length - keep; i++)
+                {
+                    try { files[i].Delete(); } catch { }
+                }
+            }
+            catch { }
+        }
+
         public static void ShowErrorDialog(Exception ex, string moduleName, string functionName, string reportPath, bool isFatal = false)
         {
             string title = isFatal ? "程序致命错误" : "功能异常";
