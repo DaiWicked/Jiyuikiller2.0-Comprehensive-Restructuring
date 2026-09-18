@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Windows;
 
@@ -23,7 +23,7 @@ namespace ChatRoom.Models
         /// ★ 注意：早期版本这里是"透明度"（WallpaperOpacity），用户要的其实是模糊 ——
         ///   壁纸**始终完全不透明**显示，滑块调的是磨砂程度，不是可见度。
         /// </summary>
-        public double WallpaperBlur { get; set; } = 15;
+        public double WallpaperBlur { get; set; } = 8;
 
         /// <summary>新消息弹窗提醒（豆包需求 #5：设置里可开关此功能；关掉只是不弹窗，未读红点照常）</summary>
         public bool ToastEnabled { get; set; } = true;

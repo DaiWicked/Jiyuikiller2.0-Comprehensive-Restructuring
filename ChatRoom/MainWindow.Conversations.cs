@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Data;
@@ -41,7 +41,7 @@ namespace ChatRoom
                     bmp.Freeze();
 
                     WallpaperBrush.ImageSource = bmp;
-                    WallpaperBlurEffect.Radius = Math.Max(0, Math.Min(30, _settings.WallpaperBlur));
+                    WallpaperBlurEffect.Radius = Math.Max(0, Math.Min(15, _settings.WallpaperBlur));
                     WallpaperLayer.Visibility = Visibility.Visible;
                     return;
                 }
