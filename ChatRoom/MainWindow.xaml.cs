@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -729,6 +729,12 @@ namespace ChatRoom
 
         private void ClearUnread()
         {
+            // 清掉所有会话的未读数，否则下次UpdateUnreadBadge会从旧数据重新累加
+            foreach (var c in _conversations.Values)
+            {
+                c.Unread = 0;
+                if (!c.IsGroup) SetPeerUnread(c.PeerIP, 0);
+            }
             _unreadCount = 0;
             TextUnread.Text = "0 条新消息";
             BtnUnread.Visibility = Visibility.Collapsed;
