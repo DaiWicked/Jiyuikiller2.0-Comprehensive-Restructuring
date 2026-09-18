@@ -297,6 +297,14 @@ namespace ChatRoom
                 bool isNew = !_userList.Any(u => u.IP == user.IP);
                 if (isNew)
                 {
+                    // ★ 第三轮复核修复：他离线时那一行被移除、行上的红点跟着消失，
+                    //   但**会话里的未读还在** —— 新行默认 Unread=0，不恢复就会出现
+                    //   "顶栏还数着 1 条、侧栏那一行却没红点"的不一致。
+                    //   （心跳上线的路径走这里直接加行，所以恢复逻辑必须放在这，不能只放同步循环里）
+                    Conversation pc;
+                    if (_conversations.TryGetValue(Conversation.PeerKey(user.IP), out pc) && pc.Unread > 0)
+                        user.Unread = pc.Unread;
+
                     _userList.Add(user);
                     MarkJustJoined(user.IP);   // 动效 2：这一行播放 3s 渐入
                 }
@@ -743,15 +751,14 @@ namespace ChatRoom
 
         private void ClearUnread()
         {
-            // 清掉所有会话的未读数，否则下次UpdateUnreadBadge会从旧数据重新累加
+            // 清掉所有会话的未读数，否则下次 UpdateUnreadBadge 会从旧数据重新累加。
+            // ★ 侧栏行必须用会话键反解 IP（c.PeerIP 可能是空串，见 ClearConversationUnread 的说明）
             foreach (var c in _conversations.Values)
             {
                 c.Unread = 0;
-                if (!c.IsGroup) SetPeerUnread(c.PeerIP, 0);
+                if (!c.IsGroup) SetPeerUnread(Conversation.PeerIpOf(c.Key), 0);
             }
-            _unreadCount = 0;
-            TextUnread.Text = "0 条新消息";
-            BtnUnread.Visibility = Visibility.Collapsed;
+            UpdateUnreadBadge();   // 内部会把顶栏总数、托盘计数、跑马灯一起同步
         }
 
         private void BtnUnread_Click(object sender, RoutedEventArgs e)
@@ -763,7 +770,12 @@ namespace ChatRoom
         protected override void OnActivated(EventArgs e)
         {
             base.OnActivated(e);
-            if (_unreadCount > 0) ClearUnread();   // 回到前台即视为已读（分隔线记录保留）
+
+            // ★ 第三轮复核修复：回到前台只能说明"用户看到了**当前这个**会话"，
+            //   绝不能把其它会话的未读一起清掉 —— 否则用户切出去（比如去看浏览器）再切回来，
+            //   那些压根没看过的私聊未读就被静默清空了，侧栏红点也跟着消失。
+            //   原来这里调的是 ClearUnread()（清全部），属于误清。
+            if (CurrentConversation.Unread > 0) ClearConversationUnread(_currentConvKey);
         }
 
         /// <summary>

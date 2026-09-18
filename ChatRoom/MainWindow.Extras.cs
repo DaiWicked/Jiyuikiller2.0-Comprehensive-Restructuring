@@ -317,7 +317,26 @@ namespace ChatRoom
                 {
                     bool found = false;
                     foreach (ChatUser u in _userList) { if (u.IP == s.IP) { found = true; break; } }
-                    if (!found) { _userList.Add(s); needRefresh = true; countChanged = true; }
+                    if (!found)
+                    {
+                        // ★ 第三轮复核修复①：他离线时那一行被移除了，行上的红点随之消失，
+                        //   但**会话里的未读还在** —— 重新上线要从会话未读恢复，
+                        //   否则侧栏红点凭空不见，而顶栏总数还数着它（两处不一致）。
+                        Conversation pc;
+                        if (_conversations.TryGetValue(Conversation.PeerKey(s.IP), out pc) && pc.Unread > 0)
+                            s.Unread = pc.Unread;
+
+                        _userList.Add(s);
+                        needRefresh = true; countChanged = true;
+
+                        // ★ 修复②：如果用户正开着和这个人的私聊，_currentTarget 还指着**旧的**（已离线的）对象，
+                        //   发消息会走"对方似乎已离线，是否改群发"那条询问分支 —— 换成新对象并重新选中。
+                        if (_currentConvKey == Conversation.PeerKey(s.IP))
+                        {
+                            _currentTarget = s;
+                            UserList.SelectedItem = s;   // 触发 SelectionChanged → 回到该会话（正在看，未读随之清零，符合预期）
+                        }
+                    }
                 }
 
                 // 离线超时的人从列表移除

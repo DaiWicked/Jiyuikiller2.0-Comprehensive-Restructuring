@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Data;
@@ -91,8 +91,7 @@ namespace ChatRoom
         {
             EnsureConversation(key, title, isGroup, peerIP);
             _currentConvKey = key;
-            CurrentConversation.Unread = 0;
-            ClearPeerUnread(key);   // 侧栏行徽标同步清零
+            ClearConversationUnread(key);   // 会话未读 + 侧栏行 + 顶栏总数 + 跑马灯，一次到位
             CurrentConversation.SeparatorShown = false;
             RefreshConversationView();
             UpdateUnreadBadge();
@@ -132,6 +131,11 @@ namespace ChatRoom
             _unreadCount = n;                       // 托盘提示也用这个数
             TextUnread.Text = n + " 条新消息";
             BtnUnread.Visibility = n > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+            // ★ 未读数变了就顺手同步跑马灯：这是所有未读变化的唯一必经点，
+            //   放在这里就不用去 TrackUnread / SwitchConversation / ClearUnread 各处补调用
+            //   （原来只在 2 秒的用户同步里对齐 ⇒ 未读清了跑马灯还要多滚 2 秒）。
+            SyncMarquees();
         }
 
         /// <summary>入站消息的会话键：图片按 scope(G/P)，文字按来源 IP</summary>
@@ -150,17 +154,27 @@ namespace ChatRoom
             }
         }
 
-        /// <summary>清掉某个会话在侧栏行上的未读标记</summary>
+        /// <summary>
+        /// 清掉某个会话的未读数（会话对象 + 侧栏行 + 顶栏总数 + 跑马灯）。
+        /// ★ 第三轮复核修复：侧栏那一行必须用**会话键反解出来的 IP**，不能用 c.PeerIP ——
+        ///   首次收到某人私聊时会话是 TrackUnread 那一刻建的，当时传的 peerIP 是空串，
+        ///   SetPeerUnread("") 会直接 return，于是**侧栏红点清不掉**（用户实测"查看后没有重新计数"就是这个）。
+        /// </summary>
+        private void ClearConversationUnread(string convKey)
+        {
+            if (string.IsNullOrEmpty(convKey)) return;
+            Conversation c;
+            if (!_conversations.TryGetValue(convKey, out c)) return;
+
+            c.Unread = 0;
+            if (!c.IsGroup) SetPeerUnread(Conversation.PeerIpOf(c.Key), 0);
+            UpdateUnreadBadge();   // 内部会一并同步跑马灯
+        }
+
+        /// <summary>清掉某个会话在侧栏行上的未读标记（保留旧名，语义已并入 ClearConversationUnread）</summary>
         private void ClearPeerUnread(string convKey)
         {
-            foreach (var kv in _conversations)
-            {
-                if (kv.Key == convKey)
-                {
-                    kv.Value.Unread = 0;
-                    if (!kv.Value.IsGroup) SetPeerUnread(kv.Value.PeerIP, 0);
-                }
-            }
+            ClearConversationUnread(convKey);
         }
 
         // ==================== 内嵌消息弹窗（豆包需求 #5 / Q6）====================
@@ -255,7 +269,9 @@ namespace ChatRoom
             if (key == Conversation.GroupKey) SwitchConversation(key, "群聊", true, "");
             else
             {
-                string ip = key.Substring("peer:".Length);
+                // 用反解 helper 而不是 key.Substring(5)：万一 key 不是 peer: 开头（理论上不该发生），
+                // 直接 Substring 会抛异常把整段点击吞掉。
+                string ip = Conversation.PeerIpOf(key);
                 ChatUser target = null;
                 foreach (ChatUser u in _userList) { if (u.IP == ip) { target = u; break; } }
                 if (target != null)
