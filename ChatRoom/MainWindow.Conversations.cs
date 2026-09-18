@@ -130,22 +130,32 @@ namespace ChatRoom
         private System.Windows.Threading.DispatcherTimer _toastTimer;
         private string _toastConvKey;
 
+        private ToastWindow _toastWindow;
+
         /// <summary>
-        /// 右下角内嵌小卡片：同会话连续消息合并成"N 条新消息"；3.5 秒自动收起；
-        /// 点击跳到该会话。不抢焦点、不闪任务栏、无声音（机房环境）。
+        /// 后台/最小化/隐藏到托盘时的提醒走独立小窗（主窗内的卡片这时根本看不见）。
+        /// 判断依据：主窗口当前是否"可见且在前台"。
         /// </summary>
         private void ShowToast(string convKey, string title, string preview)
         {
             Conversation c = EnsureConversation(convKey, title, convKey == Conversation.GroupKey, "");
             _toastConvKey = convKey;
+            string line = c.IsGroup ? ("群聊 · " + c.Unread + " 条新消息") : (title + " · " + c.Unread + " 条新消息");
 
-            TextToastTitle.Text = c.IsGroup ? ("群聊 · " + c.Unread + " 条新消息") : (title + " · " + c.Unread + " 条新消息");
+            bool canSeeCard = IsVisible && IsActive && WindowState != WindowState.Minimized;
+            if (!canSeeCard)
+            {
+                // 独立提醒窗（不抢焦点/不闪任务栏/无声音），同会话连续消息只更新内容
+                if (_toastWindow == null) _toastWindow = new ToastWindow(this);
+                _toastWindow.ShowMessage(line, preview ?? "", convKey);
+                return;
+            }
+
+            TextToastTitle.Text = line;
             TextToastText.Text = preview ?? "";
-
             ToastCard.Visibility = Visibility.Visible;
             var fade = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180));
             ToastCard.BeginAnimation(OpacityProperty, fade);
-
             if (_toastTimer == null)
             {
                 _toastTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(3500) };
@@ -153,6 +163,28 @@ namespace ChatRoom
             }
             _toastTimer.Stop();
             _toastTimer.Start();
+        }
+
+        /// <summary>把主窗口唤回前台并跳到指定会话（提醒窗点击时调用）</summary>
+        public void RestoreAndOpenConversation(string convKey)
+        {
+            try
+            {
+                if (!IsVisible) Show();
+                if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+                Activate();
+                if (string.IsNullOrEmpty(convKey)) return;
+                if (convKey == Conversation.GroupKey) SwitchConversation(convKey, "群聊", true, "");
+                else
+                {
+                    string ip = convKey.StartsWith("peer:") ? convKey.Substring(5) : convKey;
+                    ChatUser target = null;
+                    foreach (ChatUser u in _userList) { if (u.IP == ip) { target = u; break; } }
+                    if (target != null) { _currentTarget = target; UserList.SelectedItem = target; }
+                    SwitchConversation(convKey, NicknameOfConvKey(convKey), false, ip);
+                }
+            }
+            catch { }
         }
 
         private void HideToast()
