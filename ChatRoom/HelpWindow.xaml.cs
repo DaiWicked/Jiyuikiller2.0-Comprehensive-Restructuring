@@ -22,7 +22,7 @@ namespace ChatRoom
             InitializeComponent();
             ShowSection("intro");
             // 同设置窗：CenterOwner 不限制工作区，超出屏幕的部分用户就看不到了
-            Loaded += (s, e) => WindowPlacement.ClampToWorkArea(this);
+            Loaded += (s, e) => { WindowPlacement.ClampToWorkArea(this); Anim.ApplyTo(this); };
         }
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

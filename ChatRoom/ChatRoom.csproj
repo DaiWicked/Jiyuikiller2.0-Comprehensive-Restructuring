@@ -121,6 +121,7 @@
     <Compile Include="Services\ChatImageCodec.cs" />
     <Compile Include="Models\ChatUser.cs" />
     <Compile Include="WindowPlacement.cs" />
+    <Compile Include="Anim.cs" />
     <Compile Include="Models\Conversation.cs" />
     <Compile Include="Theme.cs" />
     <Compile Include="AppInfo.cs" />

@@ -1,4 +1,4 @@
-﻿<Window x:Class="ChatRoom.AboutWindow"
+<Window x:Class="ChatRoom.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="关于" Height="470" Width="380"
@@ -33,8 +33,11 @@
         </Style>
     </Window.Resources>
     <!-- 玻璃拟态（豆包 Q2 规格）：85% 不透明 + 1px 主色 20% 微光边框 + 圆角 12。
-         不截取桌面、不依赖 DWM/Aero，Win7 也能跑。 -->
-    <Border CornerRadius="12" Background="#D9FFFFFF" BorderBrush="#335B8DEF" BorderThickness="1">
+         不截取桌面、不依赖 DWM/Aero，Win7 也能跑。
+         ★ 颜色全部走主题资源（原来这里是硬编码的 #D9FFFFFF/#335B8DEF，
+           导致暗色模式下关于页仍是一张浅色卡片，与设置页/帮助页不一致 —— 豆包 Q1 要求统一）。 -->
+    <Border CornerRadius="12" Background="{DynamicResource GlassPanel}"
+            BorderBrush="{DynamicResource GlassBorder}" BorderThickness="1">
         <Border.Effect>
             <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.22" Color="#000000" />
         </Border.Effect>
@@ -43,7 +46,7 @@
             <Button x:Name="BtnClose" Content="✕" Click="BtnClose_Click" Width="34" Height="30" Style="{StaticResource WinGhostButton}"
                     HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0"
                     Background="Transparent" BorderThickness="0" FontSize="13" Cursor="Hand"
-                    Foreground="#8E8E93" />
+                    Foreground="{DynamicResource TextSecondary}" />
 
             <StackPanel Margin="26,30,26,24">
                 <!-- logo：圆形裁切 + 外圈主色光晕呼吸 -->
@@ -63,9 +66,9 @@
                     </Ellipse>
                 </Grid>
 
-                <TextBlock x:Name="Line1" Text="聊天室" FontSize="20" FontWeight="Bold" Foreground="#1C1C2E"
+                <TextBlock x:Name="Line1" Text="聊天室" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"
                            HorizontalAlignment="Center" Margin="0,14,0,2" Opacity="0"/>
-                <TextBlock x:Name="Line2" Text="ChatRoom for JiYuKiller2.0" FontSize="12" Foreground="#8E8E93"
+                <TextBlock x:Name="Line2" Text="ChatRoom for JiYuKiller2.0" FontSize="12" Foreground="{DynamicResource TextSecondary}"
                            HorizontalAlignment="Center" Opacity="0"/>
 
                 <Border x:Name="Line3" Height="1" Margin="16,16,16,16" Opacity="0">
@@ -78,14 +81,14 @@
                     </Border.Background>
                 </Border>
 
-                <TextBlock x:Name="Line4" Text="学习不通的增强模块" FontSize="13" Foreground="#3A3A3C"
+                <TextBlock x:Name="Line4" Text="学习不通的增强模块" FontSize="13" Foreground="{DynamicResource TextPrimary}"
                            HorizontalAlignment="Center" Opacity="0"/>
-                <TextBlock x:Name="Line5" Text="可单独使用" FontSize="13" Foreground="#3A3A3C"
+                <TextBlock x:Name="Line5" Text="可单独使用" FontSize="13" Foreground="{DynamicResource TextPrimary}"
                            HorizontalAlignment="Center" Margin="0,2,0,0" Opacity="0"/>
 
-                <TextBlock x:Name="Line6" Text="版本" FontSize="11" Foreground="#8E8E93"
+                <TextBlock x:Name="Line6" Text="版本" FontSize="11" Foreground="{DynamicResource TextSecondary}"
                            HorizontalAlignment="Center" Margin="0,14,0,2" Opacity="0"/>
-                <TextBlock x:Name="TextVersion" FontSize="12" Foreground="#5B8DEF" FontWeight="SemiBold"
+                <TextBlock x:Name="TextVersion" FontSize="12" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"
                            HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Opacity="0"/>
 
                 <Border x:Name="Line7" Height="1" Margin="16,16,16,16" Opacity="0">
@@ -98,9 +101,9 @@
                     </Border.Background>
                 </Border>
 
-                <TextBlock x:Name="Line8" Text="不畏浮云遮望眼，自缘身在最高层" FontSize="13" Foreground="#3A3A3C"
+                <TextBlock x:Name="Line8" Text="不畏浮云遮望眼，自缘身在最高层" FontSize="13" Foreground="{DynamicResource TextPrimary}"
                            HorizontalAlignment="Center" Opacity="0"/>
-                <TextBlock x:Name="Line9" Text="ChatRoom · 独立可选模块" FontSize="11" Foreground="#B0B0B6"
+                <TextBlock x:Name="Line9" Text="ChatRoom · 独立可选模块" FontSize="11" Foreground="{DynamicResource TextSecondary}"
                            HorizontalAlignment="Center" Margin="0,16,0,0" Opacity="0"/>
             </StackPanel>
         </Grid>

@@ -19,7 +19,7 @@ namespace ChatRoom
         {
             InitializeComponent();
             TextVersion.Text = AppInfo.Version;
-            Loaded += (s, e) => { WindowPlacement.ClampToWorkArea(this); PlayIntro(); };
+            Loaded += (s, e) => { WindowPlacement.ClampToWorkArea(this); Anim.ApplyTo(this); PlayIntro(); };
         }
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

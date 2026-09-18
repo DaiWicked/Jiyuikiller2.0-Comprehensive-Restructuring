@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -40,6 +40,7 @@ namespace ChatRoom
             RefreshConversationView();
             StartUserSync();
             ApplyWallpaper();   // 需求#7：启动时恢复聊天区壁纸
+            Anim.ApplyTo(this);  // 动效总开关（豆包 Q7）：附加属性设一次，子元素靠继承拿到
             // 系统关机/注销时必须放行关闭，否则会被"此程序阻止关机"卡住
             Application.Current.SessionEnding += (s, a) => { _isExiting = true; };
         }

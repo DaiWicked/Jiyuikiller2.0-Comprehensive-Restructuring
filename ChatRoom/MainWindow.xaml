@@ -1,6 +1,7 @@
 <Window x:Class="ChatRoom.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ChatRoom"
         Title="小小聊天" Height="620" Width="880"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
@@ -42,35 +43,76 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Trigger.EnterActions>
                                     <BeginStoryboard><Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12" />
+                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15" />
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
                                     <BeginStoryboard><Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.16" />
+                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
+                            <!-- 按钮弹簧（豆包 Q2 第 1 项）：按下缩到 90%，松开回弹。
+                                 ★ 动效总开关：开=动画过渡；关=同一终态的 Setter（瞬间到位）。
+                                   WPF 不允许 Storyboard 里用 DynamicResource，所以只能这样成对写。 -->
                             <Trigger Property="IsPressed" Value="True">
                                 <Trigger.EnterActions>
                                     <BeginStoryboard><Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.06" />
-                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="0.97" Duration="0:0:0.06" />
-                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="0.97" Duration="0:0:0.06" />
+                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15" />
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
                                     <BeginStoryboard><Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.14" />
-                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.22">
-                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.6" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.22">
-                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.6" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsPressed" Value="True" />
+                                    <Condition Property="local:Anim.On" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="0.9" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><QuadraticEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="0.9" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><QuadraticEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                                <MultiTrigger.ExitActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.6" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.6" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.ExitActions>
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsPressed" Value="True" />
+                                    <Condition Property="local:Anim.On" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <!-- 关掉动效：同样的终态、零时长（瞬间到位）。
+                                     不能用 Setter：Setter 的 TargetName 编译期不认 RenderTransform 里的变换。 -->
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="0.9" Duration="0:0:0" />
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="0.9" Duration="0:0:0" />
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                                <MultiTrigger.ExitActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0" />
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0" />
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.ExitActions>
+                            </MultiTrigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="bd" Property="Opacity" Value="0.45" />
                             </Trigger>
@@ -90,7 +132,11 @@
                     <ControlTemplate TargetType="Button">
                         <Grid RenderTransformOrigin="0.5,0.5">
                             <Grid.RenderTransform>
-                                <ScaleTransform x:Name="sc" ScaleX="1" ScaleY="1" />
+                                <!-- 缩放（按下弹簧）+ 位移（悬停上浮）都要，所以用 TransformGroup -->
+                                <TransformGroup>
+                                    <ScaleTransform x:Name="sc" ScaleX="1" ScaleY="1" />
+                                    <TranslateTransform x:Name="tr" Y="0" />
+                                </TransformGroup>
                             </Grid.RenderTransform>
                             <Border x:Name="bd" CornerRadius="6" Background="{TemplateBinding Background}" Margin="3">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -99,39 +145,113 @@
                             <Border x:Name="pressLayer" CornerRadius="6" Margin="3" Background="#33000000" Opacity="0" IsHitTestVisible="False" />
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <!-- 工具栏悬停上浮（豆包 Q2 第 2 项）：上浮 2px + 浮出圆角底 -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                                 <Trigger.EnterActions>
                                     <BeginStoryboard><Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12" />
+                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15" />
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
                                     <BeginStoryboard><Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.16" />
+                                        <DoubleAnimation Storyboard.TargetName="hoverLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="local:Anim.On" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="tr" Storyboard.TargetProperty="Y" To="-2" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                                <MultiTrigger.ExitActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="tr" Storyboard.TargetProperty="Y" To="0" Duration="0:0:0.15" />
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.ExitActions>
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="local:Anim.On" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="tr" Storyboard.TargetProperty="Y" To="-2" Duration="0:0:0" />
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                                <MultiTrigger.ExitActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="tr" Storyboard.TargetProperty="Y" To="0" Duration="0:0:0" />
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.ExitActions>
+                            </MultiTrigger>
+                            <!-- 按钮弹簧（第 1 项）：按到 90%，松开回弹 -->
                             <Trigger Property="IsPressed" Value="True">
                                 <Trigger.EnterActions>
                                     <BeginStoryboard><Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.06" />
-                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="0.92" Duration="0:0:0.06" />
-                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="0.92" Duration="0:0:0.06" />
+                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15" />
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
                                     <BeginStoryboard><Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.14" />
-                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.24">
-                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.7" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.24">
-                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.7" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="pressLayer" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsPressed" Value="True" />
+                                    <Condition Property="local:Anim.On" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="0.9" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><QuadraticEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="0.9" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><QuadraticEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                                <MultiTrigger.ExitActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.7" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><BackEase Amplitude="0.7" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.ExitActions>
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsPressed" Value="True" />
+                                    <Condition Property="local:Anim.On" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <!-- 关掉动效：同样的终态、零时长（瞬间到位）。
+                                     不能用 Setter：Setter 的 TargetName 编译期不认 RenderTransform 里的变换。 -->
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="0.9" Duration="0:0:0" />
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="0.9" Duration="0:0:0" />
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                                <MultiTrigger.ExitActions>
+                                    <BeginStoryboard><Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0" />
+                                        <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0" />
+                                    </Storyboard></BeginStoryboard>
+                                </MultiTrigger.ExitActions>
+                            </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -190,9 +310,10 @@
             <Border Grid.Column="0" Background="{DynamicResource SideBg}" CornerRadius="12,0,0,12">
                 <DockPanel>
 
-                    <!-- 侧栏标题（也是拖动区） -->
+                    <!-- 侧栏标题（也是拖动区）：玻璃 + 底部 1px 微光分隔线 -->
                     <Border DockPanel.Dock="Top" Height="54" Background="{DynamicResource HeaderBg}"
-                            CornerRadius="12,0,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                            CornerRadius="12,0,0,0" BorderBrush="{DynamicResource GlassBorder}" BorderThickness="0,0,0,1"
+                            MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0">
                             <TextBlock Text="💬" FontSize="15" VerticalAlignment="Center" />
                             <TextBlock Text="在线用户" FontSize="14" FontWeight="SemiBold"
@@ -226,16 +347,82 @@
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListBoxItem">
-                                            <Border x:Name="row" Background="Transparent" Padding="{TemplateBinding Padding}">
-                                                <ContentPresenter VerticalAlignment="Center" />
-                                            </Border>
+                                            <!-- 列表悬停/选中条（豆包 Q2 第 3 项）：用两层"色块透明度"做 0.2s 过渡，
+                                                 而不是直接改 Background（那样是一跳到位，没有过渡）。 -->
+                                            <Grid>
+                                                <Border x:Name="hoverFill" CornerRadius="9" Background="{DynamicResource RowHoverBg}"
+                                                        Opacity="0" IsHitTestVisible="False" />
+                                                <Border x:Name="selFill" CornerRadius="9" Background="{DynamicResource RowSelectedBg}"
+                                                        Opacity="0" IsHitTestVisible="False" />
+                                                <Border x:Name="row" Background="Transparent" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Border>
+                                            </Grid>
                                             <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="row" Property="Background" Value="{DynamicResource RowHoverBg}" />
-                                                </Trigger>
-                                                <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="row" Property="Background" Value="{DynamicResource RowSelectedBg}" />
-                                                </Trigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsMouseOver" Value="True" />
+                                                        <Condition Property="local:Anim.On" Value="True" />
+                                                    </MultiTrigger.Conditions>
+                                                    <MultiTrigger.EnterActions>
+                                                        <BeginStoryboard><Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="hoverFill" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" />
+                                                        </Storyboard></BeginStoryboard>
+                                                    </MultiTrigger.EnterActions>
+                                                    <MultiTrigger.ExitActions>
+                                                        <BeginStoryboard><Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="hoverFill" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2" />
+                                                        </Storyboard></BeginStoryboard>
+                                                    </MultiTrigger.ExitActions>
+                                                </MultiTrigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsMouseOver" Value="True" />
+                                                        <Condition Property="local:Anim.On" Value="False" />
+                                                    </MultiTrigger.Conditions>
+                                                    <MultiTrigger.EnterActions>
+                                                        <BeginStoryboard><Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="hoverFill" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0" />
+                                                        </Storyboard></BeginStoryboard>
+                                                    </MultiTrigger.EnterActions>
+                                                    <MultiTrigger.ExitActions>
+                                                        <BeginStoryboard><Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="hoverFill" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0" />
+                                                        </Storyboard></BeginStoryboard>
+                                                    </MultiTrigger.ExitActions>
+                                                </MultiTrigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsSelected" Value="True" />
+                                                        <Condition Property="local:Anim.On" Value="True" />
+                                                    </MultiTrigger.Conditions>
+                                                    <MultiTrigger.EnterActions>
+                                                        <BeginStoryboard><Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="selFill" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" />
+                                                        </Storyboard></BeginStoryboard>
+                                                    </MultiTrigger.EnterActions>
+                                                    <MultiTrigger.ExitActions>
+                                                        <BeginStoryboard><Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="selFill" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2" />
+                                                        </Storyboard></BeginStoryboard>
+                                                    </MultiTrigger.ExitActions>
+                                                </MultiTrigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsSelected" Value="True" />
+                                                        <Condition Property="local:Anim.On" Value="False" />
+                                                    </MultiTrigger.Conditions>
+                                                    <MultiTrigger.EnterActions>
+                                                        <BeginStoryboard><Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="selFill" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0" />
+                                                        </Storyboard></BeginStoryboard>
+                                                    </MultiTrigger.EnterActions>
+                                                    <MultiTrigger.ExitActions>
+                                                        <BeginStoryboard><Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="selFill" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0" />
+                                                        </Storyboard></BeginStoryboard>
+                                                    </MultiTrigger.ExitActions>
+                                                </MultiTrigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Setter.Value>
@@ -303,8 +490,9 @@
                     <RowDefinition Height="56" />
                 </Grid.RowDefinitions>
 
-                <!-- 顶栏（54，可拖动） -->
+                <!-- 顶栏（54，可拖动）：玻璃外壳 + 底部 1px 主色微光分隔线 -->
                 <Border Grid.Row="0" Background="{DynamicResource HeaderBg}" CornerRadius="0,12,0,0"
+                        BorderBrush="{DynamicResource GlassBorder}" BorderThickness="0,0,0,1"
                         MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                     <DockPanel LastChildFill="True">
                         <Button x:Name="BtnExit" Content="✕" Click="BtnExit_Click"
@@ -337,7 +525,11 @@
                     </DockPanel>
                 </Border>
 
-                <!-- 消息区：底色与白色来消息气泡刻意拉开（原来白气泡压在 #FAFAFA 上几乎看不见） -->
+                <!-- 消息区：底色与白色来消息气泡刻意拉开（原来白气泡压在 #FAFAFA 上几乎看不见）。
+                     ★ 这里必须有一层**不透明**底：外壳各层现在是半透明玻璃，
+                       而壁纸用的是 35% 不透明度的 ImageBrush —— 若这层底也是玻璃，
+                       桌面就会从消息区透出来（豆包要求消息区始终不透明）。 -->
+                <Border Grid.Row="1" Background="{DynamicResource ChatBg}" />
                 <ScrollViewer Grid.Row="1" x:Name="ChatScroll" Background="{DynamicResource ChatBg}"
                               VerticalScrollBarVisibility="Auto">
                     <ScrollViewer.Resources>
@@ -482,8 +674,9 @@
                     </DockPanel>
                 </Border>
 
-                <!-- 输入区（56） -->
-                <Border Grid.Row="2" Background="{DynamicResource ComposerBg}" CornerRadius="0,0,12,0">
+                <!-- 输入区（56）：玻璃外壳 + 顶部 1px 主色微光分隔线 -->
+                <Border Grid.Row="2" Background="{DynamicResource ComposerBg}" CornerRadius="0,0,12,0"
+                        BorderBrush="{DynamicResource GlassBorder}" BorderThickness="0,1,0,0">
                     <DockPanel LastChildFill="True" Margin="10,8">
                         <Button x:Name="BtnEmoji" Content="😀" Click="BtnEmoji_Click"
                                 DockPanel.Dock="Right" Background="Transparent" BorderThickness="0"

@@ -26,12 +26,12 @@ namespace ChatRoom
         private static readonly string[,] Palette = new string[,]
         {
             //  键名                浅色        深色
-            { "WindowBg",         "#FFFFFFFF", "#FF17212B" },   // 窗口/面板底
+            { "WindowBg",         "#E6FFFFFF", "#E617212B" },   // 窗口/面板底（玻璃外壳：90%）
             { "WindowBorder",     "#FFD1D1D6", "#FF0B1118" },   // 窗口外描边
-            { "SideBg",           "#FFFFFFFF", "#FF17212B" },   // 侧栏底
-            { "HeaderBg",         "#FFFFFFFF", "#FF17212B" },   // 顶栏底
-            { "ChatBg",           "#FFF0F2F5", "#FF0E1621" },   // 消息区底（与白色来消息气泡拉开对比）
-            { "ComposerBg",       "#FFFFFFFF", "#FF17212B" },   // 输入区底
+            { "SideBg",           "#E0FFFFFF", "#E017212B" },   // 侧栏底（玻璃：88%）
+            { "HeaderBg",         "#D9FFFFFF", "#D917212B" },   // 顶栏底（玻璃：85%，与弹窗同一档）
+            { "ChatBg",           "#FFF0F2F5", "#FF0E1621" },   // 消息区底（**故意不透明**：壁纸/纯色都要实底，玻璃只做外壳）
+            { "ComposerBg",       "#D9FFFFFF", "#D917212B" },   // 输入区底（玻璃：85%）
             { "Divider",          "#FFE4E6EB", "#FF101921" },   // 分隔线
             { "TextPrimary",      "#FF1C1C2E", "#FFFFFFFF" },   // 主文字
             { "TextSecondary",    "#FF8E8E93", "#FF7D8B99" },   // 次要文字
