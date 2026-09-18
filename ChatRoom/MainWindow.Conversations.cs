@@ -54,6 +54,7 @@ namespace ChatRoom
             EnsureConversation(key, title, isGroup, peerIP);
             _currentConvKey = key;
             CurrentConversation.Unread = 0;
+            ClearPeerUnread(key);   // 侧栏行徽标同步清零
             CurrentConversation.SeparatorShown = false;
             RefreshConversationView();
             UpdateUnreadBadge();
@@ -99,6 +100,88 @@ namespace ChatRoom
         private static string IncomingConvKey(string scope, string ip)
         {
             return scope == "P" ? Conversation.PeerKey(ip) : Conversation.GroupKey;
+        }
+
+        /// <summary>把某个 IP 的未读数写到侧栏那一行（会话分离后这是"谁给我发了消息"的唯一可见提示）</summary>
+        private void SetPeerUnread(string ip, int n)
+        {
+            if (string.IsNullOrEmpty(ip)) return;
+            foreach (ChatUser u in _userList)
+            {
+                if (u.IP == ip) { u.Unread = n; break; }
+            }
+        }
+
+        /// <summary>清掉某个会话在侧栏行上的未读标记</summary>
+        private void ClearPeerUnread(string convKey)
+        {
+            foreach (var kv in _conversations)
+            {
+                if (kv.Key == convKey)
+                {
+                    kv.Value.Unread = 0;
+                    if (!kv.Value.IsGroup) SetPeerUnread(kv.Value.PeerIP, 0);
+                }
+            }
+        }
+
+        // ==================== 内嵌消息弹窗（豆包需求 #5 / Q6）====================
+
+        private System.Windows.Threading.DispatcherTimer _toastTimer;
+        private string _toastConvKey;
+
+        /// <summary>
+        /// 右下角内嵌小卡片：同会话连续消息合并成"N 条新消息"；3.5 秒自动收起；
+        /// 点击跳到该会话。不抢焦点、不闪任务栏、无声音（机房环境）。
+        /// </summary>
+        private void ShowToast(string convKey, string title, string preview)
+        {
+            Conversation c = EnsureConversation(convKey, title, convKey == Conversation.GroupKey, "");
+            _toastConvKey = convKey;
+
+            TextToastTitle.Text = c.IsGroup ? ("群聊 · " + c.Unread + " 条新消息") : (title + " · " + c.Unread + " 条新消息");
+            TextToastText.Text = preview ?? "";
+
+            ToastCard.Visibility = Visibility.Visible;
+            var fade = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180));
+            ToastCard.BeginAnimation(OpacityProperty, fade);
+
+            if (_toastTimer == null)
+            {
+                _toastTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(3500) };
+                _toastTimer.Tick += (s, e) => HideToast();
+            }
+            _toastTimer.Stop();
+            _toastTimer.Start();
+        }
+
+        private void HideToast()
+        {
+            if (_toastTimer != null) _toastTimer.Stop();
+            var fade = new System.Windows.Media.Animation.DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(220));
+            fade.Completed += (s, e) => { ToastCard.Visibility = Visibility.Collapsed; };
+            ToastCard.BeginAnimation(OpacityProperty, fade);
+        }
+
+        private void Toast_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            string key = _toastConvKey;
+            HideToast();
+            if (string.IsNullOrEmpty(key)) return;
+
+            if (key == Conversation.GroupKey) SwitchConversation(key, "群聊", true, "");
+            else
+            {
+                string ip = key.Substring("peer:".Length);
+                ChatUser target = null;
+                foreach (ChatUser u in _userList) { if (u.IP == ip) { target = u; break; } }
+                if (target != null)
+                {
+                    _currentTarget = target;
+                    UserList.SelectedItem = target;
+                    SwitchConversation(key, target.Nickname, false, ip);
+                }
+            }
         }
 
         /// <summary>在会话分离模式下取消息的显示时间（侧栏/排序用）</summary>

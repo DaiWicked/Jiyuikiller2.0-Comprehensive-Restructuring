@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace ChatRoom.Models
 {
@@ -9,6 +9,16 @@ namespace ChatRoom.Models
         public DateTime LastSeen { get; set; } = DateTime.Now;
         public bool IsOnline => (DateTime.Now - LastSeen).TotalSeconds < 8;
         public bool IsMe { get; set; } = false;
+
+        /// <summary>该对象发来的未读消息数（会话分离后必须逐行提示，否则在群聊里收到的私聊会被漏看）</summary>
+        public int Unread { get; set; }
+
+        public string UnreadText { get { return Unread > 0 ? (Unread > 99 ? "99+" : Unread.ToString()) : ""; } }
+
+        public System.Windows.Visibility UnreadVisibility
+        {
+            get { return Unread > 0 ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed; }
+        }
 
         /// <summary>头像上显示的首字（Telegram 式：没有头像就显示昵称首字）</summary>
         public string Initial

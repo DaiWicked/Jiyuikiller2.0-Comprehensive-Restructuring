@@ -400,7 +400,6 @@ namespace ChatRoom
         // === 未读 / 滚动 ===
 
         private int _unreadCount = 0;
-        private bool _unreadSeparatorShown = false;
         private bool _loadingHistory = false;   // 历史批量加载时不逐条播放入场动画
 
         /// <summary>
@@ -408,27 +407,48 @@ namespace ChatRoom
         /// 第一次出现未读时插入一条服务分隔线（Telegram 的 unread divider 概念），
         /// 之后回来的用户往上翻就能看到"从这里开始是新消息"。
         /// </summary>
+        /// <summary>
+        /// 未读计数 + 侧栏行徽标 + 内嵌弹窗。
+        ///
+        /// 判定语义（之前写错过，用户实测踩到）：**这条消息不属于我正在看的那个会话**就算未读，
+        /// 与"窗口是否在前台"无关 —— 原来只判前台，导致"我在群聊里聊天时别人私聊我"既不计数也不提示。
+        /// </summary>
         private void TrackUnread(bool incoming)
         {
             if (!incoming) return;
-            if (IsActive && WindowState != WindowState.Minimized) return;
 
-            _unreadCount++;
-            TextUnread.Text = _unreadCount + " 条新消息";
-            BtnUnread.Visibility = Visibility.Visible;
+            string key = _addConvKey ?? _currentConvKey;
+            bool viewingThisConv = (key == _currentConvKey) && IsActive && WindowState != WindowState.Minimized;
+            if (viewingThisConv) return;
+
+            Conversation c = EnsureConversation(key,
+                key == Conversation.GroupKey ? "群聊" : key, key == Conversation.GroupKey, "");
+            c.Unread++;
+
+            if (!c.IsGroup) SetPeerUnread(c.PeerIP, c.Unread);   // 侧栏那一行的未读徽标
+            c.SeparatorShown = true;
+            UpdateUnreadBadge();
             PopElement(BtnUnread);
 
-            if (!_unreadSeparatorShown)
+            ShowToast(c.Key, c.Title, LastPreview());   // 同会话连续消息会合并成"N 条新消息"（Q6）
+        }
+
+        /// <summary>弹窗里的预览文本：取该会话最后一条消息</summary>
+        private string LastPreview()
+        {
+            string key = _addConvKey ?? _currentConvKey;
+            for (int i = _messages.Count - 1; i >= 0; i--)
             {
-                _unreadSeparatorShown = true;
-                // 分隔线本身是服务消息，而服务消息不计未读，所以不会自增计数
-                AddMessage("系统", "── 以下为新消息 ──", BubbleKind.Service);            }
+                ChatMessageItem m = _messages[i];
+                if (m != null && m.ConvKey == key)
+                    return m.IsImage ? "[图片]" : (m.Sender + ": " + m.Message);
+            }
+            return "";
         }
 
         private void ClearUnread()
         {
             _unreadCount = 0;
-            _unreadSeparatorShown = false;
             TextUnread.Text = "0 条新消息";
             BtnUnread.Visibility = Visibility.Collapsed;
         }
