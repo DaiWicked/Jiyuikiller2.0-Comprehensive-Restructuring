@@ -113,6 +113,34 @@ namespace ChatRoom.Models
             catch { }
         }
 
+        /// <summary>
+        /// "需要重新注册"的标记文件。
+        ///
+        /// 为什么不用 ini 里的 Registered 字段表达：ini 是**内存对象回写**的 ——
+        /// 重置发生在设置窗里，而运行中的主窗口持有启动时那份旧设置，关闭时会把它写回磁盘，
+        /// 于是刚做的重置被覆盖（这正是"重置后下次启动没重新注册、直接用神秘人登录"的根因）。
+        /// 独立标记文件不会被那条回写路径碰到，因此能可靠表达"下次启动要重新注册"。
+        /// </summary>
+        public static string NeedRegisterMarker
+        {
+            get { return Path.Combine(DataDir, "need_register.flag"); }
+        }
+
+        public static void MarkNeedRegister()
+        {
+            try { File.WriteAllText(NeedRegisterMarker, DateTime.Now.ToString("s")); } catch { }
+        }
+
+        public static void ClearNeedRegister()
+        {
+            try { if (File.Exists(NeedRegisterMarker)) File.Delete(NeedRegisterMarker); } catch { }
+        }
+
+        public static bool NeedRegister
+        {
+            get { try { return File.Exists(NeedRegisterMarker); } catch { return false; } }
+        }
+
         private static string SettingsPath
         {
             get { return Path.Combine(DataDir, "chat_settings.ini"); }

@@ -50,10 +50,13 @@ namespace ChatRoom
             var r = System.Windows.MessageBox.Show("重置后将清空昵称，并在下次启动时重新弹出注册界面。继续？",
                 "重置昵称", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (r != MessageBoxResult.Yes) return;
-            ChatRoom.Models.ChatSettings s = ChatRoom.Models.ChatSettings.Load();
-            s.Nickname = "";
-            s.Registered = false;
-            s.Save();
+            // ★ 必须改"主窗口那份 Settings 实例"，不能 Load() 一份新的：
+            //   主窗口持有的是启动时读进内存的对象，关闭时 OnClosed 会把它 Save() 回磁盘；
+            //   若只改磁盘，关闭时就被内存里的旧值（神秘人 + Registered=true）覆盖回去 ——
+            //   这正是"重置后下次启动没重新注册、直接用神秘人登录"的根因。
+            Settings.Nickname = "";
+            Settings.Registered = false;
+            Settings.Save();
             InputNickname.Text = "";
             System.Windows.MessageBox.Show("已重置，重启程序后生效。", "提示");
         }

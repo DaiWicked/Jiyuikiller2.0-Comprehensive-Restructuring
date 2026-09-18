@@ -19,7 +19,7 @@ namespace ChatRoom
             Theme.Apply(first.DarkMode);
 
             // 首次使用：先完成注册（豆包需求 #2），否则不进入主界面
-            if (!first.Registered)
+            if (!first.Registered || Models.ChatSettings.NeedRegister)   // 标记文件优先：不受内存回写影响
             {
                 var reg = new RegisterWindow();
                 if (reg.ShowDialog() != true) { Shutdown(); return; }

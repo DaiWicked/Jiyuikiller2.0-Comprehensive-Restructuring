@@ -45,6 +45,7 @@ namespace ChatRoom
             s.Nickname = (InputNickname.Text ?? "").Trim();
             s.Registered = true;
             s.Save();
+            ChatSettings.ClearNeedRegister();   // 注册完成，清掉"需要重新注册"标记
 
             // 完成后窗口淡出（她要求"完成后窗口淡出切换到主界面"）
             var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(260));
