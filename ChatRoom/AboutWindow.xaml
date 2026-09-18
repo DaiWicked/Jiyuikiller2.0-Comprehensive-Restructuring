@@ -9,6 +9,29 @@
         ResizeMode="NoResize"
         UseLayoutRounding="True"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
+    <Window.Resources>
+        <!-- 图标幽灵按钮：统一各窗口的 ✕（默认按钮模板会画系统灰底） -->
+        <Style x:Key="WinGhostButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="8" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource GhostHover}"/>
+                                <Setter TargetName="bd" Property="Opacity" Value="1"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <!-- 玻璃拟态（豆包 Q2 规格）：85% 不透明 + 1px 主色 20% 微光边框 + 圆角 12。
          不截取桌面、不依赖 DWM/Aero，Win7 也能跑。 -->
     <Border CornerRadius="12" Background="#D9FFFFFF" BorderBrush="#335B8DEF" BorderThickness="1">
@@ -17,7 +40,7 @@
         </Border.Effect>
         <Grid>
             <!-- 关闭 -->
-            <Button x:Name="BtnClose" Content="✕" Click="BtnClose_Click" Width="34" Height="30"
+            <Button x:Name="BtnClose" Content="✕" Click="BtnClose_Click" Width="34" Height="30" Style="{StaticResource WinGhostButton}"
                     HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0"
                     Background="Transparent" BorderThickness="0" FontSize="13" Cursor="Hand"
                     Foreground="#8E8E93" />

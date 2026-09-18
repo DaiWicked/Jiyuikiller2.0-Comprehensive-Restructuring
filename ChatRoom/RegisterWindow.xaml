@@ -8,6 +8,30 @@
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
     <Window.Resources>
+        <!-- 文字幽灵按钮：与其余自绘控件统一（默认按钮模板会画系统灰底，风格不一致） -->
+        <Style x:Key="RegGhostButton" TargetType="Button">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="9" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource GhostHover}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource GhostPressed}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="RegTextBox" TargetType="TextBox">
             <Setter Property="Height" Value="34"/>
             <Setter Property="FontSize" Value="13"/>
@@ -91,9 +115,8 @@
 
             <Button x:Name="BtnEnter" Content="进入聊天室" Height="36" Margin="0,16,0,0"
                     Click="BtnEnter_Click" IsEnabled="False" Style="{StaticResource RegButton}"/>
-            <Button Content="退出" Height="30" Margin="0,8,0,0" Click="BtnQuit_Click"
-                    Background="Transparent" BorderThickness="0" Cursor="Hand" FontSize="12"
-                    Foreground="{DynamicResource TextSecondary}"/>
+            <Button Content="退出" Height="32" Margin="0,8,0,0" Click="BtnQuit_Click"
+                    Style="{StaticResource RegGhostButton}"/>
         </StackPanel>
     </Border>
 

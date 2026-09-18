@@ -159,9 +159,8 @@
             <!-- 顶栏：标题 + 关闭（也可拖动） -->
             <Border VerticalAlignment="Top" Height="46" Background="Transparent">
                 <DockPanel LastChildFill="True">
-                    <Button DockPanel.Dock="Right" Content="✕" Click="BtnCancel_Click" Width="40"
-                            FontSize="13" Cursor="Hand" Background="Transparent" BorderThickness="0"
-                            Foreground="{DynamicResource TextSecondary}"/>
+                    <Button DockPanel.Dock="Right" Content="✕" Click="BtnCancel_Click" Width="42"
+                            Style="{StaticResource GhostBtn}" Margin="0,7,7,0"/>
                     <TextBlock Text="聊天设置" FontSize="15" FontWeight="SemiBold" Margin="18,0"
                                VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
                 </DockPanel>
