@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -24,25 +24,25 @@ namespace ChatRoom.Services
     ///   前后共 5 个冒号；因为两个 base64 字段都不可能含 ':'，按"前 5 个冒号"切分是安全的。
     ///
     /// 与图片的差异（都是豆包拍板的）：
-    ///   1) **体积上限 50KB**（图片是压到 320×240 后通常 5~20KB）；超限**发送前直接拒绝**，不发分片。
+    ///   1) **体积上限 200KB**（图片是压到 320×240 后通常 5~20KB）；超限**发送前直接拒绝**，不发分片。
     ///   2) **接收方不自动落盘**：字节留在内存里，等用户点气泡、自己选保存位置（另存为对话框）。
     ///      所以历史记录里只留"文件名 + 大小"，重启后点它只能提示"内容不在本机"。
     ///   3) **可执行文件红色警告**（.exe/.bat/.cmd/.scr）：是否危险由 UI 侧判断并标红，服务层不管，
     ///      保持"服务层只搬字节、不碰 WPF、不做业务判断"的分层。
     ///
-    /// 接收侧上限防护（共享局域网里必须防）：块数 ≤96、组装 ≤80K 字符、同一发送者最多 2 个在拼、
+    /// 接收侧上限防护（共享局域网里必须防）：块数 ≤260、组装 ≤300K 字符、同一发送者最多 2 个在拼、
     /// 15 秒收不齐就丢、收完的记录保留 30 秒用于忽略重复块。
     /// =====================================================================
     public partial class ChatUdpService
     {
         /// <summary>每块 base64 长度（与图片一致，留在 MTU 内）</summary>
         public const int FileChunkSize = 1200;
-        /// <summary>文件体积上限：50KB（豆包需求 #6 的硬限制）</summary>
-        public const int FileMaxBytes = 50 * 1024;
-        /// <summary>块数上限（50KB → base64 约 68K 字符 → 约 57 块，留足余量）</summary>
-        public const int FileMaxChunks = 96;
+        /// <summary>文件体积上限：200KB（豆包需求：文档/截图够用，UDP分块不适合大文件）</summary>
+        public const int FileMaxBytes = 200 * 1024;
+        /// <summary>块数上限（200KB → base64 约 272K 字符 → 约 227 块，留余量）</summary>
+        public const int FileMaxChunks = 260;
         /// <summary>组装上限（防炸）</summary>
-        public const int FileMaxChars = 80 * 1024;
+        public const int FileMaxChars = 300 * 1024;
         /// <summary>每块重复发送次数（文件比图片更重要，固定 2 次）</summary>
         public const int FileRepeat = 2;
         private const int FileTimeoutSeconds = 15;

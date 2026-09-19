@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -31,7 +31,7 @@ namespace ChatRoom
                 if (old != null)
                 {
                     old.Image = null;                              // 释放位图
-                    old.FileBytes = null;                          // 释放收到的文件字节（每条最多 50KB，之前漏了）
+                    old.FileBytes = null;                          // 释放收到的文件字节（每条最多 200KB，之前漏了）
                     if (_searchView.Contains(old)) _searchView.Remove(old);   // 搜索结果视图里也去掉引用
                 }
                 _messages.RemoveAt(0);
@@ -493,7 +493,7 @@ namespace ChatRoom
         }
 
         /// <summary>
-        /// 把文件原字节经 CFIL 发出。上限 50KB（豆包 Q4 选 A：**发送前直接拒绝 + 红字提示**，不发分片）。
+        /// 把文件原字节经 CFIL 发出。上限 200KB（豆包 Q4 选 A：**发送前直接拒绝 + 红字提示**，不发分片）。
         /// </summary>
         private void SendDataFile(string path)
         {
