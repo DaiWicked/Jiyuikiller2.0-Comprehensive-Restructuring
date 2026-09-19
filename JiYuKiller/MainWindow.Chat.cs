@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -34,16 +34,14 @@ namespace JiYuKiller
                     return;
                 }
 
-                string nick = string.IsNullOrEmpty(_settings.ChatNickname) ? "神秘人" : _settings.ChatNickname;
-
+                // 不再传 --nick 参数：ChatRoom 有自己的注册/设置系统，主程序传参会覆盖用户注册的昵称
                 var psi = new ProcessStartInfo
                 {
                     FileName = chatPath,
-                    Arguments = $"--nick={nick}",
                     UseShellExecute = false
                 };
                 _chatRoomProcess = Process.Start(psi);
-                Services.Logger.Instance.Info($"[Chat] ChatRoom.exe 已启动, PID={_chatRoomProcess.Id}, 昵称={nick}");
+                Services.Logger.Instance.Info($"[Chat] ChatRoom.exe 已启动, PID={_chatRoomProcess.Id}");
 
                 BtnStartChat.Visibility = Visibility.Collapsed;
                 BtnStopChat.Visibility = Visibility.Visible;
