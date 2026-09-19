@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """极域V6.0教师端 - 逐字节匹配真实抓包，带调试日志。
 
 运行后会弹出两个窗口：
@@ -3176,7 +3176,7 @@ def _heartbeat_loop(stop_event):
     logger.info('[Collision] 心跳线程已停止')
 
 
-def _silent_listen_and_detect(timeout=5.0):
+def _silent_listen_and_detect(timeout=10.0):
     """
     静默监听阶段：
     - 监听4705端口（极域协议），检测是否有真实教师端或其他teacher_sim在发包
@@ -3196,7 +3196,7 @@ def _silent_listen_and_detect(timeout=5.0):
         det_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         det_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         det_sock.bind(('', DETECT_PORT))
-        det_sock.settimeout(0.2)
+        det_sock.settimeout(0.05)
         logger.info('[Collision] 专属检测端口已绑定: %d', DETECT_PORT)
     except Exception as e:
         logger.warning('[Collision] 专属端口绑定失败: %s', e)
@@ -3208,7 +3208,7 @@ def _silent_listen_and_detect(timeout=5.0):
     deadline = time.time() + timeout
     last_heartbeat = 0
     # 主sock设置短超时，用于非阻塞轮询
-    sock.settimeout(0.2)
+    sock.settimeout(0.05)
 
     while time.time() < deadline:
         now = time.time()
@@ -3276,7 +3276,7 @@ def run_collision_check():
         return False, 'single_instance', '同机器已存在teacher_sim实例'
 
     # 阶段2：静默监听+专属心跳
-    has_real_teacher, same_app_pids = _silent_listen_and_detect(timeout=5.0)
+    has_real_teacher, same_app_pids = _silent_listen_and_detect(timeout=10.0)
 
     my_pid = os.getpid()
 
