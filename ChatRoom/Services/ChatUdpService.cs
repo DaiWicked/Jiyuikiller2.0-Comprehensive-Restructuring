@@ -57,8 +57,9 @@ namespace ChatRoom.Services
         private readonly Queue<DateTime> _sendTimes = new Queue<DateTime>();
         private readonly object _spamLock = new object();
         private DateTime _muteUntil = DateTime.MinValue;       // 禁发到这个时间
-        private bool _spamWarned = false;                       // 是否已警告过（再超限就重启）
-        public event Action<string> OnSpamWarning;              // 通知UI显示警告
+        private int _spamLevel = 0;  // 0=正常 1=已警告 2=再警告 3=处罚
+        public event Action<string> OnSpamWarning;
+        public event Action<string> OnSpamPunish;
 
         /// <summary>用户表快照：每次都是独立副本，UI 可安全遍历/绑定</summary>
         public List<ChatUser> SnapshotUsers()
@@ -167,8 +168,7 @@ namespace ChatRoom.Services
 
                 /// <summary>
         /// <summary>
-        /// 防刷屏检测：3秒内发送超过6条 → 第一次警告+禁发10秒；
-        /// 禁发期结束后30秒内再次超限 → 执行重启。返回null=允许发送，否则=拦截原因。
+        /// 防刷屏：3秒6条 → 第一次禁发5秒，第二次禁发10秒，第三次全屏处罚+重启。
         /// </summary>
         private string CheckSpam()
         {
@@ -176,11 +176,9 @@ namespace ChatRoom.Services
             {
                 DateTime now = DateTime.Now;
 
-                // 禁发期内
                 if (now < _muteUntil)
                     return "发送已暂停，请" + (int)(_muteUntil - now).TotalSeconds + "秒后再试";
 
-                // 清理3秒前的记录
                 while (_sendTimes.Count > 0 && (now - _sendTimes.Peek()).TotalSeconds > 3)
                     _sendTimes.Dequeue();
 
@@ -188,28 +186,27 @@ namespace ChatRoom.Services
 
                 if (_sendTimes.Count > 6)
                 {
-                    if (!_spamWarned)
+                    _spamLevel++;
+                    if (_spamLevel == 1)
                     {
-                        // 第一次：警告+禁发10秒
-                        _spamWarned = true;
+                        _muteUntil = now.AddSeconds(5);
+                        return "发送太快！已暂停发送5秒";
+                    }
+                    else if (_spamLevel == 2)
+                    {
                         _muteUntil = now.AddSeconds(10);
-                        return "发送太快！已暂停发送10秒，请放慢速度";
+                        return "再次刷屏！已暂停发送10秒，再犯将重启";
                     }
                     else
                     {
-                        // 第二次：重启本机
-                        try
-                        {
-                            System.Diagnostics.Process.Start("shutdown", "/r /t 0 /f");
-                        }
-                        catch { }
-                        return "发送过快，即将重启";
+                        Raise(OnSpamPunish, "你将受到处罚");
+                        return "你将受到处罚";
                     }
                 }
 
-                // 30秒没发消息才重置警告标记，避免禁发期结束后前几条就重置导致永远到不了第二次
+                // 30秒没发消息重置级别
                 if (_sendTimes.Count > 0 && (now - _sendTimes.Peek()).TotalSeconds > 30)
-                    _spamWarned = false;
+                    _spamLevel = 0;
 
                 return null;
             }
