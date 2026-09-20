@@ -191,8 +191,8 @@ namespace ChatRoom.Services
                     {
                         // 第一次：警告+禁发10秒
                         _spamWarned = true;
-                        _muteUntil = now.AddSeconds(10);
-                        return "发送太快！已暂停发送10秒，请放慢速度";
+                        _muteUntil = now.AddSeconds(5);
+                        return "发送太快！已暂停发送5秒，请放慢速度";
                     }
                     else
                     {
