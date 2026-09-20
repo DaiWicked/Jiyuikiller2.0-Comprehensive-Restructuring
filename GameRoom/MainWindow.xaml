@@ -144,7 +144,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- 在线玩家面板 -->
-                <Border Grid.Column="0" CornerRadius="10" Background="#15FFFFFF" BorderBrush="#206C5CE7" BorderThickness="1" Margin="0,0,10,0">
+                <Border Grid.Column="0" CornerRadius="10" Background="#18FFFFFF" BorderBrush="#256C5CE7" BorderThickness="1" Margin="0,0,10,0">
                     <DockPanel Margin="12">
                         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
                             <TextBlock Text="👥" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -161,7 +161,7 @@
                 </Border>
 
                 <!-- 游戏大厅 -->
-                <Border Grid.Column="1" CornerRadius="10" Background="#15FFFFFF" BorderBrush="#206C5CE7" BorderThickness="1">
+                <Border Grid.Column="1" CornerRadius="10" Background="#18FFFFFF" BorderBrush="#256C5CE7" BorderThickness="1">
                     <DockPanel Margin="16">
                         <TextBlock DockPanel.Dock="Top" Text="🎮 游戏大厅" FontSize="15" FontWeight="Bold" Foreground="#FFFFFFFF" Margin="0,0,0,12"/>
 
