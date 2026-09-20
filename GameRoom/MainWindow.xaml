@@ -15,7 +15,7 @@
         <!-- 霓虹主色按钮 -->
         <Style x:Key="NeonBtn" TargetType="Button">
             <Setter Property="Foreground" Value="#FFFFFFFF" />
-            <Setter Property="Background" Value="#FF6C5CE71" />
+            <Setter Property="Background" Value="#FF6C5CE7" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
@@ -23,7 +23,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid>
-                            <Border x:Name="glow" CornerRadius="8" Background="#406C5CE71" Opacity="0" Margin="2">
+                            <Border x:Name="glow" CornerRadius="8" Background="#406C5CE7" Opacity="0" Margin="2">
                             </Border>
                             <Border x:Name="bd" CornerRadius="8" Background="{TemplateBinding Background}" Padding="14,7">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -90,7 +90,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#156C5CE71" />
+                                <Setter TargetName="bd" Property="Background" Value="#156C5CE7" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -103,9 +103,9 @@
     <Border CornerRadius="14" BorderThickness="1">
         <Border.BorderBrush>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#FF6C5CE71" Offset="0"/>
+                <GradientStop Color="#FF6C5CE7" Offset="0"/>
                 <GradientStop Color="#FF00CEC8" Offset="0.5"/>
-                <GradientStop Color="#FF6C5CE71" Offset="1"/>
+                <GradientStop Color="#FF6C5CE7" Offset="1"/>
             </LinearGradientBrush>
         </Border.BorderBrush>
         <Border.Background>
@@ -126,7 +126,7 @@
             <Grid Grid.Row="0" Background="#00000000" MouseLeftButtonDown="TitleBar_MouseDown">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                     <!-- 小霓虹方块装饰 -->
-                    <Border Width="10" Height="10" CornerRadius="2" Background="#FF6C5CE71" Margin="0,0,10,0"/>
+                    <Border Width="10" Height="10" CornerRadius="2" Background="#FF6C5CE7" Margin="0,0,10,0"/>
                     <TextBlock Text="GameRoom" FontSize="15" FontWeight="Bold" Foreground="#FFFFFFFF" VerticalAlignment="Center"/>
                     <TextBlock x:Name="TitleNick" Text="" FontSize="11" Foreground="#FF8888AA" VerticalAlignment="Center" Margin="10,3,0,0"/>
                 </StackPanel>
@@ -144,13 +144,13 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- 在线玩家面板 -->
-                <Border Grid.Column="0" CornerRadius="10" Background="#15FFFFFF" BorderBrush="#206C5CE71" BorderThickness="1" Margin="0,0,10,0">
+                <Border Grid.Column="0" CornerRadius="10" Background="#15FFFFFF" BorderBrush="#206C5CE7" BorderThickness="1" Margin="0,0,10,0">
                     <DockPanel Margin="12">
                         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
                             <TextBlock Text="👥" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="在线玩家" FontSize="13" FontWeight="Bold" Foreground="#FFFFFFFF" VerticalAlignment="Center"/>
-                            <Border Background="#306C5CE71" CornerRadius="8" Padding="6,1" Margin="10,0,0,0">
-                                <TextBlock x:Name="UserCount" Text="0" FontSize="11" Foreground="#FF6C5CE71" FontWeight="Bold"/>
+                            <Border Background="#306C5CE7" CornerRadius="8" Padding="6,1" Margin="10,0,0,0">
+                                <TextBlock x:Name="UserCount" Text="0" FontSize="11" Foreground="#FF6C5CE7" FontWeight="Bold"/>
                             </Border>
                         </StackPanel>
                         <ListBox x:Name="UserList" Background="Transparent" BorderThickness="0"
@@ -161,16 +161,16 @@
                 </Border>
 
                 <!-- 游戏大厅 -->
-                <Border Grid.Column="1" CornerRadius="10" Background="#15FFFFFF" BorderBrush="#206C5CE71" BorderThickness="1">
+                <Border Grid.Column="1" CornerRadius="10" Background="#15FFFFFF" BorderBrush="#206C5CE7" BorderThickness="1">
                     <DockPanel Margin="16">
                         <TextBlock DockPanel.Dock="Top" Text="🎮 游戏大厅" FontSize="15" FontWeight="Bold" Foreground="#FFFFFFFF" Margin="0,0,0,12"/>
 
                         <!-- 游戏卡片占位 -->
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <!-- 发光游戏图标 -->
-                            <Border Width="80" Height="80" CornerRadius="16" Background="#206C5CE71" HorizontalAlignment="Center">
+                            <Border Width="80" Height="80" CornerRadius="16" Background="#206C5CE7" HorizontalAlignment="Center">
                                 <Border.Effect>
-                                    <eff:DropShadowEffect Color="#FF6C5CE71" BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
+                                    <eff:DropShadowEffect Color="#FF6C5CE7" BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
                                 </Border.Effect>
                                 <TextBlock Text="🎮" FontSize="40" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
