@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:eff="clr-namespace:System.Windows.Media.Effects;assembly=PresentationCore"
-        Title="GameRoom" Height="560" Width="820"
+        Title="GameRoom" Icon="pack://application:,,,/GameRoom;component/Assets/game.ico" Height="560" Width="820"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
         AllowsTransparency="True"
