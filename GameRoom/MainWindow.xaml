@@ -14,7 +14,7 @@
     <Window.Resources>
         <!-- 幽灵按钮 -->
         <Style x:Key="GhostBtn" TargetType="Button">
-            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="Foreground" Value="#FFB9B3D6" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FontSize" Value="12" />
@@ -40,7 +40,7 @@
         <!-- 玩家列表项 -->
         <Style x:Key="UserItem" TargetType="ListBoxItem">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="Foreground" Value="#FFFFFFFF" />
             <Setter Property="Padding" Value="10,7" />
             <Setter Property="Margin" Value="0,2" />
             <Setter Property="Template">
@@ -61,15 +61,15 @@
     </Window.Resources>
 
     <!-- 外层圆角 -->
-    <Border CornerRadius="14" BorderBrush="{DynamicResource WindowBorder}" BorderThickness="1">
+    <Border CornerRadius="14" BorderBrush="#FF2E2A4A" BorderThickness="1">
         <Grid>
-            <!-- ① 背景层：渐变 + 柔光球（BackdropHost） -->
+            <!-- ① 背景层：渐变 + 柔光球 -->
             <Grid x:Name="BackdropHost">
                 <Rectangle>
                     <Rectangle.Fill>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="{DynamicResource Backdrop1}" Offset="0"/>
-                            <GradientStop Color="{DynamicResource Backdrop2}" Offset="1"/>
+                            <GradientStop Color="#FF0B0A14" Offset="0"/>
+                            <GradientStop Color="#FF1A1430" Offset="1"/>
                         </LinearGradientBrush>
                     </Rectangle.Fill>
                 </Rectangle>
@@ -91,7 +91,7 @@
                 </Ellipse>
             </Grid>
 
-            <!-- ② 磨砂层：把背景整层模糊一次 -->
+            <!-- ② 磨砂层 -->
             <Border IsHitTestVisible="False">
                 <Border.Background>
                     <VisualBrush Visual="{Binding ElementName=BackdropHost}" Stretch="None" AlignmentX="Left" AlignmentY="Top"/>
@@ -112,9 +112,9 @@
                 <!-- 标题栏 -->
                 <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseDown">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
-                        <Border Width="10" Height="10" CornerRadius="2" Background="{DynamicResource Accent}" Margin="0,0,10,0"/>
-                        <TextBlock Text="GameRoom" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TitleNick" Text="" FontSize="11" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="10,3,0,0"/>
+                        <Border Width="10" Height="10" CornerRadius="2" Background="#FF6C5CE7" Margin="0,0,10,0"/>
+                        <TextBlock Text="GameRoom" FontSize="15" FontWeight="Bold" Foreground="#FFFFFFFF" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TitleNick" Text="" FontSize="11" Foreground="#FFB9B3D6" VerticalAlignment="Center" Margin="10,3,0,0"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0">
                         <Button Content="—" Style="{StaticResource GhostBtn}" Click="MinBtn_Click" Width="34" Height="30" FontSize="14"/>
@@ -151,9 +151,9 @@
                             <DockPanel Margin="12">
                                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
                                     <TextBlock Text="👥" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBlock Text="在线玩家" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="在线玩家" FontSize="13" FontWeight="Bold" Foreground="#FFFFFFFF" VerticalAlignment="Center"/>
                                     <Border Background="#306C5CE7" CornerRadius="8" Padding="6,1" Margin="10,0,0,0">
-                                        <TextBlock x:Name="UserCount" Text="0" FontSize="11" Foreground="{DynamicResource AccentLight}" FontWeight="Bold"/>
+                                        <TextBlock x:Name="UserCount" Text="0" FontSize="11" Foreground="#FF8B7BF0" FontWeight="Bold"/>
                                     </Border>
                                 </StackPanel>
                                 <ListBox x:Name="UserList" Background="Transparent" BorderThickness="0"
@@ -164,7 +164,7 @@
                         </Grid>
                     </Border>
 
-                    <!-- 游戏大厅（房间列表） -->
+                    <!-- 游戏大厅 -->
                     <Border Grid.Column="1" CornerRadius="12">
                         <Grid>
                             <Border CornerRadius="12">
@@ -184,9 +184,8 @@
                             <Border Background="#1AFFFFFF" CornerRadius="12"/>
                             <Border BorderBrush="#2EFFFFFF" BorderThickness="1" CornerRadius="12"/>
                             <DockPanel Margin="16">
-                                <TextBlock DockPanel.Dock="Top" Text="🎮 游戏大厅" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,12"/>
+                                <TextBlock DockPanel.Dock="Top" Text="🎮 游戏大厅" FontSize="15" FontWeight="Bold" Foreground="#FFFFFFFF" Margin="0,0,0,12"/>
 
-                                <!-- 房间列表占位 -->
                                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                     <Border Width="80" Height="80" CornerRadius="16" Background="#206C5CE7" HorizontalAlignment="Center">
                                         <Border.Effect>
@@ -194,8 +193,8 @@
                                         </Border.Effect>
                                         <TextBlock Text="🎮" FontSize="40" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="游戏开发中" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,16,0,0"/>
-                                    <TextBlock Text="连接的玩家可以在此处创建/加入房间" FontSize="12" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                    <TextBlock Text="游戏开发中" FontSize="17" FontWeight="Bold" Foreground="#FFFFFFFF" HorizontalAlignment="Center" Margin="0,16,0,0"/>
+                                    <TextBlock Text="连接的玩家可以在此处创建/加入房间" FontSize="12" Foreground="#FFB9B3D6" HorizontalAlignment="Center" Margin="0,6,0,0"/>
                                 </StackPanel>
                             </DockPanel>
                         </Grid>
@@ -205,8 +204,8 @@
                 <!-- 底部状态栏 -->
                 <Border Grid.Row="2" Background="#12000000" CornerRadius="0,0,13,13" Padding="16,6">
                     <DockPanel>
-                        <Ellipse Width="8" Height="8" Fill="{DynamicResource Online}" DockPanel.Dock="Left" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="LogText" Text="就绪" FontSize="11" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                        <Ellipse Width="8" Height="8" Fill="#FF2ECC71" DockPanel.Dock="Left" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="LogText" Text="就绪" FontSize="11" Foreground="#FFB9B3D6" VerticalAlignment="Center"/>
                         <Button Content="退出" Style="{StaticResource GhostBtn}" Click="CloseBtn_Click" DockPanel.Dock="Right" Padding="8,3" Margin="6,0,0,0"/>
                         <Button Content="刷新" Style="{StaticResource GhostBtn}" Click="Refresh_Click" DockPanel.Dock="Right" Padding="8,3"/>
                     </DockPanel>
