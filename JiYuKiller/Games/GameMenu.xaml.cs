@@ -43,6 +43,39 @@ namespace JiYuKiller.Games
             OpenGame(new DinoGame());
         }
 
+        private void OpenOnlineGames_Click(object sender, RoutedEventArgs e)
+        {
+            LogClick("启动联机游戏");
+            StartGameRoom();
+        }
+
+        private void CardOnlineGames_Click(object sender, MouseButtonEventArgs e)
+        {
+            LogClick("点击联机游戏卡片");
+            StartGameRoom();
+        }
+
+        private void StartGameRoom()
+        {
+            try
+            {
+                string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Drivers", "GameRoom.exe");
+                if (!System.IO.File.Exists(path))
+                    path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GameRoom.exe");
+                if (!System.IO.File.Exists(path))
+                {
+                    MessageBox.Show("找不到 GameRoom.exe，请确认文件完整。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = false
+                });
+            }
+            catch (Exception ex) { LogError("StartGameRoom", ex); }
+        }
+
         #endregion
 
         #region 宿主与导航

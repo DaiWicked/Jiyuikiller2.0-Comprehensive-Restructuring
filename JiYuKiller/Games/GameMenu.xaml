@@ -64,6 +64,24 @@
                     <Button Content="开始" Click="OpenDino_Click" Style="{StaticResource GlassButton}" Height="30" FontSize="13" Padding="0" Margin="0,12,0,0"/>
                 </StackPanel>
             </Border>
+
+            <!-- 联机游戏 -->
+            <Border Width="190" Margin="8" Padding="16" CornerRadius="12" Background="#15000000"
+                    Cursor="Hand" MouseLeftButtonDown="CardOnlineGames_Click">
+                <StackPanel>
+                    <Viewbox Width="48" Height="42" HorizontalAlignment="Center">
+                        <Canvas Width="44" Height="40">
+                            <Ellipse Canvas.Left="4" Canvas.Top="8" Width="14" Height="14" Fill="#FF4A90D9" />
+                            <Ellipse Canvas.Left="26" Canvas.Top="8" Width="14" Height="14" Fill="#FFE74C3C" />
+                            <Ellipse Canvas.Left="15" Canvas.Top="22" Width="14" Height="14" Fill="#FF2ECC71" />
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="联机游戏" FontSize="15" FontWeight="Bold" Foreground="#FF1a1a2e" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    <TextBlock Text="局域网多人对战" FontSize="11" Foreground="#FF888899" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <TextBlock Text="独立程序，与同学一起玩" FontSize="11" Foreground="#FF888899" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                    <Button Content="启动" Click="OpenOnlineGames_Click" Style="{StaticResource GlassButton}" Height="30" FontSize="13" Padding="0" Margin="0,12,0,0"/>
+                </StackPanel>
+            </Border>
         </WrapPanel>
     </Grid>
 </UserControl>
