@@ -112,7 +112,7 @@
                 <!-- 标题栏 -->
                 <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseDown">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
-                        <Border Width="10" Height="10" CornerRadius="2" Background="#FF6C5CE7" Margin="0,0,10,0"/>
+                        <Image Source="pack://application:,,,/GameRoom;component/Assets/game.ico" Width="20" Height="20" Margin="0,0,10,0"/>
                         <TextBlock Text="GameRoom" FontSize="15" FontWeight="Bold" Foreground="#FFFFFFFF" VerticalAlignment="Center"/>
                         <TextBlock x:Name="TitleNick" Text="" FontSize="11" Foreground="#FFB9B3D6" VerticalAlignment="Center" Margin="10,3,0,0"/>
                     </StackPanel>

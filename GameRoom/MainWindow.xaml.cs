@@ -14,6 +14,7 @@ namespace GameRoom
         public MainWindow()
         {
             InitializeComponent();
+            try { this.Icon = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/GameRoom;component/Assets/game.ico")); } catch { }
             Loaded += MainWindow_Loaded;
             Closed += MainWindow_Closed;
         }
