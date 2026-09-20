@@ -1,4 +1,4 @@
-<Window x:Class="ChatRoom.SettingsWindow"
+﻿<Window x:Class="ChatRoom.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ChatRoom"
@@ -205,6 +205,10 @@
                 <CheckBox x:Name="CheckToast" Content="收到新消息时弹窗提醒（后台/最小化也弹）"
                           Style="{StaticResource SettingsCheck}" Margin="0,12,0,0"/>
                 <CheckBox x:Name="CheckAnim" Content="界面动效（淡入、滑动、呼吸光）"
+                          Style="{StaticResource SettingsCheck}" Margin="0,12,0,0"/>
+                <CheckBox x:Name="CheckDNDGroup" Content="勿扰模式-群聊（不弹窗不闪烁红点）"
+                          Style="{StaticResource SettingsCheck}" Margin="0,12,0,0"/>
+                <CheckBox x:Name="CheckDNDPrivate" Content="勿扰模式-私聊（不弹窗不闪烁红点）"
                           Style="{StaticResource SettingsCheck}" Margin="0,12,0,0"/>
 
                 <Border Height="1" Background="{DynamicResource Divider}" Margin="0,16,0,14"/>

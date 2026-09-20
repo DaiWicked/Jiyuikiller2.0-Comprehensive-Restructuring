@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using ChatRoom.Models;
 
 namespace ChatRoom
@@ -31,6 +31,8 @@ namespace ChatRoom
             CheckClearOnExit.IsChecked = Settings.ClearOnExit;
             CheckToast.IsChecked = Settings.ToastEnabled;
             CheckAnim.IsChecked = Settings.Animations;
+            CheckDNDGroup.IsChecked = Settings.DoNotDisturbGroup;
+            CheckDNDPrivate.IsChecked = Settings.DoNotDisturbPrivate;
             SliderWallpaper.Value = Settings.WallpaperBlur;
             TextWallpaper.Text = string.IsNullOrEmpty(Settings.WallpaperPath) ? "未设置" : System.IO.Path.GetFileName(Settings.WallpaperPath);
             TextWallpaperBlur.Text = ((int)System.Math.Round(Settings.WallpaperBlur)).ToString();
@@ -86,6 +88,8 @@ namespace ChatRoom
             Settings.ClearOnExit = CheckClearOnExit.IsChecked == true;
             Settings.ToastEnabled = CheckToast.IsChecked == true;
             Settings.Animations = CheckAnim.IsChecked == true;
+            Settings.DoNotDisturbGroup = CheckDNDGroup.IsChecked == true;
+            Settings.DoNotDisturbPrivate = CheckDNDPrivate.IsChecked == true;
             Settings.Save();
 
             Anim.ApplyTo(this);   // 总开关立即生效（附加属性，打开着的窗口下次交互就用新值）

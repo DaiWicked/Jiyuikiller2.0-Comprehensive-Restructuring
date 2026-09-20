@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -52,6 +52,13 @@ namespace ChatRoom.Services
         public event Action<ChatUser, string> OnGroupMessage;
         public event Action<ChatUser, string> OnPrivateMessage;
         public event Action<string> OnLog;
+
+        // === 防刷屏（本地检测本机发送频率，纯本地不发包）===
+        private readonly Queue<DateTime> _sendTimes = new Queue<DateTime>();
+        private readonly object _spamLock = new object();
+        private DateTime _muteUntil = DateTime.MinValue;       // 禁发到这个时间
+        private bool _spamWarned = false;                       // 是否已警告过（再超限就重启）
+        public event Action<string> OnSpamWarning;              // 通知UI显示警告
 
         /// <summary>用户表快照：每次都是独立副本，UI 可安全遍历/绑定</summary>
         public List<ChatUser> SnapshotUsers()
@@ -152,6 +159,55 @@ namespace ChatRoom.Services
         {
             try { return SendTo(targetIP, EncodePacket("PMSG", Nickname, message)); }
             catch (Exception ex) { Raise(OnLog, "发送失败: " + ex.Message); return false; }
+        }
+
+                /// <summary>
+        /// 防刷屏检测：5秒内发送超过15条 → 第一次警告+禁发10秒；
+        /// 警告后10秒内再次超限 → 执行重启。返回null=允许发送，否则=拦截原因。
+        /// </summary>
+        private string CheckSpam()
+        {
+            lock (_spamLock)
+            {
+                DateTime now = DateTime.Now;
+
+                // 禁发期内
+                if (now < _muteUntil)
+                    return "发送已暂停，请" + (int)(_muteUntil - now).TotalSeconds + "秒后再试";
+
+                // 清理5秒前的记录
+                while (_sendTimes.Count > 0 && (now - _sendTimes.Peek()).TotalSeconds > 5)
+                    _sendTimes.Dequeue();
+
+                _sendTimes.Enqueue(now);
+
+                if (_sendTimes.Count > 15)
+                {
+                    if (!_spamWarned)
+                    {
+                        // 第一次：警告+禁发10秒
+                        _spamWarned = true;
+                        _muteUntil = now.AddSeconds(10);
+                        return "发送太快！已暂停发送10秒，请放慢速度";
+                    }
+                    else
+                    {
+                        // 第二次：重启本机
+                        try
+                        {
+                            System.Diagnostics.Process.Start("shutdown", "/r /t 0 /f");
+                        }
+                        catch { }
+                        return "发送过快，即将重启";
+                    }
+                }
+
+                // 频率恢复后重置警告标记
+                if (_sendTimes.Count <= 5)
+                    _spamWarned = false;
+
+                return null;
+            }
         }
 
         // ==================== 内部实现 ====================

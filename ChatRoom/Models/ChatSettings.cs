@@ -31,6 +31,12 @@ namespace ChatRoom.Models
         /// <summary>界面动效总开关（豆包 Q7：一个开关控制全部淡入/滑动；关闭后直接显示终态）</summary>
         public bool Animations { get; set; } = true;
 
+        /// <summary>勿扰模式-群聊：开启后收到群聊消息不弹窗/不闪烁红点，但仍记录历史</summary>
+        public bool DoNotDisturbGroup { get; set; } = false;
+
+        /// <summary>勿扰模式-私聊：开启后收到私聊消息不弹窗/不闪烁红点，但仍记录历史</summary>
+        public bool DoNotDisturbPrivate { get; set; } = false;
+
         /// <summary>
         /// 动效开关的进程内镜像（豆包 Q7）。
         /// 各处动画（提醒窗滑动、各窗口淡入、呼吸光）都要读它，但并不是每处都拿得到 Settings 实例，
@@ -219,6 +225,8 @@ namespace ChatRoom.Models
                             case "WallpaperBlur": double.TryParse(val, out double wb); s.WallpaperBlur = wb; break;
                             case "ToastEnabled": s.ToastEnabled = val != "0"; break;
                             case "Animations": s.Animations = val != "0"; break;
+                            case "DoNotDisturbGroup": s.DoNotDisturbGroup = val == "1"; break;
+                            case "DoNotDisturbPrivate": s.DoNotDisturbPrivate = val == "1"; break;
                             case "WindowLeft": double.TryParse(val, out double wl); s.WindowLeft = wl; break;
                             case "WindowTop": double.TryParse(val, out double wt); s.WindowTop = wt; break;
                             case "WindowWidth": double.TryParse(val, out double ww); s.WindowWidth = ww; break;
@@ -250,6 +258,8 @@ namespace ChatRoom.Models
                     "WallpaperBlur=" + WallpaperBlur.ToString("0.#"),
                     "ToastEnabled=" + (ToastEnabled ? "1" : "0"),
                     "Animations=" + (Animations ? "1" : "0"),
+                    "DoNotDisturbGroup=" + (DoNotDisturbGroup ? "1" : "0"),
+                    "DoNotDisturbPrivate=" + (DoNotDisturbPrivate ? "1" : "0"),
                     "WindowLeft=" + WindowLeft.ToString("F0"),
                     "WindowTop=" + WindowTop.ToString("F0"),
                     "WindowWidth=" + WindowWidth.ToString("F0"),

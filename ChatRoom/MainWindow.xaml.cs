@@ -69,6 +69,7 @@ namespace ChatRoom
             _chat.OnLog += OnServiceLog;
             _chat.OnImageReceived += OnImageReceived;
             _chat.OnFileReceived += OnFileReceived;
+            _chat.OnSpamWarning += OnSpamWarning;
 
             // 单实例判定 = "能否绑定 47060"，由操作系统仲裁。
             // 旧实现靠扫进程名 + PID 文件：被僵尸进程误判（2026-09-17 实测有 8 个不可杀的旧实例，
@@ -371,6 +372,16 @@ namespace ChatRoom
             OnUI(() => AddMessage("系统", log, BubbleKind.Service));
         }
 
+
+        private void OnSpamWarning(string msg)
+        {
+            OnUI(() =>
+            {
+                AddMessage("⚠ 防刷屏", msg, BubbleKind.Service);
+                if (_settings != null && _settings.ToastEnabled)
+                    ShowToast("__spam__", "防刷屏", msg);
+            });
+        }
         // === 图片 ===
 
         /// <summary>收到一张完整图片：解码 → 落盘 → 显示 → 历史只记 [图片]</summary>
@@ -1128,6 +1139,7 @@ namespace ChatRoom
                     _chat.OnLog -= OnServiceLog;
                     _chat.OnImageReceived -= OnImageReceived;
                     _chat.OnFileReceived -= OnFileReceived;
+            _chat.OnSpamWarning -= OnSpamWarning;
                 }
             }
             catch { }
