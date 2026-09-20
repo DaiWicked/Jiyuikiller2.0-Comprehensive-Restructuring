@@ -739,24 +739,23 @@ namespace ChatRoom
 
 
             // 勿扰模式：群聊/私聊分别判断，开启后不计数不弹窗，但消息仍记录
+            // 勿扰模式：开启后不弹窗，但计数和红点照常
+            bool dnd = false;
             if (_settings != null)
             {
                 bool isGroup = (key == Conversation.GroupKey);
-                if (isGroup && _settings.DoNotDisturbGroup) return;
-                if (!isGroup && _settings.DoNotDisturbPrivate) return;
+                if (isGroup && _settings.DoNotDisturbGroup) dnd = true;
+                if (!isGroup && _settings.DoNotDisturbPrivate) dnd = true;
             }
             Conversation c = EnsureConversation(key,
                 key == Conversation.GroupKey ? "群聊" : NicknameOfConvKey(key), key == Conversation.GroupKey, "");
             c.Unread++;
-
-            // 私聊要同步侧栏那一行的徽标。IP 从会话键反解，不能读 c.PeerIP：
-            // 首次收到某人私聊时会话是这一行才建的，PeerIP 还是空串，用它等于没更新。
             if (!c.IsGroup) SetPeerUnread(Conversation.PeerIpOf(c.Key), c.Unread);
             c.SeparatorShown = true;
             UpdateUnreadBadge();
             PopElement(BtnUnread);
-
-            ShowToast(c.Key, c.Title, LastPreview());   // 同会话连续消息会合并成"N 条新消息"（Q6）
+            if (!dnd)
+                ShowToast(c.Key, c.Title, LastPreview());
         }
 
         /// <summary>弹窗里的预览文本：取该会话最后一条消息</summary>
