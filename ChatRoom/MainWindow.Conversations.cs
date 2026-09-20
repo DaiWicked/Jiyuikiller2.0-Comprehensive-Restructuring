@@ -34,10 +34,13 @@ namespace ChatRoom
                 if (!string.IsNullOrEmpty(p) && System.IO.File.Exists(p))
                 {
                     var bmp = new System.Windows.Media.Imaging.BitmapImage();
-                    bmp.BeginInit();
-                    bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                    bmp.UriSource = new Uri(p, UriKind.Absolute);
-                    bmp.EndInit();
+                    using (var fs = new System.IO.FileStream(p, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                    {
+                        bmp.BeginInit();
+                        bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                        bmp.StreamSource = fs;
+                        bmp.EndInit();
+                    }
                     bmp.Freeze();
 
                     WallpaperBrush.ImageSource = bmp;
