@@ -150,6 +150,8 @@ namespace ChatRoom.Services
         /// <summary>返回是否真的送出（UI 据此提示失败，避免消息静默丢失）</summary>
         public bool SendGroup(string message)
         {
+            string blocked = CheckSpam();
+            if (blocked != null) { Raise(OnSpamWarning, blocked); return false; }
             try { return SendBroadcast(EncodePacket("GBRD", Nickname, message)); }
             catch (Exception ex) { Raise(OnLog, "发送失败: " + ex.Message); return false; }
         }
@@ -157,6 +159,8 @@ namespace ChatRoom.Services
         /// <summary>返回是否真的送出</summary>
         public bool SendPrivate(string targetIP, string message)
         {
+            string blocked = CheckSpam();
+            if (blocked != null) { Raise(OnSpamWarning, blocked); return false; }
             try { return SendTo(targetIP, EncodePacket("PMSG", Nickname, message)); }
             catch (Exception ex) { Raise(OnLog, "发送失败: " + ex.Message); return false; }
         }
