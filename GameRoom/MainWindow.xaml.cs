@@ -50,6 +50,8 @@ namespace GameRoom
                 UserList.Items.Clear();
                 foreach (var u in users)
                 {
+                    // 过滤掉自己
+                    if (u.Endpoint.Address.ToString() == GameUdpService.GetLocalIP()) continue;
                     UserList.Items.Add("● " + u.Nick + "  [" + u.Status + "]");
                 }
                 UserCount.Text = users.Count + "人在线";
