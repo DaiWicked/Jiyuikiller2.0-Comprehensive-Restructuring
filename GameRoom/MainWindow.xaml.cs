@@ -54,7 +54,7 @@ namespace GameRoom
                     if (u.Endpoint.Address.ToString() == GameUdpService.GetLocalIP()) continue;
                     UserList.Items.Add("● " + u.Nick + "  [" + u.Status + "]");
                 }
-                UserCount.Text = users.Count + "人在线";
+                UserCount.Text = UserList.Items.Count + "人在线";
             });
         }
 
