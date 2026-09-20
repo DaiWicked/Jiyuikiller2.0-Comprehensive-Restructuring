@@ -166,7 +166,7 @@ namespace ChatRoom.Services
         }
 
                 /// <summary>
-        /// 防刷屏检测：2秒内发送超过8条 → 第一次警告+禁发10秒；
+        /// 防刷屏检测：1秒内发送超过8条 → 第一次警告+禁发10秒；
         /// 警告后10秒内再次超限 → 执行重启。返回null=允许发送，否则=拦截原因。
         /// </summary>
         private string CheckSpam()
@@ -180,7 +180,7 @@ namespace ChatRoom.Services
                     return "发送已暂停，请" + (int)(_muteUntil - now).TotalSeconds + "秒后再试";
 
                 // 清理3秒前的记录
-                while (_sendTimes.Count > 0 && (now - _sendTimes.Peek()).TotalSeconds > 2)
+                while (_sendTimes.Count > 0 && (now - _sendTimes.Peek()).TotalSeconds > 1)
                     _sendTimes.Dequeue();
 
                 _sendTimes.Enqueue(now);
@@ -191,8 +191,8 @@ namespace ChatRoom.Services
                     {
                         // 第一次：警告+禁发10秒
                         _spamWarned = true;
-                        _muteUntil = now.AddSeconds(5);
-                        return "发送太快！已暂停发送5秒，请放慢速度";
+                        _muteUntil = now.AddSeconds(10);
+                        return "发送太快！已暂停发送10秒，请放慢速度";
                     }
                     else
                     {
