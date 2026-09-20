@@ -144,8 +144,13 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- 在线玩家面板 -->
-                <Border Grid.Column="0" CornerRadius="10" Background="#18FFFFFF" BorderBrush="#256C5CE7" BorderThickness="1" Margin="0,0,10,0">
-                    <DockPanel Margin="12">
+                <Border Grid.Column="0" CornerRadius="10" BorderBrush="#256C5CE7" BorderThickness="1" Margin="0,0,10,0">
+                    <Grid>
+                        <!-- 模糊背景层 -->
+                        <Border CornerRadius="10" Background="#2012121F">
+                            <Border.Effect><eff:BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Performance"/></Border.Effect>
+                        </Border>
+                        <DockPanel Margin="12">
                         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
                             <TextBlock Text="👥" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="在线玩家" FontSize="13" FontWeight="Bold" Foreground="#FFFFFFFF" VerticalAlignment="Center"/>
@@ -158,11 +163,16 @@
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                     </DockPanel>
+                    </Grid>
                 </Border>
 
                 <!-- 游戏大厅 -->
-                <Border Grid.Column="1" CornerRadius="10" Background="#18FFFFFF" BorderBrush="#256C5CE7" BorderThickness="1">
-                    <DockPanel Margin="16">
+                <Border Grid.Column="1" CornerRadius="10" BorderBrush="#256C5CE7" BorderThickness="1">
+                    <Grid>
+                        <Border CornerRadius="10" Background="#2012121F">
+                            <Border.Effect><eff:BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Performance"/></Border.Effect>
+                        </Border>
+                        <DockPanel Margin="16">
                         <TextBlock DockPanel.Dock="Top" Text="🎮 游戏大厅" FontSize="15" FontWeight="Bold" Foreground="#FFFFFFFF" Margin="0,0,0,12"/>
 
                         <!-- 游戏卡片占位 -->
@@ -178,6 +188,7 @@
                             <TextBlock Text="连接的玩家可以在此处开始对战" FontSize="12" Foreground="#FF8888AA" HorizontalAlignment="Center" Margin="0,6,0,0"/>
                         </StackPanel>
                     </DockPanel>
+                    </Grid>
                 </Border>
             </Grid>
 
