@@ -166,8 +166,9 @@ namespace ChatRoom.Services
         }
 
                 /// <summary>
-        /// 防刷屏检测：3秒内发送超过10条 → 第一次警告+禁发10秒；
-        /// 警告后10秒内再次超限 → 执行重启。返回null=允许发送，否则=拦截原因。
+        /// <summary>
+        /// 防刷屏检测：3秒内发送超过6条 → 第一次警告+禁发10秒；
+        /// 禁发期结束后30秒内再次超限 → 执行重启。返回null=允许发送，否则=拦截原因。
         /// </summary>
         private string CheckSpam()
         {
@@ -185,7 +186,7 @@ namespace ChatRoom.Services
 
                 _sendTimes.Enqueue(now);
 
-                if (_sendTimes.Count > 10)
+                if (_sendTimes.Count > 6)
                 {
                     if (!_spamWarned)
                     {
@@ -206,14 +207,13 @@ namespace ChatRoom.Services
                     }
                 }
 
-                // 频率恢复后重置警告标记
-                if (_sendTimes.Count <= 5)
+                // 30秒没发消息才重置警告标记，避免禁发期结束后前几条就重置导致永远到不了第二次
+                if (_sendTimes.Count > 0 && (now - _sendTimes.Peek()).TotalSeconds > 30)
                     _spamWarned = false;
 
                 return null;
             }
         }
-
         // ==================== 内部实现 ====================
 
         private void RecvLoop()
