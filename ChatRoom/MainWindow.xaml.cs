@@ -737,6 +737,14 @@ namespace ChatRoom
             bool viewingThisConv = (key == _currentConvKey) && IsActive && WindowState != WindowState.Minimized;
             if (viewingThisConv) return;
 
+
+            // 勿扰模式：群聊/私聊分别判断，开启后不计数不弹窗，但消息仍记录
+            if (_settings != null)
+            {
+                bool isGroup = (key == Conversation.GroupKey);
+                if (isGroup && _settings.DoNotDisturbGroup) return;
+                if (!isGroup && _settings.DoNotDisturbPrivate) return;
+            }
             Conversation c = EnsureConversation(key,
                 key == Conversation.GroupKey ? "群聊" : NicknameOfConvKey(key), key == Conversation.GroupKey, "");
             c.Unread++;
