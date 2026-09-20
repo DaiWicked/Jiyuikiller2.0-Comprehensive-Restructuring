@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows;
-using System.Windows.Controls;
+using System.Windows.Input;
 using System.Linq;
 
 namespace GameRoom
@@ -20,8 +20,8 @@ namespace GameRoom
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // 从设置读取昵称，默认"玩家"
             _nick = "玩家" + GameUdpService.GetLocalIP().Split('.').Last();
+            TitleNick.Text = " · " + _nick;
 
             try
             {
@@ -29,13 +29,11 @@ namespace GameRoom
                 _service.OnLog += Log;
                 _service.OnUserListChanged += RefreshUserList;
                 _service.Start(_nick);
-                TitleStatus.Text = "已连接 · " + _nick;
-                Log("GameRoom启动成功");
+                Log("GameRoom启动成功，端口 " + GameUdpService.Port);
             }
             catch (Exception ex)
             {
-                TitleStatus.Text = "启动失败";
-                MessageBox.Show("GameRoom启动失败：" + ex.Message + "\n\n可能已有另一个GameRoom在运行。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("GameRoom启动失败：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
             }
         }
@@ -52,27 +50,36 @@ namespace GameRoom
                 UserList.Items.Clear();
                 foreach (var u in users)
                 {
-                    UserList.Items.Add(u.Nick + "  [" + u.Status + "]");
+                    UserList.Items.Add("● " + u.Nick + "  [" + u.Status + "]");
                 }
+                UserCount.Text = users.Count + "人在线";
             });
         }
 
         private void Log(string s)
         {
-            Dispatcher.Invoke(() =>
-            {
-                LogText.Text = s;
-            });
+            Dispatcher.Invoke(() => { LogText.Text = s; });
         }
 
         private void Refresh_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                _service.Broadcast("HELLO|" + _nick + "|");
-                Log("已刷新玩家列表");
-            }
-            catch { }
+            try { _service.Broadcast("HELLO|" + _nick + "|"); Log("已刷新玩家列表"); } catch { }
+        }
+
+        private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+                DragMove();
+        }
+
+        private void MinBtn_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void CloseBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }
