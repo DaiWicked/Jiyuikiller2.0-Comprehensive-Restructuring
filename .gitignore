@@ -225,3 +225,7 @@ chat_images/
 chat_settings.ini
 chat_history.txt
 ChatRoom.pid
+
+# GameRoom（已删除项目）
+GameRoom/
+GameRoom.exe
