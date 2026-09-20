@@ -404,7 +404,7 @@ namespace ChatRoom
                     var img = new System.Windows.Controls.Image
                     {
                         Width = 400, Height = 400,
-                        Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(@"C:\Users\Administrator\Desktop\ban.jpg", UriKind.Absolute)),
+                        Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/ban.jpg", UriKind.Absolute)),
                     };
                     var tb = new TextBlock
                     {
