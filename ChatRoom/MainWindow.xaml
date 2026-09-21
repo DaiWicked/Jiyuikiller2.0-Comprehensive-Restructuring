@@ -1,4 +1,4 @@
-<Window x:Class="ChatRoom.MainWindow"
+﻿<Window x:Class="ChatRoom.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ChatRoom"
@@ -740,7 +740,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <TextBox x:Name="InputBox" FontSize="13" VerticalContentAlignment="Center"
+                            <TextBox x:Name="InputBox" FontSize="13" VerticalContentAlignment="Center" MaxLength="30"
                                      KeyDown="InputBox_KeyDown" Padding="10,8" BorderThickness="0"
                                      Background="Transparent"
                                      Foreground="{DynamicResource TextPrimary}" />

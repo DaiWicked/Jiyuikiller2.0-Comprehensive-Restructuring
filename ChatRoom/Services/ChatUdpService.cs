@@ -168,7 +168,7 @@ namespace ChatRoom.Services
 
                 /// <summary>
         /// <summary>
-        /// 防刷屏：3秒6条 → 第一次禁发5秒，第二次禁发10秒，第三次全屏处罚+重启。
+        /// 防刷屏：5秒8条 → 第一次禁发5秒，第二次禁发10秒，第三次全屏处罚+重启。
         /// </summary>
         private string CheckSpam()
         {
@@ -179,12 +179,12 @@ namespace ChatRoom.Services
                 if (now < _muteUntil)
                     return "发送已暂停，请" + (int)(_muteUntil - now).TotalSeconds + "秒后再试";
 
-                while (_sendTimes.Count > 0 && (now - _sendTimes.Peek()).TotalSeconds > 3)
+                while (_sendTimes.Count > 0 && (now - _sendTimes.Peek()).TotalSeconds > 5)
                     _sendTimes.Dequeue();
 
                 _sendTimes.Enqueue(now);
 
-                if (_sendTimes.Count > 6)
+                if (_sendTimes.Count > 8)
                 {
                     _spamLevel++;
                     if (_spamLevel == 1)
