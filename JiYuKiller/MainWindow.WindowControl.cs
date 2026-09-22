@@ -61,6 +61,7 @@ namespace JiYuKiller
                         _teacherSimService.Stop();
                 } catch { }
                 try { StopChatRoom(); } catch { }
+                try { StopUdpGhost(); } catch { }
                 try { _glassyManager?.Dispose(); } catch { }
                 try
                 {

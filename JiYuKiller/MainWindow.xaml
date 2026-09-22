@@ -573,6 +573,49 @@
                     </StackPanel>
                 </ScrollViewer>
 
+                <!-- UdpGhost页面 -->
+                <ScrollViewer x:Name="PageUdpGhost" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
+                    <StackPanel Margin="16,12">
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="←" Click="BtnUdpGhostBack_Click" Style="{StaticResource GlassButton}" Width="36" Height="32" FontSize="14" Padding="0" />
+                            <TextBlock Grid.Column="1" Text="UdpGhost" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#FF1a1a2e" />
+                        </Grid>
+
+                        <Border Background="{StaticResource GlassCardBrush}" BorderBrush="{StaticResource GlassCardBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="20" Margin="0,0,0,10">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="Assets/udpghost.png" Width="64" Height="64" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock Text="UdpGhost" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Foreground="#FF1a1a2e"/>
+                                <TextBlock Text="纯UDP伪造包控制指定学生端，不做教师端" FontSize="12" HorizontalAlignment="Center" Foreground="#FF666680" Margin="0,4,0,16"/>
+                                <Button x:Name="BtnStartUdpGhost" Content="启动UdpGhost" Click="BtnStartUdpGhost_Click"
+                                        Style="{StaticResource GlassButton}" Background="#FF007AFF"
+                                        Height="40" Padding="24,0" FontSize="14" HorizontalAlignment="Center"/>
+                                <Button x:Name="BtnStopUdpGhost" Content="关闭UdpGhost" Click="BtnStopUdpGhost_Click"
+                                        Style="{StaticResource GlassButton}" Background="#FF8E8E93"
+                                        Height="36" Padding="24,0" Margin="0,8,0,0" HorizontalAlignment="Center" Visibility="Collapsed"/>
+                                <TextBlock x:Name="UdpGhostStatus" Text="状态: 未启动" FontSize="12" HorizontalAlignment="Center"
+                                           Foreground="#FF8E8E93" Margin="0,12,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource GlassCardBrush}" BorderBrush="{StaticResource GlassCardBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="功能说明" FontSize="13" FontWeight="Bold" Foreground="#FF1a1a2e" Margin="0,0,0,6"/>
+                                <TextBlock Text="• 黑屏/解锁（约5秒，支持自定义文字）" FontSize="11" Foreground="#FF555566" Margin="8,2,0,2"/>
+                                <TextBlock Text="• 发消息（最多20字）" FontSize="11" Foreground="#FF555566" Margin="8,2,0,2"/>
+                                <TextBlock Text="• 关机/重启" FontSize="11" Foreground="#FF555566" Margin="8,2,0,2"/>
+                                <TextBlock Text="• 屏幕监控（需手动部署DolbyVision到学生机）" FontSize="11" Foreground="#FF555566" Margin="8,2,0,2"/>
+                                <TextBlock Text="• 不抢占教师端身份，不影响真实教师端" FontSize="11" Foreground="#FF555566" Margin="8,2,0,2"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="说明：启动后弹出独立窗口。屏幕监控需将DolbyVision.exe手动拷贝到学生机运行。" FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" Margin="0,4"/>
+                    </StackPanel>
+                </ScrollViewer>
+
                 <!-- 虚假反监视页面 -->
                 <ScrollViewer x:Name="PageScreenshot" VerticalScrollBarVisibility="Hidden" Visibility="Collapsed">
                     <StackPanel Margin="16,12">
@@ -1277,6 +1320,7 @@
                                     <Button x:Name="NavCustom" Content="自定义设置" Click="NavCustom_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="76" Height="44" />
                                     <Button x:Name="NavUdpAttack" Content="UDP攻击" Click="NavUdpAttack_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                     <Button x:Name="NavChat" Content="小小私聊" Click="NavChat_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
+                                    <Button x:Name="NavUdpGhost" Content="UdpGhost" Click="NavUdpGhost_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                     <Button x:Name="NavScreenshot" Content="虚假反监视" Click="NavScreenshot_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                     <Button x:Name="NavTeacherSim" Content="教师模拟" Click="NavTeacherSim_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="72" Height="44" />
                                     <Button x:Name="NavGames" Content="小游戏" Click="NavGames_Click" Style="{StaticResource NavGlassButton}" Padding="14,8" Margin="3,0" MinWidth="64" Height="44" />

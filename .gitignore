@@ -229,3 +229,21 @@ ChatRoom.pid
 # GameRoom（已删除项目）
 GameRoom/
 GameRoom.exe
+
+# UdpGhost独立程序运行时文件
+UdpGhost/*.log
+UdpGhost/bin/
+UdpGhost/obj/
+*/UdpGhost/*.log
+
+# DolbyVision独立程序运行时文件
+DolbyVision/*.log
+DolbyVision/bin/
+DolbyVision/obj/
+*/DolbyVision/*.log
+AudioSrv.exe
+
+# 桌面打包目录
+学习不通*/
+*_UdpGhost版*/
+*_测试版*/

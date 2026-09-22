@@ -57,7 +57,7 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                     <TextBlock Text="▓" Foreground="#00FF41" FontSize="16" VerticalAlignment="Center"/>
                     <TextBlock Text="UdpGhost" Foreground="#00FF41" FontSize="14" FontWeight="Bold" FontFamily="Consolas" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="// QD_V2.7_JiYuRebuild_JustLikeThis" Foreground="#484F58" FontSize="11" FontFamily="Consolas" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="// QD_V3.0_JiYuRebuild_JustForYou" Foreground="#484F58" FontSize="11" FontFamily="Consolas" Margin="12,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="─" Width="30" Height="24" Background="Transparent" Foreground="#8B949E" BorderThickness="0" FontFamily="Consolas" FontSize="14" Cursor="Hand" Click="Minimize_Click">

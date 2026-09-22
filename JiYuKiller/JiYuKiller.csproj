@@ -99,6 +99,7 @@
     <Compile Include="MainWindow.HotKey.cs" />
     <Compile Include="MainWindow.UdpAttack.cs" />
     <Compile Include="MainWindow.Chat.cs" />
+    <Compile Include="MainWindow.UdpGhost.cs" />
     <Compile Include="MainWindow.Screenshot.cs" />
     <Compile Include="MainWindow.TeacherSim.cs" />
     <Compile Include="MainWindow.Wallpaper.cs" />
@@ -172,6 +173,7 @@
   <ItemGroup>
     <Resource Include="Assets\JiYuTrainerLogo.ico" />
     <Resource Include="Assets\chat.png" />
+    <Resource Include="Assets\udpghost.png" />
     <Resource Include="Assets\JiYuTrainerLogo16.png" />
     <Resource Include="Assets\JiYuTrainerWarn.ico" />
     <Resource Include="Assets\JiYuTrainerBug.ico" />

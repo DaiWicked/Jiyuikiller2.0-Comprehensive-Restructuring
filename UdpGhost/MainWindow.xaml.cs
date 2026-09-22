@@ -83,8 +83,7 @@ namespace UdpGhost
         private void Monitor_Click(object sender, RoutedEventArgs e)
         {
             var win = new MonitorWindow();
-            win.Owner = this;
-            win.Show();
+            win.Show(); // 非模态，不设Owner，可独立切换
         }
     }
 }

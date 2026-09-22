@@ -455,7 +455,7 @@ namespace JiYuKiller
                 // 关键：Style密封后Setter里的画刷已被冻结，必须直接给按钮设本地值
                 // 本地值优先级高于Style Setter，不会被冻结
                 var navButtons = new System.Windows.Controls.Button[] {
-                    NavQuick, NavSetting, NavCustom, NavUdpAttack, NavChat,
+                    NavQuick, NavSetting, NavCustom, NavUdpAttack, NavChat, NavUdpGhost,
                     NavScreenshot, NavTeacherSim, NavGames, NavHelp, NavDebug, NavAbout
                 };
                 foreach (var btn in navButtons)

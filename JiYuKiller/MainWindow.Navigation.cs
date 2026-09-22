@@ -44,6 +44,12 @@ namespace JiYuKiller
             ShowPage("chat");
         }
 
+        private void NavUdpGhost_Click(object sender, RoutedEventArgs e)
+        {
+            Services.Logger.Instance.ButtonClick("UdpGhost", "NavUdpGhost");
+            ShowPage("udpghost");
+        }
+
         private void NavScreenshot_Click(object sender, RoutedEventArgs e)
         {
             Services.Logger.Instance.ButtonClick("截图替换", "NavScreenshot");
@@ -544,6 +550,7 @@ namespace JiYuKiller
             PageCustom.Visibility = Visibility.Collapsed;
             PageUdpAttack.Visibility = Visibility.Collapsed;
             PageChat.Visibility = Visibility.Collapsed;
+            PageUdpGhost.Visibility = Visibility.Collapsed;
             PageScreenshot.Visibility = Visibility.Collapsed;
             PageTeacherSim.Visibility = Visibility.Collapsed;
             PageGames.Visibility = Visibility.Collapsed;
@@ -561,6 +568,7 @@ namespace JiYuKiller
             NavAbout.FontWeight = FontWeights.Normal;
             NavUdpAttack.FontWeight = FontWeights.Normal;
             NavChat.FontWeight = FontWeights.Normal;
+            if (NavUdpGhost != null) NavUdpGhost.FontWeight = FontWeights.Normal;
             NavScreenshot.FontWeight = FontWeights.Normal;
             NavTeacherSim.FontWeight = FontWeights.Normal;
             NavGames.FontWeight = FontWeights.Normal;
@@ -608,6 +616,11 @@ namespace JiYuKiller
                     NavChat.FontWeight = FontWeights.Bold;
                     InitChat();
                     break;
+                case "udpghost":
+                    PageUdpGhost.Visibility = Visibility.Visible;
+                    if (NavUdpGhost != null) NavUdpGhost.FontWeight = FontWeights.Bold;
+                    InitUdpGhost();
+                    break;
                 case "screenshot":
                     PageScreenshot.Visibility = Visibility.Visible;
                     NavScreenshot.FontWeight = FontWeights.Bold;
@@ -635,6 +648,7 @@ namespace JiYuKiller
                 case "custom": targetPage = PageCustom; currentIndex = 2; break;
                 case "udpattack": targetPage = PageUdpAttack; currentIndex = 3; break;
                 case "chat": targetPage = PageChat; currentIndex = 4; break;
+                case "udpghost": targetPage = PageUdpGhost; currentIndex = 4; break;
                 case "screenshot": targetPage = PageScreenshot; currentIndex = 5; break;
                 case "teachersim": targetPage = PageTeacherSim; currentIndex = 6; break;
                 case "games": targetPage = PageGames; currentIndex = 7; break;

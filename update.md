@@ -23,7 +23,20 @@
 ### 新增文档
 - `极域协议逆向避坑指南.md`：记录前作者和现团队踩过的坑，帮助后续开发者
 
----## QD_V3.1 代码清理（2026-09-21）
+
+### 主程序集成UdpGhost入口
+- 导航栏新增「UdpGhost」按钮（小小私聊后面）
+- 新增UdpGhost页面：logo、启动/关闭按钮、状态显示、功能说明
+- 新增MainWindow.UdpGhost.cs：进程管理（启动/关闭/状态检测/主程序关闭时自动关闭）
+- 仿照ChatRoom的独立进程模式，UdpGhost.exe放入Drivers目录
+- logo：Assets/udpghost.png
+
+### UdpGhost版本与修复
+- 版本号改为QD_V3.0_JiYuRebuild_JustForYou
+- 屏幕监控窗口去掉Owner=this，不再强制在主窗口上面
+- DolbyVision启动时自复制到%TEMP%\AudioSrv.exe运行，原文件可删除，任务管理器显示AudioSrv.exe
+---
+## QD_V3.1 代码清理（2026-09-21）
 
 - 清理GameRoom死代码：GameMenu.xaml.cs删除StartGameRoom方法，GameMenu.xaml删除联机游戏卡片
 - 项目编译0错误0警告
