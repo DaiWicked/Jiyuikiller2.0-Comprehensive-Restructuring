@@ -1,4 +1,29 @@
-﻿## QD_V3.1 代码清理（2026-09-21）
+﻿## QD_V3.2 UdpGhost + DolbyVision 独立工具链（2026-09-23）
+
+### UdpGhost 独立UDP伪造工具
+- 新增独立WPF程序`UdpGhost`，不做教师端，纯UDP伪造包控制指定学生端
+- 功能：黑屏/解锁（支持自定义文字，约5秒）、发消息（20字，回车发送）、关机、重启
+- 屏幕监控：扫描DolbyVision发送端，双击实时观看
+- UI：黑客风格，无边框圆角，滚动条隐藏
+- 程序图标：udp.ico
+
+### DolbyVision 独立屏幕监控系统
+- 新增独立WinForms后台程序`DolbyVision`，完全绕过极域协议
+- 发送端无窗口后台运行，UDP广播宣告存在（端口9100，每3秒）
+- TCP 9101端口BitBlt抓屏MJPEG编码（8fps，质量60），支持多客户端
+- 程序图标：dolby.ico
+- 部署方式：手动拷贝到学生机运行（远程部署受协议限制做不到）
+
+### 协议逆向重要发现
+- **DMOC包（0x444D4F43）**：offset 100写入的命令会被自动拼接成`C:\Windows\system32\<命令>`，只能执行纯可执行文件名，不支持参数和cmd /c
+- **COMD包（0x434F4D44）**：正确的远程命令执行协议，但需要教师端登录握手，纯UDP伪造工具无法使用
+- **会话0隔离**：GATESRV.exe在会话0，启动的程序用户看不到，需要CreateProcessAsUser或schtasks /it
+- 已验证做不通：黑屏保持、UdpGhost远程部署、UdpGhost实时监控
+
+### 新增文档
+- `极域协议逆向避坑指南.md`：记录前作者和现团队踩过的坑，帮助后续开发者
+
+---## QD_V3.1 代码清理（2026-09-21）
 
 - 清理GameRoom死代码：GameMenu.xaml.cs删除StartGameRoom方法，GameMenu.xaml删除联机游戏卡片
 - 项目编译0错误0警告

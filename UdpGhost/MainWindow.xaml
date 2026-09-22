@@ -97,7 +97,8 @@
                             <Button Content="[关机]" Style="{StaticResource HackerButton}" Margin="0,2" Click="Shutdown_Click"/>
                             <Button Content="[重启]" Style="{StaticResource HackerButton}" Margin="0,2" Click="Reboot_Click"/>
                             <Button Content="[屏幕监控]" Style="{StaticResource HackerButton}" Margin="0,8,0,2" Click="Monitor_Click"/>
-                            <Button Content="[部署监控端]" Style="{StaticResource HackerButton}" Margin="0,2" Click="Deploy_Click"/>
+                            <TextBlock Text="手动部署:" Foreground="#484F58" FontFamily="Consolas" FontSize="10" Margin="0,6,0,2"/>
+                            <TextBlock Text="将DolbyVision.exe拷贝到学生机运行" Foreground="#6E7681" FontFamily="Consolas" FontSize="9" TextWrapping="Wrap"/>
                         </StackPanel>
                     </ScrollViewer>
                 </Border>
