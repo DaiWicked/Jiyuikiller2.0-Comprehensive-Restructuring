@@ -37,6 +37,8 @@ namespace DolbyVision
         private static string _localIp;
         private static bool _isServiceMode = false;
         private static Thread _pipeThread;
+        private static Thread _serviceMonitorThread;
+        private static bool _serviceNetworkActive = false;
         private const string PipeName = "DolbyVisionPriv";
 
         [STAThread]
@@ -102,15 +104,96 @@ namespace DolbyVision
             try { _terminalListener?.Stop(); } catch { }
         }
 
-        // ========== 服务模式: 命名管道提权 ==========
-        // 服务模式不做屏幕监控(Session 0无法访问桌面),只做命名管道提权(杀系统进程)
-        // 守护复活功能已移除: 从Windows服务启动用户会话.NET进程受Session 0隔离限制,经5种方式验证均不可行
+        // ========== 服务模式: 命名管道提权 + 普通模式被杀后接管网络 ==========
+        // 正常情况:普通模式运行,服务模式只做命名管道提权
+        // 普通模式被杀:服务模式自动启动广播+命令+终端端口(不做视频),主控端可连接服务模式操作
+        // 普通模式恢复:服务模式自动停止网络端口,避免端口冲突
         internal static void StartServiceMode()
         {
             _running = true;
             _isServiceMode = true;
+            _machineName = Environment.MachineName;
+            _localIp = GetLocalIP();
+            // 命名管道始终运行(提供提权)
             _pipeThread = new Thread(PipeServerLoop) { IsBackground = true };
             _pipeThread.Start();
+            // 监控普通模式状态,动态开关网络端口
+            _serviceMonitorThread = new Thread(ServiceMonitorLoop) { IsBackground = true };
+            _serviceMonitorThread.Start();
+        }
+
+        // 监控普通模式是否在运行,动态开关服务模式的网络端口
+        private static void ServiceMonitorLoop()
+        {
+            bool lastNormalRunning = IsNormalModeRunning();
+            // 初始状态:普通模式不在运行则启动网络
+            if (!lastNormalRunning) StartServiceNetwork();
+            while (_running)
+            {
+                try
+                {
+                    bool normalRunning = IsNormalModeRunning();
+                    if (normalRunning && !lastNormalRunning)
+                    {
+                        // 普通模式恢复了,停止服务模式网络(避免端口冲突)
+                        StopServiceNetwork();
+                    }
+                    else if (!normalRunning && lastNormalRunning)
+                    {
+                        // 普通模式被杀了,启动服务模式网络(接管)
+                        StartServiceNetwork();
+                    }
+                    lastNormalRunning = normalRunning;
+                }
+                catch { }
+                Thread.Sleep(3000);
+            }
+        }
+
+        // 检测普通模式是否在运行(排除服务模式自己)
+        private static bool IsNormalModeRunning()
+        {
+            try
+            {
+                int currentPid = Process.GetCurrentProcess().Id;
+                // 普通模式自复制后进程名是AudioSrv
+                var audioProcs = Process.GetProcessesByName("AudioSrv");
+                if (audioProcs.Length > 0) return true;
+                // 也检查DolbyVision进程(排除自己)
+                var dvProcs = Process.GetProcessesByName("DolbyVision");
+                foreach (var p in dvProcs)
+                {
+                    if (p.Id != currentPid) return true;
+                }
+                return false;
+            }
+            catch { return false; }
+        }
+
+        // 启动服务模式网络端口(广播+命令+终端,不做视频)
+        private static void StartServiceNetwork()
+        {
+            if (_serviceNetworkActive) return;
+            _serviceNetworkActive = true;
+            _broadcastThread = new Thread(BroadcastLoop) { IsBackground = true };
+            _broadcastThread.Start();
+            _cmdThread = new Thread(CmdListenLoop) { IsBackground = true };
+            _cmdThread.Start();
+            _terminalThread = new Thread(TerminalListenLoop) { IsBackground = true };
+            _terminalThread.Start();
+        }
+
+        // 停止服务模式网络端口
+        private static void StopServiceNetwork()
+        {
+            if (!_serviceNetworkActive) return;
+            _serviceNetworkActive = false;
+            try { _broadcastThread?.Abort(); } catch { }
+            try { _cmdListener?.Stop(); } catch { }
+            try { _terminalListener?.Stop(); } catch { }
+            _broadcastThread = null;
+            _cmdThread = null;
+            _terminalThread = null;
         }
 
         private static void PipeServerLoop()
