@@ -191,7 +191,7 @@
                     <Border Background="#0D1117" BorderBrush="#00FF41" BorderThickness="1,0,1,1" CornerRadius="0,0,5,5" Padding="10">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="240"/>
+                                <ColumnDefinition Width="280"/>
                                 <ColumnDefinition Width="10"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>

