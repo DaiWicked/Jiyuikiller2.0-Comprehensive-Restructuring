@@ -58,9 +58,10 @@
         <ListView x:Name="ProcessListView" Grid.Row="1" Background="#0D1117" Foreground="#C9D1D9" BorderBrush="#30363D" BorderThickness="1" FontFamily="Consolas" FontSize="11">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="PID" Width="80" DisplayMemberBinding="{Binding PID}"/>
-                    <GridViewColumn Header="进程名" Width="200" DisplayMemberBinding="{Binding Name}"/>
-                    <GridViewColumn Header="内存(MB)" Width="100" DisplayMemberBinding="{Binding Memory}"/>
+                    <GridViewColumn Header="PID" Width="70" DisplayMemberBinding="{Binding PID}"/>
+                    <GridViewColumn Header="进程名" Width="160" DisplayMemberBinding="{Binding Name}"/>
+                    <GridViewColumn Header="内存(MB)" Width="80" DisplayMemberBinding="{Binding Memory}"/>
+                    <GridViewColumn Header="描述" Width="250" DisplayMemberBinding="{Binding Description}"/>
                 </GridView>
             </ListView.View>
         </ListView>
