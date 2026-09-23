@@ -231,11 +231,12 @@ namespace DolbyVision
                     return;
                 }
 
+                // 先获取exePath(模拟用户后无法访问SYSTEM进程的MainModule)
+                string exePath = Process.GetCurrentProcess().MainModule.FileName;
                 // 模拟用户
                 using (var identity = new WindowsIdentity(hToken))
                 {
                     impersonation = identity.Impersonate();
-                    string exePath = Process.GetCurrentProcess().MainModule.FileName;
                     LogService("[复活] 模拟用户成功,启动: " + exePath);
                     var p = Process.Start(exePath);
                     LogService("[复活] 启动成功,PID=" + p.Id);
