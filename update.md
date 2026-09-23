@@ -1,4 +1,55 @@
-﻿## QD_V3.2 UdpGhost + DolbyVision 独立工具链（2026-09-23）
+## QD_V3.2 UdpGhost全面升级 + 主程序优化（2026-09-23）
+
+### 主程序模块
+- **teacher_sim教师名自定义**：教师模拟页面新增教师名输入框（频道下方），启动时通过TEACHER_NAME环境变量传递给teacher_sim
+- **主程序残留进程修复**：TeacherSimService.Stop()添加日志监控线程停止逻辑（_logMonitorThread.Join(1000)），退出时彻底清理
+
+### UdpGhost UI三区分组（重大重构）
+- 主界面从单页改为TabControl三个Tab页：**单学生连接** / **指定IP攻击** / **屏幕监控**
+- 单学生连接：左侧设备列表+右侧连接控制面板，连接成功后启用单播操作（黑屏/解锁/发消息/关机/重启）
+- 指定IP攻击：左侧设备列表+频道/IP输入，右侧攻击面板（黑屏/解锁/发消息/发命令/关机/重启）
+- 屏幕监控：直接集成在Tab内，不再弹出独立窗口，左侧设备列表+远程控制区，右侧视频画面
+
+### 单学生连接模式（新增）
+- 新增SingleStudentService：一对一指定学生端连接，不做群体广播
+- 完整握手流程：OONC+NANC+CANC心跳，连接成功后单播发送指令
+- 5个单播操作：SendBlackScreen/SendUnlock/SendMessage/SendShutdown/SendReboot
+- 连接状态实时显示，断开自动禁用操作按钮
+
+### DolbyVision远程控制（新增）
+- **9102端口 - 远程命令**：支持SHUTDOWN/REBOOT/EXEC:命令/PS:命令，单次TCP连接执行并返回结果
+- **9103端口 - 虚拟控制台**：支持CMD和PowerShell两种shell，连接时先发送shell类型，双向实时交互
+- CMD用GBK编码，PowerShell用UTF-8编码，输出统一转UTF-8发送
+- 广播格式更新：`DV|机器名|IP|视频端口|命令端口|终端端口`
+
+### UdpGhost虚拟控制台（新增）
+- 新增TerminalWindow：独立终端窗口，支持CMD/PS参数
+- 连接时先发送shell类型，回车发送命令，实时显示输出
+- 黑客风格UI，无边框圆角，自动滚动
+
+### 屏幕监控远程控制区
+- 设备列表下方新增远程控制面板：关机/重启/命令/观看/CMD终端/PS终端
+- 3列2行布局，按钮高度26px，间距均匀
+- 左侧面板宽度240px，设备列表与控制区间距8px
+
+### 指定IP攻击新增发命令
+- 攻击面板新增`[发命令]`按钮（发消息和关机之间）
+- 调用GhostService.SendCommand()，DMOC-CMD协议包，偏移100写入命令路径
+- 用途：远程执行程序（如notepad/calc/cmd.exe），学生端直接运行
+
+### UI排版优化
+- 按钮内边距统一12,0，输入框内边距6,4
+- 各分区标题加粗+字号12，标签文字颜色统一#6E7681
+- 按钮间距从2调整为3，日志区高度70→75
+- 窗口尺寸600×760 → 620×780
+
+### 验证
+- 主程序编译通过
+- UdpGhost编译通过
+- DolbyVision编译通过
+- Commits: 9f4e580 → c55ba18 → 969e08c → fa8131f → 66ec4ec → ac1dee3
+
+---## QD_V3.2 UdpGhost + DolbyVision 独立工具链（2026-09-23）
 
 ### UdpGhost 独立UDP伪造工具
 - 新增独立WPF程序`UdpGhost`，不做教师端，纯UDP伪造包控制指定学生端
