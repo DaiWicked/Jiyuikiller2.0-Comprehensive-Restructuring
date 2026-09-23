@@ -76,6 +76,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="ProcessManagerWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -94,6 +98,9 @@
     <Compile Include="MonitorWindow.xaml.cs">
       <DependentUpon>MonitorWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ProcessManagerWindow.xaml.cs">
+      <DependentUpon>ProcessManagerWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Services\GhostService.cs" />
     <Compile Include="Services\BlurHelper.cs" />

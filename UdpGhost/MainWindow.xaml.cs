@@ -331,6 +331,14 @@ namespace UdpGhost
             string result = SendMonitorCommand(info, "OOBE11");
             Log("[远程] Win11恶搞: " + result);
         }
+        private void RemoteProcess_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            var win = new ProcessManagerWindow(info.IP, info.CmdPort, info.MachineName) { Owner = this };
+            win.Show();
+            Log("[远程] 打开进程管理: " + info.MachineName);
+        }
 
         private void RemoteWatch_Click(object sender, RoutedEventArgs e)
         {

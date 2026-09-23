@@ -217,7 +217,8 @@
                                             <Button Content="[CMD终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteCmdTerminal_Click"/>
                                             <Button Content="[PS终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,3" Click="RemotePsTerminal_Click"/>
                                             <Button Content="[Win10恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,3,3,0" Click="RemoteOobeWin10_Click"/>
-                                            <Button Content="[Win11恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,0" Click="RemoteOobeWin11_Click"/>
+                                            <Button Content="[Win11恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,0" Click="RemoteOobeWin11_Click"/>
+                                            <Button Content="[进程管理]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,0" Click="RemoteProcess_Click"/>
                                         </UniformGrid>
                                     </StackPanel>
                                 </Border>
