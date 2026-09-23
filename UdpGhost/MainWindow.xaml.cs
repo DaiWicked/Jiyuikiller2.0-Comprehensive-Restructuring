@@ -315,6 +315,14 @@ namespace UdpGhost
                 MessageBox.Show(result, "远程命令结果");
             }
         }
+        private void RemoteOobe_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上启动OOBE恶搞？\n\n将全屏播放Windows 10开机动画，对方按Alt+F4可退出。", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            string result = SendMonitorCommand(info, "OOBE");
+            Log("[远程] OOBE恶搞: " + result);
+        }
 
         private void RemoteWatch_Click(object sender, RoutedEventArgs e)
         {

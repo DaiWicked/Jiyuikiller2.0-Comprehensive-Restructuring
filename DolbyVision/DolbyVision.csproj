@@ -52,6 +52,7 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <Resource Include="Assets\dolby.ico" />
+    <EmbeddedResource Include="Assets\Win10_OOBE_Prank.html" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -209,13 +209,14 @@
                                 <Border Grid.Row="2" Background="#161B22" BorderBrush="#00FF41" BorderThickness="1" CornerRadius="4" Padding="8">
                                     <StackPanel>
                                         <TextBlock Text="── 远程控制 ──" Foreground="#00FF41" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
-                                        <UniformGrid Columns="3" Rows="2">
+                                        <UniformGrid Columns="3" Rows="3">
                                             <Button Content="[关机]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,0,3,3" Click="RemoteShutdown_Click"/>
                                             <Button Content="[重启]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,0,3,3" Click="RemoteReboot_Click"/>
                                             <Button Content="[命令]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,0,0,3" Click="RemoteCmd_Click"/>
-                                            <Button Content="[观看]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,3,3,0" Click="RemoteWatch_Click"/>
-                                            <Button Content="[CMD终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,0" Click="RemoteCmdTerminal_Click"/>
-                                            <Button Content="[PS终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,0" Click="RemotePsTerminal_Click"/>
+                                            <Button Content="[观看]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,3,3,3" Click="RemoteWatch_Click"/>
+                                            <Button Content="[CMD终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteCmdTerminal_Click"/>
+                                            <Button Content="[PS终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,3" Click="RemotePsTerminal_Click"/>
+                                            <Button Content="[OOBE恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,3,3,0" Click="RemoteOobe_Click"/>
                                         </UniformGrid>
                                     </StackPanel>
                                 </Border>
