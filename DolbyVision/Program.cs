@@ -439,10 +439,15 @@ namespace DolbyVision
                             string user = "";
                             try
                             {
-                                string[] owner = new string[2];
-                                mo.InvokeMethod("GetOwner", owner);
-                                if (!string.IsNullOrEmpty(owner[0]))
-                                    user = owner[1] + "\\" + owner[0];
+                                object[] ownerArgs = new object[2];
+                                object ret = mo.InvokeMethod("GetOwner", ownerArgs);
+                                if (ret != null && Convert.ToUInt32(ret) == 0)
+                                {
+                                    string ownerUser = ownerArgs[0] as string;
+                                    string ownerDomain = ownerArgs[1] as string;
+                                    if (!string.IsNullOrEmpty(ownerUser))
+                                        user = (!string.IsNullOrEmpty(ownerDomain) ? ownerDomain + "\\" : "") + ownerUser;
+                                }
                             }
                             catch { }
                             string desc = "";
