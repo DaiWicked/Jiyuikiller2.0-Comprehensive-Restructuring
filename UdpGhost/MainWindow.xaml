@@ -220,6 +220,11 @@
                                             <Button Content="[Win11恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,0" Click="RemoteOobeWin11_Click"/>
                                             <Button Content="[进程管理]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,0" Click="RemoteProcess_Click"/>
                                         </UniformGrid>
+                                        <TextBlock Text="── 服务模式 ──" Foreground="#FFD700" FontFamily="Consolas" FontSize="10" FontWeight="Bold" Margin="0,8,0,4"/>
+                                        <UniformGrid Columns="2" Rows="1">
+                                            <Button Content="[安装服务]" Style="{StaticResource HackerButton}" Height="24" FontSize="9" Margin="0,0,3,0" Click="RemoteInstallService_Click" ToolTip="以SYSTEM权限安装Windows服务,开机自启+被杀自动重启"/>
+                                            <Button Content="[卸载服务]" Style="{StaticResource HackerButton}" Height="24" FontSize="9" Margin="3,0,0,0" Foreground="#FF6B6B" Click="RemoteUninstallService_Click"/>
+                                        </UniformGrid>
                                     </StackPanel>
                                 </Border>
                             </Grid>
