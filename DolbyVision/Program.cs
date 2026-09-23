@@ -478,28 +478,47 @@ namespace DolbyVision
             {
                 var sb = new System.Text.StringBuilder();
                 sb.AppendLine("PID\t名称\t内存(MB)\t用户\t描述");
-                var procs = Process.GetProcesses();
-                foreach (var p in procs)
+                // 用WMI一次查询获取所有进程基本信息(比Process.GetProcesses+MainModule快且不会挂起)
+                var procDict = new System.Collections.Generic.Dictionary<int, string[]>();
+                using (var searcher = new ManagementObjectSearcher("SELECT ProcessId, Name, WorkingSetSize, ExecutablePath FROM Win32_Process"))
+                {
+                    foreach (ManagementObject mo in searcher.Get())
+                    {
+                        try
+                        {
+                            int pid = Convert.ToInt32(mo["ProcessId"]);
+                            string name = mo["Name"]?.ToString() ?? "";
+                            double mem = mo["WorkingSetSize"] != null ? Math.Round(Convert.ToDouble(mo["WorkingSetSize"]) / 1024.0 / 1024.0, 1) : 0;
+                            string exePath = mo["ExecutablePath"]?.ToString() ?? "";
+                            procDict[pid] = new string[] { name, mem.ToString(), exePath };
+                        }
+                        catch { }
+                    }
+                }
+                // 遍历进程,获取用户和描述
+                foreach (var kv in procDict)
                 {
                     try
                     {
-                        double mem = Math.Round(p.WorkingSet64 / 1024.0 / 1024.0, 1);
-                        // 用P/Invoke获取用户(比WMI GetOwner快10倍以上)
-                        string user = GetProcessOwner(p.Id);
-                        // 描述: 用WMI获取ExecutablePath再读文件版本
+                        int pid = kv.Key;
+                        string name = kv.Value[0];
+                        string mem = kv.Value[1];
+                        string exePath = kv.Value[2];
+                        // 跳过系统空闲进程(PID 0),避免OpenProcess挂起
+                        string user = pid > 4 ? GetProcessOwner(pid) : "SYSTEM";
+                        // 描述:直接读文件版本信息(不打开进程句柄)
                         string desc = "";
-                        try
+                        if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
                         {
-                            string exePath = p.MainModule?.FileName;
-                            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+                            try
                             {
                                 var fvi = FileVersionInfo.GetVersionInfo(exePath);
                                 desc = fvi.FileDescription;
                                 if (string.IsNullOrEmpty(desc)) desc = fvi.ProductName;
                             }
+                            catch { }
                         }
-                        catch { }
-                        sb.AppendLine(p.Id + "\t" + p.ProcessName + "\t" + mem + "\t" + user + "\t" + desc);
+                        sb.AppendLine(pid + "\t" + name + "\t" + mem + "\t" + user + "\t" + desc);
                     }
                     catch { }
                 }
