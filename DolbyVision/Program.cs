@@ -238,6 +238,14 @@ namespace DolbyVision
                     string pidStr = cmd.Substring(13);
                     return KillProcess(pidStr);
                 }
+                if (cmd.Equals("INSTALL_SERVICE", StringComparison.OrdinalIgnoreCase))
+                {
+                    return InstallService();
+                }
+                if (cmd.Equals("UNINSTALL_SERVICE", StringComparison.OrdinalIgnoreCase))
+                {
+                    return UninstallService();
+                }
                 if (cmd.Equals("SHUTDOWN", StringComparison.OrdinalIgnoreCase))
                 {
                     Process.Start(new ProcessStartInfo("shutdown", "/s /t 0") { CreateNoWindow = true, UseShellExecute = false });
@@ -367,6 +375,64 @@ namespace DolbyVision
                 var p = Process.GetProcessById(pid);
                 p.Kill();
                 return "OK: 已终止进程 " + pid + " (" + p.ProcessName + ")";
+            }
+            catch (Exception ex)
+            {
+                return "ERROR: " + ex.Message;
+            }
+        }
+        private static string InstallService()
+        {
+            try
+            {
+                // 用当前exe自己的路径安装服务(被控端真实路径)
+                string exePath = Application.ExecutablePath;
+                string binPath = "\"" + exePath + " /service\"";
+                var psi = new ProcessStartInfo("cmd.exe", "/c sc create DolbyVision binPath= " + binPath + " start= auto && sc failure DolbyVision reset= 0 actions= restart/5000/restart/5000/restart/5000 && sc start DolbyVision")
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    StandardOutputEncoding = Encoding.GetEncoding(936),
+                    StandardErrorEncoding = Encoding.GetEncoding(936)
+                };
+                using (var p = Process.Start(psi))
+                {
+                    string output = p.StandardOutput.ReadToEnd();
+                    string error = p.StandardError.ReadToEnd();
+                    p.WaitForExit(10000);
+                    if (p.ExitCode == 0)
+                        return "OK: 服务安装成功\r\n" + output;
+                    else
+                        return "ERROR: 服务安装失败(可能需要管理员权限)\r\n" + output + error;
+                }
+            }
+            catch (Exception ex)
+            {
+                return "ERROR: " + ex.Message;
+            }
+        }
+        private static string UninstallService()
+        {
+            try
+            {
+                var psi = new ProcessStartInfo("cmd.exe", "/c sc stop DolbyVision & sc delete DolbyVision")
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    StandardOutputEncoding = Encoding.GetEncoding(936),
+                    StandardErrorEncoding = Encoding.GetEncoding(936)
+                };
+                using (var p = Process.Start(psi))
+                {
+                    string output = p.StandardOutput.ReadToEnd();
+                    string error = p.StandardError.ReadToEnd();
+                    p.WaitForExit(10000);
+                    return "OK: 服务卸载命令已执行\r\n" + output + (string.IsNullOrEmpty(error) ? "" : "\r\n" + error);
+                }
             }
             catch (Exception ex)
             {
