@@ -1,4 +1,4 @@
-﻿<Window x:Class="JiYuKiller.MainWindow"
+<Window x:Class="JiYuKiller.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:effects="clr-namespace:JiYuKiller.Effects"
@@ -726,6 +726,14 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="频道:" FontSize="12" Foreground="#FF555566" VerticalAlignment="Center" Margin="0,0,8,0" />
                                     <TextBox Grid.Column="1" x:Name="TextTeacherSimChannel" Text="1" Style="{StaticResource GlassTextBox}" FontSize="12" Padding="6,4" Height="28" Width="60" HorizontalAlignment="Left" />
+                                </Grid>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="教师名:" FontSize="12" Foreground="#FF555566" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox Grid.Column="1" x:Name="TextTeacherSimName" Text="1" Style="{StaticResource GlassTextBox}" FontSize="12" Padding="6,4" Height="28" Width="120" HorizontalAlignment="Left" />
                                 </Grid>
                                 <TextBlock x:Name="TextTeacherSimInfo" Text="本机IP: 获取中..." FontSize="11" Foreground="#FF888899" TextWrapping="Wrap" />
                             </StackPanel>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
@@ -167,14 +167,8 @@ namespace JiYuKiller
             {
                 _teacherSimService.Channel = channel;
             }
-            // ⚠ 这里必须留在 UI 线程调用！
-            // 曾尝试挪到 Task.Run 以消除"最多 15 秒的界面冻结"，但那会造成**永久死锁**：
-            //   · TeacherSimService.Start() 全程持 lock(_lock)，且成功路径会在锁内 sleep 满 15 秒；
-            //   · 它的 OnLogOutput/OnStateChanged 回调在**持锁状态下**同步 Dispatcher.Invoke；
-            //   · 而本窗口的"停止模拟"按钮仍在 UI 线程同步调 Stop() → 抢同一把锁；
-            //   ⇒ UI 线程等锁、后台线程等 UI 线程，互相等待。
-            // 真正的修法是改服务本身（别在锁内 sleep、回调改 BeginInvoke、Stop 也放后台），
-            // 那属于 TeacherSimService.cs（由豆包负责），已写入报告请她处理。
+            // 传递教师名称
+            _teacherSimService.TeacherName = string.IsNullOrWhiteSpace(TextTeacherSimName.Text) ? "1" : TextTeacherSimName.Text.Trim();
             _teacherSimService.Start();
         }
 

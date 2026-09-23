@@ -36,6 +36,9 @@ namespace JiYuKiller.Services
         /// <summary>频道号</summary>
         public int Channel { get; set; } = 1;
 
+        /// <summary>教师名称（传递给teacher_sim的TEACHER_NAME环境变量）</summary>
+        public string TeacherName { get; set; } = "1";
+
         /// <summary>是否运行中</summary>
         public bool IsRunning => _isRunning && _process != null && !_process.HasExited;
 
@@ -93,6 +96,7 @@ namespace JiYuKiller.Services
 
                     // 设置环境变量
                     psi.EnvironmentVariables["TEACHER_CHANNEL"] = Channel.ToString();
+                    psi.EnvironmentVariables["TEACHER_NAME"] = string.IsNullOrEmpty(TeacherName) ? "1" : TeacherName;
 
                     _process = new Process();
                     _process.StartInfo = psi;
@@ -206,6 +210,16 @@ namespace JiYuKiller.Services
                     Logger.Instance.Error("[TeacherSim] 停止时出错", ex);
                     try { _process.Kill(); } catch { }
                 }
+
+                // 停止日志监控线程
+                try
+                {
+                    if (_logMonitorThread != null && _logMonitorThread.IsAlive)
+                    {
+                        _logMonitorThread.Join(1000);
+                    }
+                }
+                catch { }
 
                 _isRunning = false;
                 OnStateChanged?.Invoke(false);
