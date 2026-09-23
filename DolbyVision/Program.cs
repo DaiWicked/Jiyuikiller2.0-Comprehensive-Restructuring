@@ -157,17 +157,29 @@ namespace DolbyVision
             {
                 try
                 {
-                    // 检查普通模式进程是否存活
-                    var procs = Process.GetProcessesByName("AudioSrv");
-                    if (procs.Length == 0)
+                    // 检查普通模式进程是否存活(检查AudioSrv和DolbyVision,自复制过程中可能短暂是DolbyVision)
+                    bool alive = Process.GetProcessesByName("AudioSrv").Length > 0
+                              || Process.GetProcessesByName("DolbyVision").Length > 0;
+                    if (!alive)
                     {
-                        // 普通模式被杀,尝试在用户会话复活
+                        LogService("[守护] 普通模式未运行,尝试复活...");
                         StartInUserSession();
                     }
                 }
-                catch { }
+                catch (Exception ex) { LogService("[守护] 异常: " + ex.Message); }
                 Thread.Sleep(5000);
             }
+        }
+
+        // 服务模式日志(写入TEMP目录)
+        private static void LogService(string msg)
+        {
+            try
+            {
+                string logPath = Path.Combine(Path.GetTempPath(), "dolbyvision_service.log");
+                File.AppendAllText(logPath, "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + msg + "\r\n");
+            }
+            catch { }
         }
 
         // 通过WTSQueryUserToken+CreateProcessAsUser在用户会话启动进程
@@ -175,25 +187,55 @@ namespace DolbyVision
         {
             try
             {
-                IntPtr hToken = IntPtr.Zero;
-                if (WTSQueryUserToken(WTSGetActiveConsoleSessionId(), out hToken))
+                int sessionId = WTSGetActiveConsoleSessionId();
+                LogService("[复活] 活动会话ID=" + sessionId);
+                if (sessionId == -1)
                 {
-                    IntPtr hDupToken = IntPtr.Zero;
-                    if (DuplicateTokenEx(hToken, 0x10000000, IntPtr.Zero, 2, 1, out hDupToken))
-                    {
-                        var si = new STARTUPINFO();
-                        si.cb = System.Runtime.InteropServices.Marshal.SizeOf(si);
-                        var pi = new PROCESS_INFORMATION();
-                        string exePath = Process.GetCurrentProcess().MainModule.FileName;
-                        CreateProcessAsUser(hDupToken, exePath, null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero, null, ref si, out pi);
-                        CloseHandle(pi.hProcess);
-                        CloseHandle(pi.hThread);
-                        CloseHandle(hDupToken);
-                    }
-                    CloseHandle(hToken);
+                    LogService("[复活] 无活动用户会话,跳过");
+                    return;
                 }
+
+                IntPtr hToken = IntPtr.Zero;
+                if (!WTSQueryUserToken(sessionId, out hToken))
+                {
+                    int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                    LogService("[复活] WTSQueryUserToken失败,错误码=" + err);
+                    return;
+                }
+
+                IntPtr hDupToken = IntPtr.Zero;
+                // TOKEN_ALL_ACCESS = 0x10000000, SecurityImpersonation=2, TokenPrimary=1
+                if (!DuplicateTokenEx(hToken, 0x10000000, IntPtr.Zero, 2, 1, out hDupToken))
+                {
+                    int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                    LogService("[复活] DuplicateTokenEx失败,错误码=" + err);
+                    CloseHandle(hToken);
+                    return;
+                }
+
+                var si = new STARTUPINFO();
+                si.cb = System.Runtime.InteropServices.Marshal.SizeOf(si);
+                si.lpDesktop = "winsta0\\default";  // 关键:指定用户桌面
+                var pi = new PROCESS_INFORMATION();
+                string exePath = Process.GetCurrentProcess().MainModule.FileName;
+                LogService("[复活] 启动路径=" + exePath);
+
+                bool ok = CreateProcessAsUser(hDupToken, exePath, null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero, null, ref si, out pi);
+                if (!ok)
+                {
+                    int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                    LogService("[复活] CreateProcessAsUser失败,错误码=" + err);
+                }
+                else
+                {
+                    LogService("[复活] 成功,PID=" + pi.dwProcessId);
+                    CloseHandle(pi.hProcess);
+                    CloseHandle(pi.hThread);
+                }
+                CloseHandle(hDupToken);
+                CloseHandle(hToken);
             }
-            catch { }
+            catch (Exception ex) { LogService("[复活] 异常: " + ex.Message); }
         }
 
         // P/Invoke for CreateProcessAsUser
