@@ -307,17 +307,56 @@ namespace DolbyVision
 
         private static string FindBrowser()
         {
-            // 优先Edge，其次Chrome
-            string[] candidates = {
+            // 优先Edge，其次Chrome；找到第一个可用的就返回，不会冲突
+            var candidates = new System.Collections.Generic.List<string>
+            {
+                // Edge (Win10+)
                 @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
                 @"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+                // Chrome 系统级安装
                 @"C:\Program Files\Google\Chrome\Application\chrome.exe",
-                @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+                @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+                // Chrome 用户级安装 (Win7常见)
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Google\Chrome\Application\chrome.exe")
             };
             foreach (var p in candidates)
             {
                 if (File.Exists(p)) return p;
             }
+            // 注册表查找 Chrome
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe"))
+                {
+                    if (key != null)
+                    {
+                        var v = key.GetValue("") as string;
+                        if (!string.IsNullOrEmpty(v) && File.Exists(v)) return v;
+                    }
+                }
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe"))
+                {
+                    if (key != null)
+                    {
+                        var v = key.GetValue("") as string;
+                        if (!string.IsNullOrEmpty(v) && File.Exists(v)) return v;
+                    }
+                }
+            }
+            catch { }
+            // 注册表查找 Edge
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe"))
+                {
+                    if (key != null)
+                    {
+                        var v = key.GetValue("") as string;
+                        if (!string.IsNullOrEmpty(v) && File.Exists(v)) return v;
+                    }
+                }
+            }
+            catch { }
             return null;
         }
 
