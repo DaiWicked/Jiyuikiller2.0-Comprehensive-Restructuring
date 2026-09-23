@@ -176,6 +176,7 @@
                                         <TextBox x:Name="BlackText" Style="{StaticResource HackerInput}" Margin="0,3" MaxLength="30" ToolTip="黑屏显示文字(可选)"/>
                                         <Button Content="[解锁]" Style="{StaticResource HackerButton}" Margin="0,3" Click="Unlock_Click"/>
                                         <Button Content="[发消息]" Style="{StaticResource HackerButton}" Margin="0,3" Click="SendMsg_Click"/>
+                                        <Button Content="[发命令]" Style="{StaticResource HackerButton}" Margin="0,3" Click="SendCmd_Click"/>
                                         <Button Content="[关机]" Style="{StaticResource HackerButton}" Margin="0,3" Click="Shutdown_Click"/>
                                         <Button Content="[重启]" Style="{StaticResource HackerButton}" Margin="0,3" Click="Reboot_Click"/>
                                     </StackPanel>

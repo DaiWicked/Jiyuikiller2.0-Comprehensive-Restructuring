@@ -102,6 +102,14 @@ namespace UdpGhost
             if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.Message))
                 Log(GhostService.SendText(ip, 4705, dlg.Message));
         }
+        private void SendCmd_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = GetAttackTarget();
+            if (ip == null) { MessageBox.Show("请输入或选择学生端IP"); return; }
+            var dlg = new MessageDialog { Owner = this };
+            if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.Message))
+                Log(GhostService.SendCommand(ip, 4705, dlg.Message));
+        }
         private void Shutdown_Click(object sender, RoutedEventArgs e)
         {
             string ip = GetAttackTarget();
