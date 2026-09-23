@@ -62,7 +62,9 @@ namespace UdpGhost
                                     {
                                         MachineName = parts[1],
                                         IP = parts[2],
-                                        Port = int.Parse(parts[3])
+                                        VideoPort = int.Parse(parts[3]),
+                                        CmdPort = parts.Length > 4 ? int.Parse(parts[4]) : 9102,
+                                        TerminalPort = parts.Length > 5 ? int.Parse(parts[5]) : 9103
                                     };
                                     if (!_senders.Exists(s => s.IP == info.IP))
                                     {
@@ -90,6 +92,96 @@ namespace UdpGhost
             StartWatching(info);
         }
 
+        private SenderInfo GetSelected()
+        {
+            if (SenderList.SelectedIndex < 0) return null;
+            return _senders[SenderList.SelectedIndex];
+        }
+
+        // ========== 远程控制 ==========
+        private void RemoteShutdown_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            if (MessageBox.Show($"确认远程关机 {info.MachineName} ({info.IP})？", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            string result = SendCommand(info, "SHUTDOWN");
+            MessageBox.Show(result, "远程关机");
+        }
+
+        private void RemoteReboot_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            if (MessageBox.Show($"确认远程重启 {info.MachineName} ({info.IP})？", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            string result = SendCommand(info, "REBOOT");
+            MessageBox.Show(result, "远程重启");
+        }
+
+        private void RemoteCmd_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            var dlg = new MessageDialog { Owner = this };
+            if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.Message))
+            {
+                string result = SendCommand(info, "EXEC:" + dlg.Message);
+                MessageBox.Show(result, "远程命令结果");
+            }
+        }
+
+        private void RemoteWatch_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            StartWatching(info);
+        }
+
+        private void RemoteCmdTerminal_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            var term = new TerminalWindow(info.IP, info.TerminalPort, info.MachineName, "CMD");
+            term.Owner = this;
+            term.Show();
+        }
+
+        private void RemotePsTerminal_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            var term = new TerminalWindow(info.IP, info.TerminalPort, info.MachineName, "PS");
+            term.Owner = this;
+            term.Show();
+        }
+
+        private string SendCommand(SenderInfo info, string cmd)
+        {
+            try
+            {
+                using (var client = new TcpClient())
+                {
+                    client.ReceiveTimeout = 5000;
+                    client.Connect(info.IP, info.CmdPort);
+                    using (NetworkStream stream = client.GetStream())
+                    {
+                        byte[] data = Encoding.UTF8.GetBytes(cmd);
+                        stream.Write(data, 0, data.Length);
+                        stream.Flush();
+
+                        byte[] buffer = new byte[8192];
+                        int read = stream.Read(buffer, 0, buffer.Length);
+                        if (read > 0)
+                            return Encoding.UTF8.GetString(buffer, 0, read);
+                        return "无响应";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return "错误: " + ex.Message;
+            }
+        }
+
         private void StartWatching(SenderInfo info)
         {
             _watching = false;
@@ -105,7 +197,7 @@ namespace UdpGhost
             {
                 using (var client = new TcpClient())
                 {
-                    client.Connect(info.IP, info.Port);
+                    client.Connect(info.IP, info.VideoPort);
                     using (NetworkStream stream = client.GetStream())
                     {
                         byte[] buffer = new byte[65536];
@@ -164,6 +256,8 @@ namespace UdpGhost
     {
         public string MachineName { get; set; }
         public string IP { get; set; }
-        public int Port { get; set; }
+        public int VideoPort { get; set; }
+        public int CmdPort { get; set; }
+        public int TerminalPort { get; set; }
     }
 }
