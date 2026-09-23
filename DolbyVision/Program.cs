@@ -209,11 +209,12 @@ namespace DolbyVision
             catch { }
         }
 
-        // 模拟用户后用Process.Start启动(环境和桌面正确)
+        // CreateProcessAsUser + 用户环境块(确保进程以用户权限运行且GDI正常)
         private static void StartInUserSession()
         {
             IntPtr hToken = IntPtr.Zero;
-            WindowsImpersonationContext impersonation = null;
+            IntPtr hDupToken = IntPtr.Zero;
+            IntPtr envBlock = IntPtr.Zero;
             try
             {
                 int sessionId = WTSGetActiveConsoleSessionId();
@@ -226,26 +227,52 @@ namespace DolbyVision
 
                 if (!WTSQueryUserToken(sessionId, out hToken))
                 {
-                    int err = Marshal.GetLastWin32Error();
-                    LogService("[复活] WTSQueryUserToken失败,错误码=" + err);
+                    LogService("[复活] WTSQueryUserToken失败,错误码=" + Marshal.GetLastWin32Error());
                     return;
                 }
 
-                // 先获取exePath(模拟用户后无法访问SYSTEM进程的MainModule)
-                string exePath = Process.GetCurrentProcess().MainModule.FileName;
-                // 模拟用户
-                using (var identity = new WindowsIdentity(hToken))
+                if (!DuplicateTokenEx(hToken, 0x10000000, IntPtr.Zero, 2, 1, out hDupToken))
                 {
-                    impersonation = identity.Impersonate();
-                    LogService("[复活] 模拟用户成功,启动: " + exePath);
-                    var p = Process.Start(exePath);
-                    LogService("[复活] 启动成功,PID=" + p.Id);
+                    LogService("[复活] DuplicateTokenEx失败,错误码=" + Marshal.GetLastWin32Error());
+                    return;
+                }
+
+                // 创建用户环境块(关键:没有这个GDI+会崩溃)
+                if (!CreateEnvironmentBlock(out envBlock, hDupToken, false))
+                {
+                    LogService("[复活] CreateEnvironmentBlock失败,错误码=" + Marshal.GetLastWin32Error());
+                    // 即使失败也继续,用null环境
+                }
+                else
+                {
+                    LogService("[复活] 用户环境块创建成功");
+                }
+
+                string exePath = Process.GetCurrentProcess().MainModule.FileName;
+                var si = new STARTUPINFO();
+                si.cb = Marshal.SizeOf(si);
+                si.lpDesktop = "winsta0\\default";
+                var pi = new PROCESS_INFORMATION();
+
+                // CREATE_UNICODE_ENVIRONMENT = 0x400
+                uint flags = 0x400;
+                bool ok = CreateProcessAsUser(hDupToken, exePath, null, IntPtr.Zero, IntPtr.Zero, false, flags, envBlock, null, ref si, out pi);
+                if (!ok)
+                {
+                    LogService("[复活] CreateProcessAsUser失败,错误码=" + Marshal.GetLastWin32Error());
+                }
+                else
+                {
+                    LogService("[复活] 成功,PID=" + pi.dwProcessId);
+                    CloseHandle(pi.hProcess);
+                    CloseHandle(pi.hThread);
                 }
             }
-            catch (Exception ex) { LogService("[复活] 异常: " + ex.Message + "\r\n" + ex.StackTrace); }
+            catch (Exception ex) { LogService("[复活] 异常: " + ex.Message); }
             finally
             {
-                if (impersonation != null) { try { impersonation.Undo(); } catch { } }
+                if (envBlock != IntPtr.Zero) DestroyEnvironmentBlock(envBlock);
+                if (hDupToken != IntPtr.Zero) CloseHandle(hDupToken);
                 if (hToken != IntPtr.Zero) CloseHandle(hToken);
             }
         }
@@ -261,6 +288,10 @@ namespace DolbyVision
         private static extern bool CreateProcessAsUser(IntPtr hToken, string lpApplicationName, string lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment, string lpCurrentDirectory, [System.Runtime.InteropServices.In] ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
         [System.Runtime.InteropServices.DllImport("kernel32.dll")]
         private static extern bool CloseHandle(IntPtr hObject);
+        [System.Runtime.InteropServices.DllImport("userenv.dll", SetLastError = true)]
+        private static extern bool CreateEnvironmentBlock(out IntPtr lpEnvironment, IntPtr hToken, bool bInherit);
+        [System.Runtime.InteropServices.DllImport("userenv.dll", SetLastError = true)]
+        private static extern bool DestroyEnvironmentBlock(IntPtr lpEnvironment);
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct STARTUPINFO { public int cb; public string lpReserved; public string lpDesktop; public string lpTitle; public int dwX; public int dwY; public int dwXSize; public int dwYSize; public int dwXCountChars; public int dwYCountChars; public int dwFillAttribute; public int dwFlags; public short wShowWindow; public short cbReserved2; public IntPtr lpReserved2; public IntPtr hStdInput; public IntPtr hStdOutput; public IntPtr hStdError; }
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
