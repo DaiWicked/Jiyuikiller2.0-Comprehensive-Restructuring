@@ -44,6 +44,17 @@ namespace DolbyVision
         [STAThread]
         static void Main(string[] args)
         {
+            // 全局异常处理-记录崩溃原因
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                try
+                {
+                    string logPath = Path.Combine(Path.GetTempPath(), "dolbyvision_crash.log");
+                    File.AppendAllText(logPath, "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] 未处理异常: " + e.ExceptionObject.ToString() + "\r\n\r\n");
+                }
+                catch { }
+            };
+
             // 服务模式: sc create时binPath带 /service 参数
             if (args.Length > 0 && args[0].Equals("/service", StringComparison.OrdinalIgnoreCase))
             {
@@ -65,6 +76,12 @@ namespace DolbyVision
                 catch { }
             }
 
+            try
+            {
+                string normalLog = Path.Combine(Path.GetTempPath(), "dolbyvision_normal.log");
+                File.AppendAllText(normalLog, "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] 普通模式启动,路径=" + Application.ExecutablePath + "\r\n");
+            }
+            catch { }
             StartServices();
             while (_running) { Thread.Sleep(1000); }
         }
