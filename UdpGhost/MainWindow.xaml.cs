@@ -252,14 +252,16 @@ namespace UdpGhost
                                         IP = parts[2],
                                         VideoPort = int.Parse(parts[3]),
                                         CmdPort = parts.Length > 4 ? int.Parse(parts[4]) : 9102,
-                                        TerminalPort = parts.Length > 5 ? int.Parse(parts[5]) : 9103
+                                        TerminalPort = parts.Length > 5 ? int.Parse(parts[5]) : 9103,
+                                        Mode = parts.Length > 6 ? parts[6] : "NORMAL"
                                     };
                                     if (!_monitorSenders.Exists(s => s.IP == info.IP))
                                     {
                                         _monitorSenders.Add(info);
                                         Dispatcher.Invoke(() =>
                                         {
-                                            MonitorSenderList.Items.Add($"{info.MachineName} ({info.IP})");
+                                            string modeTag = info.Mode == "SERVICE" ? "[服务]" : "[普通]";
+                                            MonitorSenderList.Items.Add($"{modeTag} {info.MachineName} ({info.IP})");
                                         });
                                     }
                                 }
@@ -354,11 +356,20 @@ namespace UdpGhost
         {
             var info = GetMonitorSelected();
             if (info == null) { MessageBox.Show("请先选择设备"); return; }
-            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上卸载DolbyVision服务？", "确认卸载", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上卸载DolbyVision服务？\n\n卸载后服务将停止,设备将从列表中消失。", "确认卸载", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
 
-            string result = SendMonitorCommand(info, "UNINSTALL_SERVICE");
-            Log("[远程] 卸载服务: " + result);
-            MessageBox.Show(result, "卸载结果", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                string result = SendMonitorCommand(info, "UNINSTALL_SERVICE");
+                Log("[远程] 卸载服务: " + result);
+                MessageBox.Show(result + "\n\n3秒后服务将停止并删除,设备将从列表消失。", "卸载结果", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception)
+            {
+                // 卸载服务时连接断开是正常的,不显示错误
+                Log("[远程] 卸载服务: 连接已断开(服务已停止,正常现象)");
+                MessageBox.Show("服务卸载命令已发送,连接断开是正常现象(服务已停止)。", "卸载结果", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
 
         private void RemoteWatch_Click(object sender, RoutedEventArgs e)
@@ -489,5 +500,6 @@ namespace UdpGhost
         public int VideoPort { get; set; }
         public int CmdPort { get; set; }
         public int TerminalPort { get; set; }
+        public string Mode { get; set; } = "NORMAL";
     }
 }

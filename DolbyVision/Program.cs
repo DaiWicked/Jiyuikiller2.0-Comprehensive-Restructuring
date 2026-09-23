@@ -31,6 +31,7 @@ namespace DolbyVision
         private static volatile bool _running = true;
         private static string _machineName;
         private static string _localIp;
+        private static bool _isServiceMode = false;
 
         [STAThread]
         static void Main(string[] args)
@@ -60,6 +61,10 @@ namespace DolbyVision
             while (_running) { Thread.Sleep(1000); }
         }
 
+        internal static void SetServiceMode(bool isService)
+        {
+            _isServiceMode = isService;
+        }
         internal static void StartServices()
         {
             _running = true;
@@ -69,8 +74,12 @@ namespace DolbyVision
             _broadcastThread = new Thread(BroadcastLoop) { IsBackground = true };
             _broadcastThread.Start();
 
-            _videoThread = new Thread(VideoListenLoop) { IsBackground = true };
-            _videoThread.Start();
+            // 服务模式(Session 0)无法捕获用户桌面,不启动视频流
+            if (!_isServiceMode)
+            {
+                _videoThread = new Thread(VideoListenLoop) { IsBackground = true };
+                _videoThread.Start();
+            }
 
             _cmdThread = new Thread(CmdListenLoop) { IsBackground = true };
             _cmdThread.Start();
@@ -109,7 +118,8 @@ namespace DolbyVision
                     using (var client = new UdpClient())
                     {
                         client.EnableBroadcast = true;
-                        string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{CmdPort}|{TerminalPort}";
+                        string mode = _isServiceMode ? "SERVICE" : "NORMAL";
+                        string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{CmdPort}|{TerminalPort}|{mode}";
                         byte[] data = Encoding.UTF8.GetBytes(msg);
                         client.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, BroadcastPort));
                     }
@@ -425,12 +435,15 @@ namespace DolbyVision
         {
             try
             {
-                RunCmd("sc stop DolbyVision");
-                bool deleteOk = RunCmd("sc delete DolbyVision");
-                if (deleteOk)
-                    return "OK: 服务已卸载";
-                else
-                    return "WARNING: 服务可能未在运行,删除命令已执行";
+                // 先回复主控端,然后延迟3秒再停止并删除自己(避免TCP连接断开导致报错)
+                var t = new Thread(() =>
+                {
+                    Thread.Sleep(3000);
+                    RunCmd("sc stop DolbyVision");
+                    RunCmd("sc delete DolbyVision");
+                }) { IsBackground = true };
+                t.Start();
+                return "OK: 服务卸载命令已发送,3秒后执行(连接将断开)";
             }
             catch (Exception ex)
             {
@@ -653,6 +666,7 @@ namespace DolbyVision
         }
         protected override void OnStart(string[] args)
         {
+            Program.SetServiceMode(true);
             Program.StartServices();
         }
         protected override void OnStop()
