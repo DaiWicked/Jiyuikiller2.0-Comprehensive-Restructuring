@@ -100,18 +100,22 @@ namespace DolbyVision
             _terminalThread.Start();
         }
 
-        // 检测命名管道是否可用(服务模式是否在运行)
+        // 检测命名管道是否可用(服务模式是否在运行),重试3次
         private static bool CheckPipeAvailable()
         {
-            try
+            for (int i = 0; i < 3; i++)
             {
-                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
+                try
                 {
-                    client.Connect(500);
-                    return true;
+                    using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
+                    {
+                        client.Connect(500);
+                        return true;
+                    }
                 }
+                catch { Thread.Sleep(200); }
             }
-            catch { return false; }
+            return false;
         }
         internal static void StopServices()
         {
@@ -138,11 +142,19 @@ namespace DolbyVision
             {
                 try
                 {
-                    
-                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.None))
+                    // 设置ACL允许所有认证用户连接(SYSTEM创建的管道默认不允许普通用户连接)
+                    var pipeSecurity = new PipeSecurity();
+                    pipeSecurity.AddAccessRule(new PipeAccessRule(
+                        new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
+                        PipeAccessRights.ReadWrite, AccessControlType.Allow));
+                    pipeSecurity.AddAccessRule(new PipeAccessRule(
+                        new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
+                        PipeAccessRights.FullControl, AccessControlType.Allow));
+
+                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.None, 1024, 1024, pipeSecurity))
                     {
                         server.WaitForConnection();
-                        
+
                         using (var reader = new StreamReader(server, Encoding.UTF8))
                         using (var writer = new StreamWriter(server, Encoding.UTF8) { AutoFlush = true })
                         {
