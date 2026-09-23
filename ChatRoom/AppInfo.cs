@@ -4,7 +4,7 @@ namespace ChatRoom
 {
     public static class AppInfo
     {
-        public const string Version = "QD_V3.0_JiYuRebuild_JustForYou";
+        public const string Version = "QD_V3.1_JiYuRebuild_Funny";
         public const string ProductName = "聊天室";
         public const string Tagline = "学习不通的增强模块，可单独使用";
     }
