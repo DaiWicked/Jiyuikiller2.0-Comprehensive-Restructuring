@@ -15,6 +15,7 @@ namespace UdpGhost
             public int PID { get; set; }
             public string Name { get; set; }
             public string Memory { get; set; }
+            public string User { get; set; }
             public string Description { get; set; }
         }
 
@@ -78,7 +79,8 @@ namespace UdpGhost
                         PID = pid,
                         Name = parts[1],
                         Memory = parts[2],
-                        Description = parts.Length >= 4 ? parts[3] : ""
+                        User = parts.Length >= 4 ? parts[3] : "",
+                        Description = parts.Length >= 5 ? parts[4] : ""
                     });
                 }
             }
@@ -90,7 +92,7 @@ namespace UdpGhost
             string filter = SearchBox.Text.Trim().ToLower();
             var filtered = string.IsNullOrEmpty(filter)
                 ? _allProcesses
-                : _allProcesses.Where(p => p.Name.ToLower().Contains(filter) || (p.Description ?? "").ToLower().Contains(filter)).ToList();
+                : _allProcesses.Where(p => p.Name.ToLower().Contains(filter) || (p.User ?? "").ToLower().Contains(filter) || (p.Description ?? "").ToLower().Contains(filter)).ToList();
             ProcessListView.ItemsSource = filtered;
         }
 
