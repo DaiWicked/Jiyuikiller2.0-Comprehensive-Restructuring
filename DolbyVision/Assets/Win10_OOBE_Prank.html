@@ -276,10 +276,24 @@
             sto = "";
             window.temp_i = 0;
             oobeword1.style.opacity = 0;
-            // 循环播放
+            // 播放完成，显示完成提示后自动关闭
             setTimeout(function() {
                 oobeword1.style.top = "44.5%";
-                changertp();
+                oobeword1.innerHTML = "完成";
+                oobeword1.style.display = "block";
+                // 淡入
+                var fi = setInterval(function() {
+                    window.temp_i += 2;
+                    oobeword1.style.opacity = window.temp_i / 100;
+                    if (window.temp_i >= 100) {
+                        clearInterval(fi);
+                        // 显示2秒后关闭窗口
+                        setTimeout(function() {
+                            window.open('', '_self');
+                            window.close();
+                        }, 2000);
+                    }
+                }, 12);
             }, 500);
         }
 
