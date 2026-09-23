@@ -1,4 +1,63 @@
-## QD_V3.2 UdpGhost全面升级 + 主程序优化（2026-09-23）
+## QD_V3.1_JiYuRebuild_Funny DolbyVision SYSTEM模式 + 远程进程管理 + 封禁恶搞（2026-09-24）
+
+### DolbyVision SYSTEM模式（独立网络端口）
+- SYSTEM模式（Windows服务）始终监听独立端口：9112命令 / 9113终端，与普通模式9102/9103不冲突
+- 主控端设备列表显示两个设备：`[普通]`（可屏幕监控）和 `[SYSTEM]`（可高权限操作）
+- 普通模式被杀后，`[SYSTEM]`设备仍在线，可执行关机/重启/杀进程/命令行
+- SYSTEM模式不做屏幕监控（Session 0隔离限制）
+- 广播mode字段：NORMAL / SYSTEM
+
+### 远程进程管理（新增）
+- UdpGhost新增ProcessManagerWindow独立窗口，支持搜索/刷新/结束进程
+- 进程信息5列：PID | 进程名 | 内存(MB) | 用户 | 描述
+- 用户获取：P/Invoke OpenProcessToken + GetTokenInformation + LookupAccountSid（比WMI GetOwner快10倍）
+- 描述获取：WMI Win32_Process.ExecutablePath + FileVersionInfo.GetVersionInfo（不打开进程句柄，避免x86 WOW64挂起）
+- 搜索支持按进程名/用户/描述过滤
+- 后台线程获取进程列表，避免UI卡死
+
+### [封禁]恶搞功能（新增）
+- ban.jpg内嵌为DolbyVision EmbeddedResource
+- 被控端收到BAN命令后全屏显示ban.jpg 5秒
+- 隐蔽性：无边框+最大化+TopMost+ShowInTaskbar=false+不在Alt+Tab显示
+- 新线程显示窗口，不阻塞命令处理
+
+### [重启普通模式]功能（新增）
+- SYSTEM模式收到RESTART_NORMAL命令后，用CreateProcessAsUser在用户会话中启动普通模式
+- 流程：WTSGetActiveConsoleSessionId → WTSQueryUserToken → DuplicateTokenEx → CreateEnvironmentBlock → CreateProcessAsUser(lpDesktop="winsta0\default")
+- 普通模式被杀后，通过SYSTEM模式可恢复屏幕监控
+- 关键修复：WTSGetActiveConsoleSessionId在kernel32.dll（之前误写为wtsapi32.dll导致守护复活5种方式全部失败）
+
+### 命名管道提权
+- 普通模式杀进程失败时，通过命名管道`\\.\pipe\DolbyVisionPriv`请求SYSTEM模式提权执行
+- 协议：`KILL:<PID>` → `OK:<msg>` / `ERROR:<msg>`
+
+### DolbyVision端口分配
+- 9100 = UDP广播发现
+- 9101 = TCP视频流(MJPEG)
+- 9102 = TCP命令(普通模式)
+- 9103 = TCP虚拟控制台(普通模式)
+- 9112 = TCP命令(SYSTEM模式)
+- 9113 = TCP虚拟控制台(SYSTEM模式)
+
+### UdpGhost UI更新
+- 屏幕监控远程控制区：3列4行布局（关机/重启/命令/观看/CMD终端/PS终端/Win10恶搞/Win11恶搞/封禁/进程管理）
+- 服务模式区域：安装服务/卸载服务/重启普通模式
+- [封禁]按钮红色，[重启普通模式]仅SYSTEM模式设备可用
+
+### 已验证做不通（记录）
+- 从Windows服务启动用户会话.NET进程：schtasks /it（SYSTEM下无法解析交互用户）、at /interactive（被安全增强禁用）
+- UdpGhost远程部署：极域远程命令权限受限，certutil下载+schtasks启动均无效
+- 黑屏保持：学生端5秒自动解除
+- Win7 teacher_sim崩溃
+
+### 验证
+- 全部4个项目编译通过（主程序/UdpGhost/ChatRoom/DolbyVision）
+- 远程进程管理用户和描述正常显示
+- 封禁恶搞全屏显示5秒正常
+- 重启普通模式功能验证成功
+- Commits: 80979e3 → 40563be → dbbb112 → 63d1733 → 276125e → a6d805f → 6761171 → 6616ac7 → 1a8ae5a → 796b930
+
+---## QD_V3.2 UdpGhost全面升级 + 主程序优化（2026-09-23）
 
 ### 主程序模块
 - **teacher_sim教师名自定义**：教师模拟页面新增教师名输入框（频道下方），启动时通过TEACHER_NAME环境变量传递给teacher_sim
