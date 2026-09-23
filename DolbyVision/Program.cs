@@ -162,17 +162,23 @@ namespace DolbyVision
             {
                 try
                 {
-                    // 只检查AudioSrv(普通模式自复制后的进程名)
-                    // 注意: 不能检查DolbyVision,因为服务模式自己就是DolbyVision.exe,会误判为存活
-                    bool alive = Process.GetProcessesByName("AudioSrv").Length > 0;
-                    if (!alive)
+                    // 服务模式和普通模式进程名可能都是AudioSrv.exe(因为安装服务时binPath指向的是自复制后的AudioSrv.exe)
+                    // 所以需要排除当前进程(服务模式自己),只检查是否有其他AudioSrv进程(普通模式)
+                    int currentPid = Process.GetCurrentProcess().Id;
+                    var allProcs = Process.GetProcessesByName("AudioSrv");
+                    int normalCount = 0;
+                    foreach (var p in allProcs)
                     {
-                        LogService("[守护] 普通模式(AudioSrv)未运行,尝试复活...");
+                        if (p.Id != currentPid) normalCount++;
+                    }
+                    if (normalCount == 0)
+                    {
+                        LogService("[守护] 普通模式未运行(当前PID=" + currentPid + ", AudioSrv总数=" + allProcs.Length + "),尝试复活...");
                         StartInUserSession();
                     }
                     else
                     {
-                        LogService("[守护] 普通模式运行中,进程数=" + Process.GetProcessesByName("AudioSrv").Length);
+                        LogService("[守护] 普通模式运行中,普通模式进程数=" + normalCount);
                     }
                 }
                 catch (Exception ex) { LogService("[守护] 异常: " + ex.Message); }
