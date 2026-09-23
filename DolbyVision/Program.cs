@@ -22,6 +22,9 @@ namespace DolbyVision
         private const int VideoPort = 9101;
         private const int CmdPort = 9102;
         private const int TerminalPort = 9103;
+        // SYSTEM模式(服务)使用不同端口,避免与普通模式冲突
+        private const int CmdPortSystem = 9112;
+        private const int TerminalPortSystem = 9113;
         private const int Fps = 8;
         private const int JpegQuality = 60;
 
@@ -102,13 +105,24 @@ namespace DolbyVision
             try { _terminalListener?.Stop(); } catch { }
         }
 
-        // ========== 服务模式: 命名管道提权 ==========
-        // 服务模式不做屏幕监控(Session 0无法访问桌面),只做命名管道提权(杀系统进程)
-        // 守护复活功能已移除: 从Windows服务启动用户会话.NET进程受Session 0隔离限制,经5种方式验证均不可行
+        // ========== SYSTEM模式(服务): 独立网络端口 + 命名管道提权 ==========
+        // SYSTEM模式始终监听网络端口(9112命令/9113终端),与普通模式(9102/9103)不冲突
+        // 普通模式被杀后,主控端仍可连接SYSTEM模式执行关机/重启/杀进程/命令行
+        // SYSTEM模式不做屏幕监控(Session 0无法访问桌面)
         internal static void StartServiceMode()
         {
             _running = true;
             _isServiceMode = true;
+            _machineName = Environment.MachineName;
+            _localIp = GetLocalIP();
+            // 启动广播+命令+终端(不做视频)
+            _broadcastThread = new Thread(BroadcastLoop) { IsBackground = true };
+            _broadcastThread.Start();
+            _cmdThread = new Thread(CmdListenLoop) { IsBackground = true };
+            _cmdThread.Start();
+            _terminalThread = new Thread(TerminalListenLoop) { IsBackground = true };
+            _terminalThread.Start();
+            // 命名管道(为普通模式提供提权)
             _pipeThread = new Thread(PipeServerLoop) { IsBackground = true };
             _pipeThread.Start();
         }
@@ -167,8 +181,10 @@ namespace DolbyVision
                     using (var client = new UdpClient())
                     {
                         client.EnableBroadcast = true;
-                        string mode = _isServiceMode ? "SERVICE" : "NORMAL";
-                        string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{CmdPort}|{TerminalPort}|{mode}";
+                        string mode = _isServiceMode ? "SYSTEM" : "NORMAL";
+                        int cmdPort = _isServiceMode ? CmdPortSystem : CmdPort;
+                        int termPort = _isServiceMode ? TerminalPortSystem : TerminalPort;
+                        string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{cmdPort}|{termPort}|{mode}";
                         byte[] data = Encoding.UTF8.GetBytes(msg);
                         client.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, BroadcastPort));
                     }
@@ -234,12 +250,13 @@ namespace DolbyVision
             catch { }
         }
 
-        // ========== 远程命令（9102） ==========
+        // ========== 远程命令 ==========
         private static void CmdListenLoop()
         {
             try
             {
-                _cmdListener = new TcpListener(IPAddress.Any, CmdPort);
+                int port = _isServiceMode ? CmdPortSystem : CmdPort;
+                _cmdListener = new TcpListener(IPAddress.Any, port);
                 _cmdListener.Start();
                 while (_running)
                 {
@@ -580,12 +597,13 @@ namespace DolbyVision
             return null;
         }
 
-        // ========== 虚拟控制台（9103） ==========
+        // ========== 虚拟控制台 ==========
         private static void TerminalListenLoop()
         {
             try
             {
-                _terminalListener = new TcpListener(IPAddress.Any, TerminalPort);
+                int port = _isServiceMode ? TerminalPortSystem : TerminalPort;
+                _terminalListener = new TcpListener(IPAddress.Any, port);
                 _terminalListener.Start();
                 while (_running)
                 {

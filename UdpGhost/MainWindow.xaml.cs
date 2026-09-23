@@ -260,7 +260,7 @@ namespace UdpGhost
                                         _monitorSenders.Add(info);
                                         Dispatcher.Invoke(() =>
                                         {
-                                            string modeTag = info.Mode == "SERVICE" ? "[服务]" : "[普通]";
+                                            string modeTag = info.Mode == "SYSTEM" ? "[SYSTEM]" : "[普通]";
                                             MonitorSenderList.Items.Add($"{modeTag} {info.MachineName} ({info.IP})");
                                         });
                                     }
