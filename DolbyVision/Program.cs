@@ -316,6 +316,7 @@ namespace DolbyVision
                 // Chrome 系统级安装
                 @"C:\Program Files\Google\Chrome\Application\chrome.exe",
                 @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+                @"C:\Program Files\Google Chrome\Chrome\App\chrome.exe",
                 // Chrome 用户级安装 (Win7常见)
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Google\Chrome\Application\chrome.exe")
             };
