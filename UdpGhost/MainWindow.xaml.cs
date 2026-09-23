@@ -315,13 +315,21 @@ namespace UdpGhost
                 MessageBox.Show(result, "远程命令结果");
             }
         }
-        private void RemoteOobe_Click(object sender, RoutedEventArgs e)
+        private void RemoteOobeWin10_Click(object sender, RoutedEventArgs e)
         {
             var info = GetMonitorSelected();
             if (info == null) { MessageBox.Show("请先选择设备"); return; }
-            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上启动OOBE恶搞？\n\n将全屏播放Windows 10开机动画，对方按Alt+F4可退出。", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上启动Win10恶搞？\n\n将全屏播放Windows 10开机动画，对方按Alt+F4可退出。", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
             string result = SendMonitorCommand(info, "OOBE");
-            Log("[远程] OOBE恶搞: " + result);
+            Log("[远程] Win10恶搞: " + result);
+        }
+        private void RemoteOobeWin11_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上启动Win11恶搞？\n\n将全屏播放Windows 11开机动画（黑色背景+彩色圆圈），对方按Alt+F4可退出。", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            string result = SendMonitorCommand(info, "OOBE11");
+            Log("[远程] Win11恶搞: " + result);
         }
 
         private void RemoteWatch_Click(object sender, RoutedEventArgs e)

