@@ -325,6 +325,14 @@ namespace UdpGhost
             string result = SendMonitorCommand(info, "OOBE");
             Log("[远程] Win10恶搞: " + result);
         }
+        private void RemoteBan_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上执行封禁？\n\n将全屏显示封禁图片5秒，对方无法操作。", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            string result = SendMonitorCommand(info, "BAN");
+            Log("[远程] 封禁: " + result);
+        }
         private void RemoteOobeWin11_Click(object sender, RoutedEventArgs e)
         {
             var info = GetMonitorSelected();

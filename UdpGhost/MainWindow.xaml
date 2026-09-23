@@ -209,7 +209,7 @@
                                 <Border Grid.Row="2" Background="#161B22" BorderBrush="#00FF41" BorderThickness="1" CornerRadius="4" Padding="8">
                                     <StackPanel>
                                         <TextBlock Text="── 远程控制 ──" Foreground="#00FF41" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
-                                        <UniformGrid Columns="3" Rows="3">
+                                        <UniformGrid Columns="3" Rows="4">
                                             <Button Content="[关机]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,0,3,3" Click="RemoteShutdown_Click"/>
                                             <Button Content="[重启]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,0,3,3" Click="RemoteReboot_Click"/>
                                             <Button Content="[命令]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,0,0,3" Click="RemoteCmd_Click"/>
@@ -218,7 +218,8 @@
                                             <Button Content="[PS终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,3" Click="RemotePsTerminal_Click"/>
                                             <Button Content="[Win10恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,3,3,0" Click="RemoteOobeWin10_Click"/>
                                             <Button Content="[Win11恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,0" Click="RemoteOobeWin11_Click"/>
-                                            <Button Content="[进程管理]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,0" Click="RemoteProcess_Click"/>
+                                            <Button Content="[封禁]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,3,3,0" Foreground="#FF6B6B" Click="RemoteBan_Click"/>
+                                            <Button Content="[进程管理]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,0" Click="RemoteProcess_Click"/>
                                         </UniformGrid>
                                         <TextBlock Text="── 服务模式 ──" Foreground="#FFD700" FontFamily="Consolas" FontSize="10" FontWeight="Bold" Margin="0,8,0,4"/>
                                         <UniformGrid Columns="2" Rows="1">

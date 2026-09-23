@@ -56,6 +56,7 @@
     <Resource Include="Assets\dolby.ico" />
     <EmbeddedResource Include="Assets\Win10_OOBE_Prank.html" />
     <EmbeddedResource Include="Assets\Win11_OOBE_Prank.html" />
+    <EmbeddedResource Include="Assets\ban.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
