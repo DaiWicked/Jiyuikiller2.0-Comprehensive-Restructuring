@@ -255,7 +255,7 @@ namespace DolbyVision
         }
 
         // P/Invoke for CreateProcessAsUser
-        [System.Runtime.InteropServices.DllImport("wtsapi32.dll")]
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
         private static extern int WTSGetActiveConsoleSessionId();
         [System.Runtime.InteropServices.DllImport("wtsapi32.dll")]
         private static extern bool WTSQueryUserToken(int SessionId, out IntPtr phToken);
