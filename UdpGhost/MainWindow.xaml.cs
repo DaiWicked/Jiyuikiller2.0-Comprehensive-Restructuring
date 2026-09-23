@@ -253,8 +253,7 @@ namespace UdpGhost
                                         VideoPort = int.Parse(parts[3]),
                                         CmdPort = parts.Length > 4 ? int.Parse(parts[4]) : 9102,
                                         TerminalPort = parts.Length > 5 ? int.Parse(parts[5]) : 9103,
-                                        Mode = parts.Length > 6 ? parts[6] : "NORMAL",
-                                        Priv = parts.Length > 7 ? parts[7] : "PRIV_OFF"
+                                        Mode = parts.Length > 6 ? parts[6] : "NORMAL"
                                     };
                                     if (!_monitorSenders.Exists(s => s.IP == info.IP))
                                     {
@@ -262,8 +261,7 @@ namespace UdpGhost
                                         Dispatcher.Invoke(() =>
                                         {
                                             string modeTag = info.Mode == "SERVICE" ? "[服务]" : "[普通]";
-                                            string privTag = info.Priv == "PRIV_ON" ? "[已提权]" : "";
-                                            MonitorSenderList.Items.Add($"{modeTag}{privTag} {info.MachineName} ({info.IP})");
+                                            MonitorSenderList.Items.Add($"{modeTag} {info.MachineName} ({info.IP})");
                                         });
                                     }
                                 }
@@ -503,6 +501,5 @@ namespace UdpGhost
         public int CmdPort { get; set; }
         public int TerminalPort { get; set; }
         public string Mode { get; set; } = "NORMAL";
-        public string Priv { get; set; } = "PRIV_OFF";
     }
 }

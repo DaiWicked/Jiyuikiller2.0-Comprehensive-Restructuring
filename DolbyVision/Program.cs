@@ -36,7 +36,6 @@ namespace DolbyVision
         private static string _machineName;
         private static string _localIp;
         private static bool _isServiceMode = false;
-        private static bool _privAvailable = false;
         private static Thread _pipeThread;
         private const string PipeName = "DolbyVisionPriv";
 
@@ -77,11 +76,6 @@ namespace DolbyVision
             _running = true;
             _machineName = Environment.MachineName;
             _localIp = GetLocalIP();
-            // 普通模式:检测服务模式是否在运行(命名管道是否可连接)
-            if (!_isServiceMode)
-            {
-                _privAvailable = CheckPipeAvailable();
-            }
 
             _broadcastThread = new Thread(BroadcastLoop) { IsBackground = true };
             _broadcastThread.Start();
@@ -100,23 +94,6 @@ namespace DolbyVision
             _terminalThread.Start();
         }
 
-        // 检测命名管道是否可用(服务模式是否在运行),重试3次
-        private static bool CheckPipeAvailable()
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                try
-                {
-                    using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
-                    {
-                        client.Connect(500);
-                        return true;
-                    }
-                }
-                catch { Thread.Sleep(200); }
-            }
-            return false;
-        }
         internal static void StopServices()
         {
             _running = false;
@@ -142,19 +119,11 @@ namespace DolbyVision
             {
                 try
                 {
-                    // 设置ACL允许所有认证用户连接(SYSTEM创建的管道默认不允许普通用户连接)
-                    var pipeSecurity = new PipeSecurity();
-                    pipeSecurity.AddAccessRule(new PipeAccessRule(
-                        new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
-                        PipeAccessRights.ReadWrite, AccessControlType.Allow));
-                    pipeSecurity.AddAccessRule(new PipeAccessRule(
-                        new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
-                        PipeAccessRights.FullControl, AccessControlType.Allow));
-
-                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.None, 1024, 1024, pipeSecurity))
+                    
+                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.None))
                     {
                         server.WaitForConnection();
-
+                        
                         using (var reader = new StreamReader(server, Encoding.UTF8))
                         using (var writer = new StreamWriter(server, Encoding.UTF8) { AutoFlush = true })
                         {
@@ -199,8 +168,7 @@ namespace DolbyVision
                     {
                         client.EnableBroadcast = true;
                         string mode = _isServiceMode ? "SERVICE" : "NORMAL";
-                        string priv = _privAvailable ? "PRIV_ON" : "PRIV_OFF";
-                        string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{CmdPort}|{TerminalPort}|{mode}|{priv}";
+                        string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{CmdPort}|{TerminalPort}|{mode}";
                         byte[] data = Encoding.UTF8.GetBytes(msg);
                         client.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, BroadcastPort));
                     }
