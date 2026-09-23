@@ -105,14 +105,23 @@ namespace DolbyVision
         // ========== 服务模式: 命名管道 + 守护复活 ==========
         internal static void StartServiceMode()
         {
-            _running = true;
-            _isServiceMode = true;
-            // 命名管道: 接收普通模式的杀进程转发请求
-            _pipeThread = new Thread(PipeServerLoop) { IsBackground = true };
-            _pipeThread.Start();
-            // 守护线程: 监控普通模式(AudioSrv.exe),被杀就复活
-            _guardianThread = new Thread(GuardianLoop) { IsBackground = true };
-            _guardianThread.Start();
+            try
+            {
+                LogService("[服务] StartServiceMode 开始");
+                _running = true;
+                _isServiceMode = true;
+                _pipeThread = new Thread(PipeServerLoop) { IsBackground = true };
+                _pipeThread.Start();
+                LogService("[服务] 命名管道线程已启动");
+                _guardianThread = new Thread(GuardianLoop) { IsBackground = true };
+                _guardianThread.Start();
+                LogService("[服务] 守护线程已启动");
+                LogService("[服务] StartServiceMode 完成");
+            }
+            catch (Exception ex)
+            {
+                LogService("[服务] StartServiceMode 异常: " + ex.Message);
+            }
         }
 
         private static void PipeServerLoop()
@@ -121,15 +130,11 @@ namespace DolbyVision
             {
                 try
                 {
-                    // ACL: 只允许当前用户访问
-                    var pipeSecurity = new PipeSecurity();
-                    var currentUser = WindowsIdentity.GetCurrent().Owner;
-                    pipeSecurity.AddAccessRule(new PipeAccessRule(currentUser, PipeAccessRights.ReadWrite, AccessControlType.Allow));
-                    pipeSecurity.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), PipeAccessRights.ReadWrite, AccessControlType.Allow));
-
-                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.None, 1024, 1024, pipeSecurity))
+                    LogService("[管道] 等待连接...");
+                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.None))
                     {
                         server.WaitForConnection();
+                        LogService("[管道] 客户端已连接");
                         using (var reader = new StreamReader(server, Encoding.UTF8))
                         using (var writer = new StreamWriter(server, Encoding.UTF8) { AutoFlush = true })
                         {
@@ -172,12 +177,13 @@ namespace DolbyVision
         }
 
         // 服务模式日志(写入TEMP目录)
-        private static void LogService(string msg)
+        internal static void LogService(string msg)
         {
             try
             {
-                string logPath = Path.Combine(Path.GetTempPath(), "dolbyvision_service.log");
-                File.AppendAllText(logPath, "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + msg + "\r\n");
+                // 固定路径,SYSTEM账户的TEMP是C:\\Windows\\Temp
+                string logPath = @"C:\Windows\Temp\dolbyvision_service.log";
+                File.AppendAllText(logPath, "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " + msg + "\r\n");
             }
             catch { }
         }
@@ -849,7 +855,16 @@ namespace DolbyVision
         }
         protected override void OnStart(string[] args)
         {
-            Program.StartServiceMode();
+            try
+            {
+                Program.LogService("[服务] OnStart 被调用");
+                Program.StartServiceMode();
+                Program.LogService("[服务] OnStart 完成");
+            }
+            catch (Exception ex)
+            {
+                Program.LogService("[服务] OnStart 异常: " + ex.Message + "\r\n" + ex.StackTrace);
+            }
         }
         protected override void OnStop()
         {
