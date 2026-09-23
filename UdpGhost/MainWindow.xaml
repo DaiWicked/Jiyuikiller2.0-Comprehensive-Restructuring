@@ -190,8 +190,8 @@
                     <Border Background="#0D1117" BorderBrush="#00FF41" BorderThickness="1,0,1,1" CornerRadius="0,0,5,5" Padding="10">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="210"/>
-                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="240"/>
+                                <ColumnDefinition Width="10"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <!-- 左侧：设备列表 + 远程控制 -->
@@ -202,19 +202,19 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Button Grid.Row="0" Content="[扫描设备]" Style="{StaticResource HackerButton}" Width="90" HorizontalAlignment="Left" Click="MonitorScan_Click"/>
-                                <Border Grid.Row="1" Background="#161B22" BorderBrush="#30363D" BorderThickness="1" CornerRadius="4" Margin="0,5,0,5">
+                                <Border Grid.Row="1" Background="#161B22" BorderBrush="#30363D" BorderThickness="1" CornerRadius="4" Margin="0,8,0,8">
                                     <ListBox x:Name="MonitorSenderList" Background="#161B22" Foreground="#C9D1D9" BorderThickness="0" FontFamily="Consolas" FontSize="11" MouseDoubleClick="MonitorList_DoubleClick"/>
                                 </Border>
-                                <Border Grid.Row="2" Background="#161B22" BorderBrush="#00FF41" BorderThickness="1" CornerRadius="4" Padding="6">
+                                <Border Grid.Row="2" Background="#161B22" BorderBrush="#00FF41" BorderThickness="1" CornerRadius="4" Padding="8">
                                     <StackPanel>
-                                        <TextBlock Text="── 远程控制 ──" Foreground="#00FF41" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                                        <UniformGrid Columns="2" Rows="4">
-                                            <Button Content="[关机]" Style="{StaticResource HackerButton}" Height="24" FontSize="10" Margin="0,0,2,2" Click="RemoteShutdown_Click"/>
-                                            <Button Content="[重启]" Style="{StaticResource HackerButton}" Height="24" FontSize="10" Margin="2,0,0,2" Click="RemoteReboot_Click"/>
-                                            <Button Content="[命令]" Style="{StaticResource HackerButton}" Height="24" FontSize="10" Margin="0,2,2,0" Click="RemoteCmd_Click"/>
-                                            <Button Content="[观看]" Style="{StaticResource HackerButton}" Height="24" FontSize="10" Margin="2,2,0,0" Click="RemoteWatch_Click"/>
-                                            <Button Content="[CMD终端]" Style="{StaticResource HackerButton}" Height="24" FontSize="10" Margin="0,2,2,0" Click="RemoteCmdTerminal_Click"/>
-                                            <Button Content="[PS终端]" Style="{StaticResource HackerButton}" Height="24" FontSize="10" Margin="2,2,0,0" Click="RemotePsTerminal_Click"/>
+                                        <TextBlock Text="── 远程控制 ──" Foreground="#00FF41" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                        <UniformGrid Columns="3" Rows="2">
+                                            <Button Content="[关机]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,0,3,3" Click="RemoteShutdown_Click"/>
+                                            <Button Content="[重启]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,0,3,3" Click="RemoteReboot_Click"/>
+                                            <Button Content="[命令]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,0,0,3" Click="RemoteCmd_Click"/>
+                                            <Button Content="[观看]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,3,3,0" Click="RemoteWatch_Click"/>
+                                            <Button Content="[CMD终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,0" Click="RemoteCmdTerminal_Click"/>
+                                            <Button Content="[PS终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,0" Click="RemotePsTerminal_Click"/>
                                         </UniformGrid>
                                     </StackPanel>
                                 </Border>
