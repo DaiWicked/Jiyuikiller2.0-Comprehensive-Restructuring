@@ -254,9 +254,11 @@ namespace DolbyVision
                 si.lpDesktop = "winsta0\\default";
                 var pi = new PROCESS_INFORMATION();
 
-                // CREATE_UNICODE_ENVIRONMENT = 0x400
-                uint flags = 0x400;
-                bool ok = CreateProcessAsUser(hDupToken, exePath, null, IntPtr.Zero, IntPtr.Zero, false, flags, envBlock, null, ref si, out pi);
+                // 通过cmd.exe /c start作为中间进程启动,确保目标进程的父进程是用户会话的cmd.exe
+                // 直接CreateProcessAsUser启动的进程GDI+初始化不稳定会崩溃
+                string cmdLine = "/c start \"\" \"" + exePath + "\"";
+                uint flags = 0x400; // CREATE_UNICODE_ENVIRONMENT
+                bool ok = CreateProcessAsUser(hDupToken, "cmd.exe", cmdLine, IntPtr.Zero, IntPtr.Zero, false, flags, envBlock, null, ref si, out pi);
                 if (!ok)
                 {
                     LogService("[复活] CreateProcessAsUser失败,错误码=" + Marshal.GetLastWin32Error());
