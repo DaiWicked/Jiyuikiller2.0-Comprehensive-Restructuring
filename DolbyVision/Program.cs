@@ -265,7 +265,13 @@ namespace DolbyVision
                     LogService("[复活] 用户环境块创建成功");
                 }
 
-                string exePath = Process.GetCurrentProcess().MainModule.FileName;
+                // 启动System32下的exe,它会自复制到TEMP并正常启动普通模式(和手动运行流程一致)
+                string exePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "DolbyVision.exe");
+                if (!File.Exists(exePath))
+                {
+                    LogService("[复活] System32下的DolbyVision.exe不存在,回退到当前路径");
+                    exePath = Process.GetCurrentProcess().MainModule.FileName;
+                }
                 var si = new STARTUPINFO();
                 si.cb = Marshal.SizeOf(si);
                 si.lpDesktop = "winsta0\\default";
@@ -640,12 +646,22 @@ namespace DolbyVision
         {
             try
             {
-                string exePath = Application.ExecutablePath;
-                string binPath = "\"" + exePath + " /service\"";
-                // 分步执行,只返回简洁结果
+                // 先复制到System32,确保服务模式和普通模式使用不同的exe文件
+                // 从服务CreateProcessAsUser启动TEMP下的exe会CLR崩溃
+                string system32Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "DolbyVision.exe");
+                try
+                {
+                    File.Copy(Application.ExecutablePath, system32Path, true);
+                }
+                catch (Exception ex)
+                {
+                    return "ERROR: 复制到System32失败: " + ex.Message;
+                }
+
+                string binPath = "\"" + system32Path + " /service\"";
                 bool createOk = RunCmd("sc create DolbyVision binPath= " + binPath + " start= auto");
                 if (!createOk) return "ERROR: 创建服务失败(可能需要管理员权限)";
-                bool failureOk = RunCmd("sc failure DolbyVision reset= 0 actions= restart/5000/restart/5000/restart/5000");
+                RunCmd("sc failure DolbyVision reset= 0 actions= restart/5000/restart/5000/restart/5000");
                 bool startOk = RunCmd("sc start DolbyVision");
                 if (startOk)
                     return "OK: 服务安装并启动成功(SYSTEM权限+开机自启+被杀5秒重启)";
