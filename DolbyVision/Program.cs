@@ -425,17 +425,42 @@ namespace DolbyVision
         {
             try
             {
-                var procs = Process.GetProcesses();
                 var sb = new System.Text.StringBuilder();
-                sb.AppendLine("PID\t名称\t内存(MB)");
-                foreach (var p in procs)
+                sb.AppendLine("PID\t名称\t内存(MB)\t用户\t描述");
+                using (var searcher = new ManagementObjectSearcher("SELECT ProcessId, Name, WorkingSetSize, ExecutablePath FROM Win32_Process"))
                 {
-                    try
+                    foreach (ManagementObject mo in searcher.Get())
                     {
-                        double mem = Math.Round(p.WorkingSet64 / 1024.0 / 1024.0, 1);
-                        sb.AppendLine(p.Id + "\t" + p.ProcessName + "\t" + mem);
+                        try
+                        {
+                            int pid = Convert.ToInt32(mo["ProcessId"]);
+                            string name = mo["Name"]?.ToString() ?? "";
+                            double mem = mo["WorkingSetSize"] != null ? Math.Round(Convert.ToDouble(mo["WorkingSetSize"]) / 1024.0 / 1024.0, 1) : 0;
+                            string user = "";
+                            try
+                            {
+                                string[] owner = new string[2];
+                                mo.InvokeMethod("GetOwner", owner);
+                                if (!string.IsNullOrEmpty(owner[0]))
+                                    user = owner[1] + "\\" + owner[0];
+                            }
+                            catch { }
+                            string desc = "";
+                            try
+                            {
+                                string exePath = mo["ExecutablePath"]?.ToString();
+                                if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+                                {
+                                    var fvi = FileVersionInfo.GetVersionInfo(exePath);
+                                    desc = fvi.FileDescription;
+                                    if (string.IsNullOrEmpty(desc)) desc = fvi.ProductName;
+                                }
+                            }
+                            catch { }
+                            sb.AppendLine(pid + "\t" + name + "\t" + mem + "\t" + user + "\t" + desc);
+                        }
+                        catch { }
                     }
-                    catch { }
                 }
                 return "OK:\r\n" + sb.ToString();
             }
