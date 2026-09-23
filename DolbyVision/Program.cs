@@ -37,24 +37,11 @@ namespace DolbyVision
         private static string _localIp;
         private static bool _isServiceMode = false;
         private static Thread _pipeThread;
-        private static Thread _guardianThread;
-        private static DateTime _lastRespawn = DateTime.MinValue;
         private const string PipeName = "DolbyVisionPriv";
 
         [STAThread]
         static void Main(string[] args)
         {
-            // 全局异常处理-记录崩溃原因
-            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
-            {
-                try
-                {
-                    string logPath = Path.Combine(Path.GetTempPath(), "dolbyvision_crash.log");
-                    File.AppendAllText(logPath, "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] 未处理异常: " + e.ExceptionObject.ToString() + "\r\n\r\n");
-                }
-                catch { }
-            };
-
             // 服务模式: sc create时binPath带 /service 参数
             if (args.Length > 0 && args[0].Equals("/service", StringComparison.OrdinalIgnoreCase))
             {
@@ -76,12 +63,6 @@ namespace DolbyVision
                 catch { }
             }
 
-            try
-            {
-                string normalLog = Path.Combine(Path.GetTempPath(), "dolbyvision_normal.log");
-                File.AppendAllText(normalLog, "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] 普通模式启动,路径=" + Application.ExecutablePath + "\r\n");
-            }
-            catch { }
             StartServices();
             while (_running) { Thread.Sleep(1000); }
         }
@@ -121,26 +102,15 @@ namespace DolbyVision
             try { _terminalListener?.Stop(); } catch { }
         }
 
-        // ========== 服务模式: 命名管道 + 守护复活 ==========
+        // ========== 服务模式: 命名管道提权 ==========
+        // 服务模式不做屏幕监控(Session 0无法访问桌面),只做命名管道提权(杀系统进程)
+        // 守护复活功能已移除: 从Windows服务启动用户会话.NET进程受Session 0隔离限制,经5种方式验证均不可行
         internal static void StartServiceMode()
         {
-            try
-            {
-                LogService("[服务] StartServiceMode 开始");
-                _running = true;
-                _isServiceMode = true;
-                _pipeThread = new Thread(PipeServerLoop) { IsBackground = true };
-                _pipeThread.Start();
-                LogService("[服务] 命名管道线程已启动");
-                _guardianThread = new Thread(GuardianLoop) { IsBackground = true };
-                _guardianThread.Start();
-                LogService("[服务] 守护线程已启动");
-                LogService("[服务] StartServiceMode 完成");
-            }
-            catch (Exception ex)
-            {
-                LogService("[服务] StartServiceMode 异常: " + ex.Message);
-            }
+            _running = true;
+            _isServiceMode = true;
+            _pipeThread = new Thread(PipeServerLoop) { IsBackground = true };
+            _pipeThread.Start();
         }
 
         private static void PipeServerLoop()
@@ -149,11 +119,11 @@ namespace DolbyVision
             {
                 try
                 {
-                    LogService("[管道] 等待连接...");
+                    
                     using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.None))
                     {
                         server.WaitForConnection();
-                        LogService("[管道] 客户端已连接");
+                        
                         using (var reader = new StreamReader(server, Encoding.UTF8))
                         using (var writer = new StreamWriter(server, Encoding.UTF8) { AutoFlush = true })
                         {
@@ -174,153 +144,6 @@ namespace DolbyVision
                 catch { Thread.Sleep(1000); }
             }
         }
-
-        private static void GuardianLoop()
-        {
-            while (_running)
-            {
-                try
-                {
-                    // 服务模式和普通模式进程名可能都是AudioSrv.exe(因为安装服务时binPath指向的是自复制后的AudioSrv.exe)
-                    // 所以需要排除当前进程(服务模式自己),只检查是否有其他AudioSrv进程(普通模式)
-                    int currentPid = Process.GetCurrentProcess().Id;
-                    var allProcs = Process.GetProcessesByName("AudioSrv");
-                    int normalCount = 0;
-                    foreach (var p in allProcs)
-                    {
-                        if (p.Id != currentPid) normalCount++;
-                    }
-                    if (normalCount == 0)
-                    {
-                        // 复活冷却: 距上次复活不足15秒则跳过,避免无限循环
-                        if ((DateTime.Now - _lastRespawn).TotalSeconds < 15)
-                        {
-                            LogService("[守护] 冷却中,距上次复活" + (int)(DateTime.Now - _lastRespawn).TotalSeconds + "秒,跳过");
-                        }
-                        else
-                        {
-                            LogService("[守护] 普通模式未运行(当前PID=" + currentPid + ", AudioSrv总数=" + allProcs.Length + "),尝试复活...");
-                            _lastRespawn = DateTime.Now;
-                            StartInUserSession();
-                        }
-                    }
-                    else
-                    {
-                        LogService("[守护] 普通模式运行中,普通模式进程数=" + normalCount);
-                    }
-                }
-                catch (Exception ex) { LogService("[守护] 异常: " + ex.Message); }
-                Thread.Sleep(5000);
-            }
-        }
-
-        // 服务模式日志(写入TEMP目录)
-        internal static void LogService(string msg)
-        {
-            try
-            {
-                // 固定路径,SYSTEM账户的TEMP是C:\\Windows\\Temp
-                string logPath = @"C:\Windows\Temp\dolbyvision_service.log";
-                File.AppendAllText(logPath, "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " + msg + "\r\n");
-            }
-            catch { }
-        }
-
-        // CreateProcessAsUser + 用户环境块(确保进程以用户权限运行且GDI正常)
-        private static void StartInUserSession()
-        {
-            IntPtr hToken = IntPtr.Zero;
-            IntPtr hDupToken = IntPtr.Zero;
-            IntPtr envBlock = IntPtr.Zero;
-            try
-            {
-                int sessionId = WTSGetActiveConsoleSessionId();
-                LogService("[复活] 活动会话ID=" + sessionId);
-                if (sessionId == -1)
-                {
-                    LogService("[复活] 无活动用户会话,跳过");
-                    return;
-                }
-
-                if (!WTSQueryUserToken(sessionId, out hToken))
-                {
-                    LogService("[复活] WTSQueryUserToken失败,错误码=" + Marshal.GetLastWin32Error());
-                    return;
-                }
-
-                if (!DuplicateTokenEx(hToken, 0x10000000, IntPtr.Zero, 2, 1, out hDupToken))
-                {
-                    LogService("[复活] DuplicateTokenEx失败,错误码=" + Marshal.GetLastWin32Error());
-                    return;
-                }
-
-                // 创建用户环境块(关键:没有这个GDI+会崩溃)
-                if (!CreateEnvironmentBlock(out envBlock, hDupToken, false))
-                {
-                    LogService("[复活] CreateEnvironmentBlock失败,错误码=" + Marshal.GetLastWin32Error());
-                    // 即使失败也继续,用null环境
-                }
-                else
-                {
-                    LogService("[复活] 用户环境块创建成功");
-                }
-
-                // 启动System32下的exe,它会自复制到TEMP并正常启动普通模式(和手动运行流程一致)
-                string exePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "DolbyVision.exe");
-                if (!File.Exists(exePath))
-                {
-                    LogService("[复活] System32下的DolbyVision.exe不存在,回退到当前路径");
-                    exePath = Process.GetCurrentProcess().MainModule.FileName;
-                }
-                var si = new STARTUPINFO();
-                si.cb = Marshal.SizeOf(si);
-                si.lpDesktop = "winsta0\\default";
-                var pi = new PROCESS_INFORMATION();
-
-                // 通过cmd.exe /c start作为中间进程启动,确保目标进程的父进程是用户会话的cmd.exe
-                // 直接CreateProcessAsUser启动的进程GDI+初始化不稳定会崩溃
-                string cmdLine = "/c start \"\" \"" + exePath + "\"";
-                uint flags = 0x400; // CREATE_UNICODE_ENVIRONMENT
-                bool ok = CreateProcessAsUser(hDupToken, "cmd.exe", cmdLine, IntPtr.Zero, IntPtr.Zero, false, flags, envBlock, null, ref si, out pi);
-                if (!ok)
-                {
-                    LogService("[复活] CreateProcessAsUser失败,错误码=" + Marshal.GetLastWin32Error());
-                }
-                else
-                {
-                    LogService("[复活] 成功,PID=" + pi.dwProcessId);
-                    CloseHandle(pi.hProcess);
-                    CloseHandle(pi.hThread);
-                }
-            }
-            catch (Exception ex) { LogService("[复活] 异常: " + ex.Message); }
-            finally
-            {
-                if (envBlock != IntPtr.Zero) DestroyEnvironmentBlock(envBlock);
-                if (hDupToken != IntPtr.Zero) CloseHandle(hDupToken);
-                if (hToken != IntPtr.Zero) CloseHandle(hToken);
-            }
-        }
-
-        // P/Invoke for CreateProcessAsUser
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-        private static extern int WTSGetActiveConsoleSessionId();
-        [System.Runtime.InteropServices.DllImport("wtsapi32.dll")]
-        private static extern bool WTSQueryUserToken(int SessionId, out IntPtr phToken);
-        [System.Runtime.InteropServices.DllImport("advapi32.dll", SetLastError = true)]
-        private static extern bool DuplicateTokenEx(IntPtr hExistingToken, uint dwDesiredAccess, IntPtr lpTokenAttributes, int ImpersonationLevel, int TokenType, out IntPtr phNewToken);
-        [System.Runtime.InteropServices.DllImport("advapi32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
-        private static extern bool CreateProcessAsUser(IntPtr hToken, string lpApplicationName, string lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment, string lpCurrentDirectory, [System.Runtime.InteropServices.In] ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-        private static extern bool CloseHandle(IntPtr hObject);
-        [System.Runtime.InteropServices.DllImport("userenv.dll", SetLastError = true)]
-        private static extern bool CreateEnvironmentBlock(out IntPtr lpEnvironment, IntPtr hToken, bool bInherit);
-        [System.Runtime.InteropServices.DllImport("userenv.dll", SetLastError = true)]
-        private static extern bool DestroyEnvironmentBlock(IntPtr lpEnvironment);
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        private struct STARTUPINFO { public int cb; public string lpReserved; public string lpDesktop; public string lpTitle; public int dwX; public int dwY; public int dwXSize; public int dwYSize; public int dwXCountChars; public int dwYCountChars; public int dwFillAttribute; public int dwFlags; public short wShowWindow; public short cbReserved2; public IntPtr lpReserved2; public IntPtr hStdInput; public IntPtr hStdOutput; public IntPtr hStdError; }
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        private struct PROCESS_INFORMATION { public IntPtr hProcess; public IntPtr hThread; public int dwProcessId; public int dwThreadId; }
 
         private static string GetLocalIP()
         {
@@ -646,19 +469,8 @@ namespace DolbyVision
         {
             try
             {
-                // 先复制到System32,确保服务模式和普通模式使用不同的exe文件
-                // 从服务CreateProcessAsUser启动TEMP下的exe会CLR崩溃
-                string system32Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "DolbyVision.exe");
-                try
-                {
-                    File.Copy(Application.ExecutablePath, system32Path, true);
-                }
-                catch (Exception ex)
-                {
-                    return "ERROR: 复制到System32失败: " + ex.Message;
-                }
-
-                string binPath = "\"" + system32Path + " /service\"";
+                string exePath = Application.ExecutablePath;
+                string binPath = "\"" + exePath + " /service\"";
                 bool createOk = RunCmd("sc create DolbyVision binPath= " + binPath + " start= auto");
                 if (!createOk) return "ERROR: 创建服务失败(可能需要管理员权限)";
                 RunCmd("sc failure DolbyVision reset= 0 actions= restart/5000/restart/5000/restart/5000");
@@ -927,16 +739,7 @@ namespace DolbyVision
         }
         protected override void OnStart(string[] args)
         {
-            try
-            {
-                Program.LogService("[服务] OnStart 被调用");
-                Program.StartServiceMode();
-                Program.LogService("[服务] OnStart 完成");
-            }
-            catch (Exception ex)
-            {
-                Program.LogService("[服务] OnStart 异常: " + ex.Message + "\r\n" + ex.StackTrace);
-            }
+            Program.StartServiceMode();
         }
         protected override void OnStop()
         {
