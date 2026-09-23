@@ -37,6 +37,7 @@ namespace DolbyVision
         private static bool _isServiceMode = false;
         private static Thread _pipeThread;
         private static Thread _guardianThread;
+        private static DateTime _lastRespawn = DateTime.MinValue;
         private const string PipeName = "DolbyVisionPriv";
 
         [STAThread]
@@ -173,8 +174,17 @@ namespace DolbyVision
                     }
                     if (normalCount == 0)
                     {
-                        LogService("[守护] 普通模式未运行(当前PID=" + currentPid + ", AudioSrv总数=" + allProcs.Length + "),尝试复活...");
-                        StartInUserSession();
+                        // 复活冷却: 距上次复活不足15秒则跳过,避免无限循环
+                        if ((DateTime.Now - _lastRespawn).TotalSeconds < 15)
+                        {
+                            LogService("[守护] 冷却中,距上次复活" + (int)(DateTime.Now - _lastRespawn).TotalSeconds + "秒,跳过");
+                        }
+                        else
+                        {
+                            LogService("[守护] 普通模式未运行(当前PID=" + currentPid + ", AudioSrv总数=" + allProcs.Length + "),尝试复活...");
+                            _lastRespawn = DateTime.Now;
+                            StartInUserSession();
+                        }
                     }
                     else
                     {
@@ -198,58 +208,37 @@ namespace DolbyVision
             catch { }
         }
 
-        // 通过WTSQueryUserToken+CreateProcessAsUser在用户会话启动进程
+        // 通过schtasks创建立即运行的任务,在用户会话启动进程(比CreateProcessAsUser更稳定)
         private static void StartInUserSession()
         {
             try
             {
-                int sessionId = WTSGetActiveConsoleSessionId();
-                LogService("[复活] 活动会话ID=" + sessionId);
-                if (sessionId == -1)
-                {
-                    LogService("[复活] 无活动用户会话,跳过");
-                    return;
-                }
-
-                IntPtr hToken = IntPtr.Zero;
-                if (!WTSQueryUserToken(sessionId, out hToken))
-                {
-                    int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-                    LogService("[复活] WTSQueryUserToken失败,错误码=" + err);
-                    return;
-                }
-
-                IntPtr hDupToken = IntPtr.Zero;
-                // TOKEN_ALL_ACCESS = 0x10000000, SecurityImpersonation=2, TokenPrimary=1
-                if (!DuplicateTokenEx(hToken, 0x10000000, IntPtr.Zero, 2, 1, out hDupToken))
-                {
-                    int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-                    LogService("[复活] DuplicateTokenEx失败,错误码=" + err);
-                    CloseHandle(hToken);
-                    return;
-                }
-
-                var si = new STARTUPINFO();
-                si.cb = System.Runtime.InteropServices.Marshal.SizeOf(si);
-                si.lpDesktop = "winsta0\\default";  // 关键:指定用户桌面
-                var pi = new PROCESS_INFORMATION();
                 string exePath = Process.GetCurrentProcess().MainModule.FileName;
-                LogService("[复活] 启动路径=" + exePath);
+                string taskName = "DV_Respawn_" + DateTime.Now.ToString("HHmmss");
+                LogService("[复活] 用schtasks启动: " + exePath);
 
-                bool ok = CreateProcessAsUser(hDupToken, exePath, null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero, null, ref si, out pi);
-                if (!ok)
+                // 创建一个立即运行的任务,/it表示交互式用户会话
+                string cmd = string.Format(
+                    "/c schtasks /create /tn \"{0}\" /tr \"\\\"{1}\\\"\" /sc once /st 23:59 /it /f && schtasks /run /tn \"{0}\" && timeout /t 3 /nobreak >nul && schtasks /delete /tn \"{0}\" /f",
+                    taskName, exePath);
+
+                var psi = new ProcessStartInfo("cmd.exe", cmd)
                 {
-                    int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-                    LogService("[复活] CreateProcessAsUser失败,错误码=" + err);
-                }
-                else
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+                using (var p = Process.Start(psi))
                 {
-                    LogService("[复活] 成功,PID=" + pi.dwProcessId);
-                    CloseHandle(pi.hProcess);
-                    CloseHandle(pi.hThread);
+                    string output = p.StandardOutput.ReadToEnd();
+                    string error = p.StandardError.ReadToEnd();
+                    p.WaitForExit(10000);
+                    LogService("[复活] schtasks输出: " + output.Replace("\r\n", " ").Trim());
+                    if (!string.IsNullOrEmpty(error))
+                        LogService("[复活] schtasks错误: " + error.Replace("\r\n", " ").Trim());
+                    LogService("[复活] schtasks退出码=" + p.ExitCode);
                 }
-                CloseHandle(hDupToken);
-                CloseHandle(hToken);
             }
             catch (Exception ex) { LogService("[复活] 异常: " + ex.Message); }
         }
