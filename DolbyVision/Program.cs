@@ -36,6 +36,7 @@ namespace DolbyVision
         private static string _machineName;
         private static string _localIp;
         private static bool _isServiceMode = false;
+        private static bool _privAvailable = false;
         private static Thread _pipeThread;
         private const string PipeName = "DolbyVisionPriv";
 
@@ -76,6 +77,11 @@ namespace DolbyVision
             _running = true;
             _machineName = Environment.MachineName;
             _localIp = GetLocalIP();
+            // 普通模式:检测服务模式是否在运行(命名管道是否可连接)
+            if (!_isServiceMode)
+            {
+                _privAvailable = CheckPipeAvailable();
+            }
 
             _broadcastThread = new Thread(BroadcastLoop) { IsBackground = true };
             _broadcastThread.Start();
@@ -94,6 +100,19 @@ namespace DolbyVision
             _terminalThread.Start();
         }
 
+        // 检测命名管道是否可用(服务模式是否在运行)
+        private static bool CheckPipeAvailable()
+        {
+            try
+            {
+                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
+                {
+                    client.Connect(500);
+                    return true;
+                }
+            }
+            catch { return false; }
+        }
         internal static void StopServices()
         {
             _running = false;
@@ -168,7 +187,8 @@ namespace DolbyVision
                     {
                         client.EnableBroadcast = true;
                         string mode = _isServiceMode ? "SERVICE" : "NORMAL";
-                        string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{CmdPort}|{TerminalPort}|{mode}";
+                        string priv = _privAvailable ? "PRIV_ON" : "PRIV_OFF";
+                        string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{CmdPort}|{TerminalPort}|{mode}|{priv}";
                         byte[] data = Encoding.UTF8.GetBytes(msg);
                         client.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, BroadcastPort));
                     }
