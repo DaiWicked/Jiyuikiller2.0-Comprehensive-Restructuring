@@ -6,6 +6,9 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.IO.Pipes;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.ServiceProcess;
 using System.Threading;
 using System.Windows.Forms;
@@ -32,6 +35,9 @@ namespace DolbyVision
         private static string _machineName;
         private static string _localIp;
         private static bool _isServiceMode = false;
+        private static Thread _pipeThread;
+        private static Thread _guardianThread;
+        private const string PipeName = "DolbyVisionPriv";
 
         [STAThread]
         static void Main(string[] args)
@@ -95,6 +101,116 @@ namespace DolbyVision
             try { _cmdListener?.Stop(); } catch { }
             try { _terminalListener?.Stop(); } catch { }
         }
+
+        // ========== 服务模式: 命名管道 + 守护复活 ==========
+        internal static void StartServiceMode()
+        {
+            _running = true;
+            _isServiceMode = true;
+            // 命名管道: 接收普通模式的杀进程转发请求
+            _pipeThread = new Thread(PipeServerLoop) { IsBackground = true };
+            _pipeThread.Start();
+            // 守护线程: 监控普通模式(AudioSrv.exe),被杀就复活
+            _guardianThread = new Thread(GuardianLoop) { IsBackground = true };
+            _guardianThread.Start();
+        }
+
+        private static void PipeServerLoop()
+        {
+            while (_running)
+            {
+                try
+                {
+                    // ACL: 只允许当前用户访问
+                    var pipeSecurity = new PipeSecurity();
+                    var currentUser = WindowsIdentity.GetCurrent().Owner;
+                    pipeSecurity.AddAccessRule(new PipeAccessRule(currentUser, PipeAccessRights.ReadWrite, AccessControlType.Allow));
+                    pipeSecurity.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), PipeAccessRights.ReadWrite, AccessControlType.Allow));
+
+                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.None, 1024, 1024, pipeSecurity))
+                    {
+                        server.WaitForConnection();
+                        using (var reader = new StreamReader(server, Encoding.UTF8))
+                        using (var writer = new StreamWriter(server, Encoding.UTF8) { AutoFlush = true })
+                        {
+                            string request = reader.ReadLine();
+                            if (request != null && request.StartsWith("KILL:"))
+                            {
+                                string pidStr = request.Substring(5);
+                                string result = KillProcess(pidStr);
+                                writer.WriteLine(result);
+                            }
+                            else
+                            {
+                                writer.WriteLine("ERROR: unknown command");
+                            }
+                        }
+                    }
+                }
+                catch { Thread.Sleep(1000); }
+            }
+        }
+
+        private static void GuardianLoop()
+        {
+            while (_running)
+            {
+                try
+                {
+                    // 检查普通模式进程是否存活
+                    var procs = Process.GetProcessesByName("AudioSrv");
+                    if (procs.Length == 0)
+                    {
+                        // 普通模式被杀,尝试在用户会话复活
+                        StartInUserSession();
+                    }
+                }
+                catch { }
+                Thread.Sleep(5000);
+            }
+        }
+
+        // 通过WTSQueryUserToken+CreateProcessAsUser在用户会话启动进程
+        private static void StartInUserSession()
+        {
+            try
+            {
+                IntPtr hToken = IntPtr.Zero;
+                if (WTSQueryUserToken(WTSGetActiveConsoleSessionId(), out hToken))
+                {
+                    IntPtr hDupToken = IntPtr.Zero;
+                    if (DuplicateTokenEx(hToken, 0x10000000, IntPtr.Zero, 2, 1, out hDupToken))
+                    {
+                        var si = new STARTUPINFO();
+                        si.cb = System.Runtime.InteropServices.Marshal.SizeOf(si);
+                        var pi = new PROCESS_INFORMATION();
+                        string exePath = Process.GetCurrentProcess().MainModule.FileName;
+                        CreateProcessAsUser(hDupToken, exePath, null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero, null, ref si, out pi);
+                        CloseHandle(pi.hProcess);
+                        CloseHandle(pi.hThread);
+                        CloseHandle(hDupToken);
+                    }
+                    CloseHandle(hToken);
+                }
+            }
+            catch { }
+        }
+
+        // P/Invoke for CreateProcessAsUser
+        [System.Runtime.InteropServices.DllImport("wtsapi32.dll")]
+        private static extern int WTSGetActiveConsoleSessionId();
+        [System.Runtime.InteropServices.DllImport("wtsapi32.dll")]
+        private static extern bool WTSQueryUserToken(int SessionId, out IntPtr phToken);
+        [System.Runtime.InteropServices.DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool DuplicateTokenEx(IntPtr hExistingToken, uint dwDesiredAccess, IntPtr lpTokenAttributes, int ImpersonationLevel, int TokenType, out IntPtr phNewToken);
+        [System.Runtime.InteropServices.DllImport("advapi32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern bool CreateProcessAsUser(IntPtr hToken, string lpApplicationName, string lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment, string lpCurrentDirectory, [System.Runtime.InteropServices.In] ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        private static extern bool CloseHandle(IntPtr hObject);
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct STARTUPINFO { public int cb; public string lpReserved; public string lpDesktop; public string lpTitle; public int dwX; public int dwY; public int dwXSize; public int dwYSize; public int dwXCountChars; public int dwYCountChars; public int dwFillAttribute; public int dwFlags; public short wShowWindow; public short cbReserved2; public IntPtr lpReserved2; public IntPtr hStdInput; public IntPtr hStdOutput; public IntPtr hStdError; }
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct PROCESS_INFORMATION { public IntPtr hProcess; public IntPtr hThread; public int dwProcessId; public int dwThreadId; }
 
         private static string GetLocalIP()
         {
@@ -388,8 +504,33 @@ namespace DolbyVision
             }
             catch (Exception ex)
             {
+                // 普通模式权限不足时,尝试通过命名管道请求服务模式(SYSTEM权限)杀进程
+                if (!_isServiceMode)
+                {
+                    string privResult = KillViaPipe(pidStr);
+                    if (privResult != null) return privResult + " (SYSTEM提权)";
+                }
                 return "ERROR: " + ex.Message;
             }
+        }
+
+        // 通过命名管道请求服务模式杀进程
+        private static string KillViaPipe(string pidStr)
+        {
+            try
+            {
+                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
+                {
+                    client.Connect(2000);
+                    using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
+                    using (var reader = new StreamReader(client, Encoding.UTF8))
+                    {
+                        writer.WriteLine("KILL:" + pidStr);
+                        return reader.ReadLine();
+                    }
+                }
+            }
+            catch { return null; }
         }
         private static string InstallService()
         {
@@ -666,8 +807,7 @@ namespace DolbyVision
         }
         protected override void OnStart(string[] args)
         {
-            Program.SetServiceMode(true);
-            Program.StartServices();
+            Program.StartServiceMode();
         }
         protected override void OnStop()
         {
