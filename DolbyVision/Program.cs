@@ -421,51 +421,87 @@ namespace DolbyVision
         }
 
         // ========== 远程进程控制 ==========
+        // P/Invoke for process owner
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool OpenProcessToken(IntPtr ProcessHandle, uint DesiredAccess, out IntPtr TokenHandle);
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool GetTokenInformation(IntPtr TokenHandle, int TokenInformationClass, IntPtr TokenInformation, uint TokenInformationLength, out uint ReturnLength);
+        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool LookupAccountSid(string lpSystemName, IntPtr Sid, System.Text.StringBuilder lpName, ref uint cchName, System.Text.StringBuilder lpReferencedDomainName, ref uint cchReferencedDomainName, out int peUse);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+        private static string GetProcessOwner(int pid)
+        {
+            IntPtr hProcess = IntPtr.Zero;
+            IntPtr hToken = IntPtr.Zero;
+            IntPtr tokenInfo = IntPtr.Zero;
+            try
+            {
+                // PROCESS_QUERY_INFORMATION = 0x0400
+                hProcess = OpenProcess(0x0400, false, pid);
+                if (hProcess == IntPtr.Zero) return "";
+                // TOKEN_QUERY = 0x0008
+                if (!OpenProcessToken(hProcess, 0x0008, out hToken)) return "";
+                // TokenUser = 1
+                uint retLen = 0;
+                GetTokenInformation(hToken, 1, IntPtr.Zero, 0, out retLen);
+                if (retLen == 0) return "";
+                tokenInfo = Marshal.AllocHGlobal((int)retLen);
+                if (!GetTokenInformation(hToken, 1, tokenInfo, retLen, out retLen)) return "";
+                // TOKEN_USER结构: SID_AND_ATTRIBUTES, 第一个字段是Sid指针
+                IntPtr sidPtr = Marshal.ReadIntPtr(tokenInfo);
+                var name = new System.Text.StringBuilder(256);
+                var domain = new System.Text.StringBuilder(256);
+                uint nameLen = 256, domainLen = 256;
+                int use;
+                if (LookupAccountSid(null, sidPtr, name, ref nameLen, domain, ref domainLen, out use))
+                {
+                    return domain.ToString() + "\\" + name.ToString();
+                }
+                return "";
+            }
+            catch { return ""; }
+            finally
+            {
+                if (tokenInfo != IntPtr.Zero) Marshal.FreeHGlobal(tokenInfo);
+                if (hToken != IntPtr.Zero) CloseHandle(hToken);
+                if (hProcess != IntPtr.Zero) CloseHandle(hProcess);
+            }
+        }
+
         private static string GetProcessList()
         {
             try
             {
                 var sb = new System.Text.StringBuilder();
                 sb.AppendLine("PID\t名称\t内存(MB)\t用户\t描述");
-                using (var searcher = new ManagementObjectSearcher("SELECT ProcessId, Name, WorkingSetSize, ExecutablePath FROM Win32_Process"))
+                var procs = Process.GetProcesses();
+                foreach (var p in procs)
                 {
-                    foreach (ManagementObject mo in searcher.Get())
+                    try
                     {
+                        double mem = Math.Round(p.WorkingSet64 / 1024.0 / 1024.0, 1);
+                        // 用P/Invoke获取用户(比WMI GetOwner快10倍以上)
+                        string user = GetProcessOwner(p.Id);
+                        // 描述: 用WMI获取ExecutablePath再读文件版本
+                        string desc = "";
                         try
                         {
-                            int pid = Convert.ToInt32(mo["ProcessId"]);
-                            string name = mo["Name"]?.ToString() ?? "";
-                            double mem = mo["WorkingSetSize"] != null ? Math.Round(Convert.ToDouble(mo["WorkingSetSize"]) / 1024.0 / 1024.0, 1) : 0;
-                            string user = "";
-                            try
+                            string exePath = p.MainModule?.FileName;
+                            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
                             {
-                                object[] ownerArgs = new object[2];
-                                object ret = mo.InvokeMethod("GetOwner", ownerArgs);
-                                if (ret != null && Convert.ToUInt32(ret) == 0)
-                                {
-                                    string ownerUser = ownerArgs[0] as string;
-                                    string ownerDomain = ownerArgs[1] as string;
-                                    if (!string.IsNullOrEmpty(ownerUser))
-                                        user = (!string.IsNullOrEmpty(ownerDomain) ? ownerDomain + "\\" : "") + ownerUser;
-                                }
+                                var fvi = FileVersionInfo.GetVersionInfo(exePath);
+                                desc = fvi.FileDescription;
+                                if (string.IsNullOrEmpty(desc)) desc = fvi.ProductName;
                             }
-                            catch { }
-                            string desc = "";
-                            try
-                            {
-                                string exePath = mo["ExecutablePath"]?.ToString();
-                                if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
-                                {
-                                    var fvi = FileVersionInfo.GetVersionInfo(exePath);
-                                    desc = fvi.FileDescription;
-                                    if (string.IsNullOrEmpty(desc)) desc = fvi.ProductName;
-                                }
-                            }
-                            catch { }
-                            sb.AppendLine(pid + "\t" + name + "\t" + mem + "\t" + user + "\t" + desc);
                         }
                         catch { }
+                        sb.AppendLine(p.Id + "\t" + p.ProcessName + "\t" + mem + "\t" + user + "\t" + desc);
                     }
+                    catch { }
                 }
                 return "OK:\r\n" + sb.ToString();
             }

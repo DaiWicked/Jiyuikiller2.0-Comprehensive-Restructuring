@@ -41,26 +41,43 @@ namespace UdpGhost
 
         private void RefreshProcessList()
         {
-            try
+            StatusText.Text = "正在获取进程列表...";
+            RefreshBtn.IsEnabled = false;
+            KillBtn.IsEnabled = false;
+            // 后台线程获取,避免UI卡死
+            var thread = new System.Threading.Thread(() =>
             {
-                StatusText.Text = "正在获取进程列表...";
-                string result = SendCommand("PROCESS_LIST");
-                if (result.StartsWith("OK:"))
+                try
                 {
-                    ParseProcessList(result.Substring(3));
-                    StatusText.Text = $"共 {_allProcesses.Count} 个进程";
+                    string result = SendCommand("PROCESS_LIST");
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (result.StartsWith("OK:"))
+                        {
+                            ParseProcessList(result.Substring(3));
+                            StatusText.Text = $"共 {_allProcesses.Count} 个进程";
+                        }
+                        else
+                        {
+                            StatusText.Text = "获取失败: " + result;
+                        }
+                    });
                 }
-                else
+                catch (Exception ex)
                 {
-                    StatusText.Text = "获取失败: " + result;
-                    MessageBox.Show(result, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Dispatcher.Invoke(() => { StatusText.Text = "错误: " + ex.Message; });
                 }
-            }
-            catch (Exception ex)
-            {
-                StatusText.Text = "错误: " + ex.Message;
-                MessageBox.Show(ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                finally
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        RefreshBtn.IsEnabled = true;
+                        KillBtn.IsEnabled = true;
+                    });
+                }
+            });
+            thread.IsBackground = true;
+            thread.Start();
         }
 
         private void ParseProcessList(string data)
