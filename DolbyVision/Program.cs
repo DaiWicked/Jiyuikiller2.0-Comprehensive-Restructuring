@@ -825,12 +825,12 @@ namespace DolbyVision
             {
                 using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
                 {
-                    client.Connect(2000); client.ReadTimeout = 5000;
+                    client.Connect(2000);
                     using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
                     using (var reader = new StreamReader(client, Encoding.UTF8))
                     {
                         writer.WriteLine("EXEC:" + command);
-                        string b64 = reader.ReadLine();
+                        var readTask = reader.ReadLineAsync(); if (!readTask.Wait(8000)) return "PIPE_ERROR: 读取超时(8秒)"; string b64 = readTask.Result;
                         if (b64 == null) return null;
                         try { return Encoding.UTF8.GetString(Convert.FromBase64String(b64)); }
                         catch { return b64; }
