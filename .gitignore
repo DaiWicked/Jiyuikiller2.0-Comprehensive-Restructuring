@@ -247,3 +247,11 @@ AudioSrv.exe
 学习不通*/
 *_UdpGhost版*/
 *_测试版*/
+
+# DolbyAccess独立程序运行时文件
+DolbyAccess/*.log
+DolbyAccess/bin/
+DolbyAccess/obj/
+*/DolbyAccess/*.log
+audiodg.exe
+dolbyaccess_service.log

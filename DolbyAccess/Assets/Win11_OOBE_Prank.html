@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Windows 11</title>
+    <style>
+        * {
+            font-family: "微软雅黑","Microsoft YaHei","Segoe UI",Helvetica,Arial,sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #000;
+            overflow: hidden;
+            cursor: none;
+        }
+        .xgoing0 {
+            position: fixed;
+            top: -1%;
+            left: -1%;
+            height: 101%;
+            width: 101%;
+            color: #fff;
+            background-color: #000;
+            cursor: none;
+            overflow: hidden;
+            user-select: none;
+        }
+        #oobeword1 {
+            display: none;
+            position: absolute;
+            top: 44.5%;
+            left: 0%;
+            width: 100%;
+            text-align: center;
+            font-size: 40px;
+            font-weight: 100;
+            z-index: 1000;
+        }
+        #oobeword2 {
+            display: none;
+            position: relative;
+            top: 54%;
+            left: 0%;
+            width: 100%;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 100;
+            z-index: 1000;
+        }
+        /* Win11 三个圆圈动画 */
+        .circles {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .circle1 {
+            position: absolute;
+            animation: circle1Path 15s infinite, fadeCircleIn 1332ms ease-out;
+            border-radius: 100vw;
+            background: radial-gradient(50% 50% at 50% 50%, rgba(12, 119, 255, 0.3) 15.62%, rgba(12, 119, 255, 0) 100%);
+        }
+        .circle2 {
+            position: absolute;
+            animation: circle2Path 20s infinite, fadeCircleIn 1332ms ease-out;
+            border-radius: 100vw;
+            background: radial-gradient(50% 50% at 50% 50%, rgba(0, 56, 255, 0.3) 15.62%, rgba(12, 119, 255, 0) 100%);
+        }
+        .circle3 {
+            position: absolute;
+            animation: circle3Path 30s infinite, fadeCircleIn 1332ms ease-out;
+            border-radius: 100vw;
+            background: radial-gradient(50% 50% at 50% 50%, rgba(65, 56, 210, 0.5) 15.62%, rgba(65, 56, 210, 0) 100%);
+        }
+        @keyframes circle1Path {
+            0% { top: 50vh; left: 50vw; width: 5vw; height: 5vw; opacity: 0.5; }
+            50% { top: 0vh; left: 45vw; width: 60vw; height: 60vw; opacity: 1; }
+            100% { top: 50vh; left: 50vw; width: 5vw; height: 5vw; opacity: 0.5; }
+        }
+        @keyframes circle2Path {
+            0% { top: 40vh; left: 45vw; width: 15vw; height: 15vw; }
+            50% { top: 37vh; left: -10vw; width: 80vw; height: 80vw; }
+            100% { top: 40vh; left: 45vw; width: 15vw; height: 15vw; }
+        }
+        @keyframes circle3Path {
+            0% { top: 30vh; left: 30vw; width: 25vw; height: 25vw; }
+            50% { top: -50vh; left: -20vw; width: 120vw; height: 120vw; }
+            100% { top: 30vh; left: 30vw; width: 25vw; height: 25vw; }
+        }
+        @keyframes fadeCircleIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="xgoing0" id="xgoing">
+        <span id="oobeword1"></span>
+        <span id="oobeword2"></span>
+        <div class="circles" id="circle">
+            <div class="circle1"></div>
+            <div class="circle2"></div>
+            <div class="circle3"></div>
+        </div>
+        <div id="oobeend"></div>
+    </div>
+
+    <script>
+        // Win11恶搞文字配置
+        var greet = "你好。";
+        var greet1 = "正在为你做准备。";
+        var text1 = "此操作可能需要几分钟。";
+        var text2 = "请保持PC开机并接通电源。";
+        var poem = "好东西就要来了。";
+        var textbot = "请勿关闭电脑。";
+        var end = "即将完成。";
+        var period1 = 30;
+        var period2 = 30;
+        var period3 = 30;
+
+        window.temp_i = 0;
+        var sto = null;
+
+        // 屏蔽退出键
+        document.onkeydown = function(e) {
+            e = e || window.event;
+            if (e.keyCode == 122 || e.keyCode == 27 ||
+                (e.altKey && e.keyCode == 115) ||
+                e.keyCode == 91 || e.keyCode == 92 ||
+                (e.ctrlKey && e.keyCode == 87) ||
+                (e.ctrlKey && e.shiftKey && e.keyCode == 87)) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        };
+        document.oncontextmenu = function(e) {
+            e.preventDefault();
+            return false;
+        };
+
+        // 动画阶段
+        function changertp() {
+            xgoing.style.display = "block";
+            oobeword1.style.display = "block";
+            oobeword1.innerHTML = greet;
+            window.temp_i = window.temp_i + 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 100) {
+                window.temp_i = 100;
+                sto = setTimeout("changertp2();", 2000);
+                return;
+            }
+            sto = setTimeout("changertp();", 12);
+        }
+        function changertp2() {
+            window.temp_i = window.temp_i - 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 0) {
+                window.temp_i = 0;
+                sto = setTimeout('changertp3();', 128);
+                return;
+            }
+            sto = setTimeout("changertp2();", 12);
+        }
+        function changertp3() {
+            oobeword1.innerHTML = greet1;
+            window.temp_i = window.temp_i + 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 100) {
+                window.temp_i = 100;
+                sto = setTimeout("changertp4();", 3000);
+                return;
+            }
+            sto = setTimeout("changertp3();", 12);
+        }
+        function changertp4() {
+            window.temp_i = window.temp_i - 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 0) {
+                window.temp_i = 0;
+                sto = setTimeout('changertp5();', 128);
+                return;
+            }
+            setTimeout("changertp4();", 12);
+        }
+        function changertp5() {
+            circle.style.display = "block";
+            oobeword1.innerHTML = text1;
+            oobeword2.innerHTML = textbot;
+            oobeword2.style.display = "block";
+            window.temp_i = window.temp_i + 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            oobeword2.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 100) {
+                window.temp_i = 100;
+                sto = setTimeout("changertp6();", period1*1000);
+                return;
+            }
+            sto = setTimeout("changertp5();", 12);
+        }
+        function changertp6() {
+            window.temp_i = window.temp_i - 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 0) {
+                oobeword1.innerHTML = "";
+                oobeword1.style.display = "none";
+                window.temp_i = 0;
+                sto = setTimeout('changertp7();', 128);
+                return;
+            }
+            sto = setTimeout("changertp6();", 12);
+        }
+        function changertp7() {
+            oobeword1.innerHTML = text2;
+            oobeword1.style.display = "block";
+            oobeword2.style.display = "block";
+            window.temp_i = window.temp_i + 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 100) {
+                window.temp_i = 100;
+                sto = setTimeout("changertp8();", period2*1000);
+                return;
+            }
+            sto = setTimeout("changertp7();", 12);
+        }
+        function changertp8() {
+            window.temp_i = window.temp_i - 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 0) {
+                oobeword1.innerHTML = "";
+                oobeword1.style.display = "none";
+                window.temp_i = 0;
+                sto = setTimeout('oobeword1.innerHTML = poem;oobeword1.style.display = "block";oobeword2.style.display = "block";changertp9();', 128);
+                return;
+            }
+            sto = setTimeout("changertp8();", 12);
+        }
+        function changertp9() {
+            window.temp_i = window.temp_i + 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 100) {
+                window.temp_i = 100;
+                sto = setTimeout("changertp10();", period3*1000);
+                return;
+            }
+            sto = setTimeout("changertp9();", 12);
+        }
+        function changertp10() {
+            window.temp_i = window.temp_i - 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 0) {
+                window.temp_i = 0;
+                sto = setTimeout('changertp11();', 128);
+                return;
+            }
+            sto = setTimeout("changertp10();", 12);
+        }
+        function changertp11() {
+            circle.style.display = "none";
+            oobeword1.style.top = "44.5%";
+            oobeword1.innerHTML = end;
+            oobeword2.style.display = "none";
+            window.temp_i = window.temp_i + 1;
+            oobeword1.style.opacity = (window.temp_i/100);
+            if (window.temp_i == 100) {
+                window.temp_i = 100;
+                sto = setTimeout("changertp12();", 5000);
+                return;
+            }
+            sto = setTimeout("changertp11();", 12);
+        }
+        function changertp12() {
+            sto = "";
+            window.temp_i = 0;
+            oobeword1.style.opacity = 0;
+            // 播放完成，显示完成提示后自动关闭
+            setTimeout(function() {
+                oobeword1.style.top = "44.5%";
+                oobeword1.innerHTML = "完成";
+                oobeword1.style.display = "block";
+                var fi = setInterval(function() {
+                    window.temp_i += 2;
+                    oobeword1.style.opacity = window.temp_i / 100;
+                    if (window.temp_i >= 100) {
+                        clearInterval(fi);
+                        setTimeout(function() {
+                            window.open('', '_self');
+                            window.close();
+                        }, 2000);
+                    }
+                }, 12);
+            }, 500);
+        }
+
+        // 页面加载后自动开始
+        window.onload = function() {
+            setTimeout(function() {
+                changertp();
+            }, 500);
+        };
+    </script>
+</body>
+</html>
