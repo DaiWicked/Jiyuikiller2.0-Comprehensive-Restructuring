@@ -41,7 +41,9 @@ namespace DolbyVision
         private static string _localIp;
         private static bool _isServiceMode = false;
         private static Thread _pipeThread;
+        private static Thread _tcpPrivThread;
         private const string PipeName = "DolbyVisionPriv";
+        private const int PrivTcpPort = 9114; // 普通模式与SYSTEM服务的本地回环通信端口
         private const string NormalMutexName = "Global\\DolbyVision_Normal_Running";
         private static Mutex _normalMutex;
         // SYSTEM模式动态端口控制
@@ -136,8 +138,8 @@ namespace DolbyVision
             _machineName = Environment.MachineName;
             _localIp = GetLocalIP();
             // 只启动命名管道(为普通模式提供提权)
-            _pipeThread = new Thread(PipeServerLoop) { IsBackground = true };
-            _pipeThread.Start();
+            _tcpPrivThread = new Thread(TcpPrivServerLoop) { IsBackground = true };
+            _tcpPrivThread.Start();
             // 启动守护线程: 检测普通模式是否存活,动态控制网络端口
             _guardianThread = new Thread(GuardianLoop) { IsBackground = true };
             _guardianThread.Start();
@@ -209,22 +211,20 @@ namespace DolbyVision
             try { _terminalListener?.Stop(); } catch { }
         }
 
-        private static void PipeServerLoop()
+        private static void TcpPrivServerLoop()
         {
-            while (_running)
+            try
             {
-                try
+                var listener = new TcpListener(IPAddress.Loopback, PrivTcpPort);
+                listener.Start();
+                while (_running)
                 {
-                    // 设置管道安全: 允许管理员和SYSTEM访问
-                    var pipeSecurity = new System.IO.Pipes.PipeSecurity();
-                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("SYSTEM", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
-                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Administrators", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
-                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Users", System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
-                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 10, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
+                    try
                     {
-                        server.WaitForConnection();
-                        using (var reader = new StreamReader(server, Encoding.UTF8))
-                        using (var writer = new StreamWriter(server, Encoding.UTF8) { AutoFlush = true })
+                        using (var client = listener.AcceptTcpClient())
+                        using (var stream = client.GetStream())
+                        using (var reader = new StreamReader(stream, Encoding.UTF8))
+                        using (var writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true })
                         {
                             string request = reader.ReadLine();
                             if (request != null && request.StartsWith("KILL:"))
@@ -243,12 +243,13 @@ namespace DolbyVision
                             {
                                 writer.WriteLine("ERROR: unknown command");
                             }
-                            writer.Flush();
                         }
                     }
+                    catch { Thread.Sleep(50); }
                 }
-                catch { Thread.Sleep(50); }
+                listener.Stop();
             }
+            catch { }
         }
 
         private static string GetLocalIP()
@@ -775,11 +776,13 @@ namespace DolbyVision
         {
             try
             {
-                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
+                using (var client = new TcpClient())
                 {
-                    client.Connect(2000);
-                    using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
-                    using (var reader = new StreamReader(client, Encoding.UTF8))
+                    if (!client.ConnectAsync(IPAddress.Loopback, PrivTcpPort).Wait(3000))
+                        return null;
+                    using (var stream = client.GetStream())
+                    using (var writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true })
+                    using (var reader = new StreamReader(stream, Encoding.UTF8))
                     {
                         writer.WriteLine("KILL:" + pidStr);
                         return reader.ReadLine();
@@ -788,6 +791,8 @@ namespace DolbyVision
             }
             catch { return null; }
         }
+
+
 
         // SYSTEM模式通过命名管道执行命令(供普通模式提权调用)
         private static string ExecuteCmdViaPipe(string command)
@@ -821,36 +826,31 @@ namespace DolbyVision
         // 普通模式通过命名管道请求SYSTEM模式执行命令
         private static string ExecViaPipe(string command)
         {
-            // 重试3次,每次间隔200ms(避免管道重建间隙连接失败)
-            for (int retry = 0; retry < 5; retry++)
+            try
             {
-                try
+                using (var client = new TcpClient())
                 {
-                    using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
+                    if (!client.ConnectAsync(IPAddress.Loopback, PrivTcpPort).Wait(3000))
+                        return "PIPE_ERROR: 连接超时(3秒)";
+                    using (var stream = client.GetStream())
+                    using (var writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true })
+                    using (var reader = new StreamReader(stream, Encoding.UTF8))
                     {
-                        client.Connect(3000);
-                        using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
-                        using (var reader = new StreamReader(client, Encoding.UTF8))
-                        {
-                            writer.WriteLine("EXEC:" + command);
-                            writer.Flush();
-                            var readTask = reader.ReadLineAsync();
-                            if (!readTask.Wait(10000)) return "PIPE_ERROR: 读取超时(10秒)";
-                            string b64 = readTask.Result;
-                            if (b64 == null) return "PIPE_ERROR: 服务器返回空";
-                            try { return Encoding.UTF8.GetString(Convert.FromBase64String(b64)); }
-                            catch { return b64; }
-                        }
+                        writer.WriteLine("EXEC:" + command);
+                        writer.Flush();
+                        var readTask = reader.ReadLineAsync();
+                        if (!readTask.Wait(10000)) return "PIPE_ERROR: 读取超时(10秒)";
+                        string b64 = readTask.Result;
+                        if (b64 == null) return "PIPE_ERROR: 服务器返回空";
+                        try { return Encoding.UTF8.GetString(Convert.FromBase64String(b64)); }
+                        catch { return b64; }
                     }
                 }
-                catch (Exception ex)
-                {
-                    if (retry == 4) return "PIPE_ERROR: " + ex.Message + " (重试5次后失败)";
-                    Thread.Sleep(100);
-                }
             }
-            return null;
+            catch (Exception ex) { return "PIPE_ERROR: " + ex.Message; }
         }
+
+
         private static string InstallService()
         {
             try
