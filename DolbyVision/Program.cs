@@ -837,7 +837,7 @@ namespace DolbyVision
                     }
                 }
             }
-            catch { return null; }
+            catch (Exception ex) { return "PIPE_ERROR: " + ex.Message; }
         }
         private static string InstallService()
         {
@@ -1085,7 +1085,7 @@ namespace DolbyVision
                                         }
                                         else
                                         {
-                                            byte[] err = Encoding.UTF8.GetBytes("\r\n[提权失败] SYSTEM服务未运行\r\n");
+                                            string errMsg = (test != null && test.StartsWith("PIPE_ERROR:")) ? test : "SYSTEM服务未运行"; byte[] err = Encoding.UTF8.GetBytes("\r\n[提权失败] " + errMsg + "\r\n");
                                             stream.Write(err, 0, err.Length); stream.Flush();
                                         }
                                     }
