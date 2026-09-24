@@ -807,7 +807,7 @@ namespace DolbyVision
                     return "OK:\\r\\n" + output + (string.IsNullOrEmpty(error) ? "" : "\\r\\n[错误]\\r\\n" + error);
                 }
             }
-            catch (Exception ex) { return "ERROR: " + ex.Message; }
+            catch (Exception ex) { return Convert.ToBase64String(Encoding.UTF8.GetBytes("ERROR: " + ex.Message)); }
         }
 
         // 普通模式通过命名管道请求SYSTEM模式执行命令
@@ -822,7 +822,9 @@ namespace DolbyVision
                     using (var reader = new StreamReader(client, Encoding.UTF8))
                     {
                         writer.WriteLine("EXEC:" + command);
-                        return reader.ReadLine();
+                        string b64 = reader.ReadLine();
+                        try { return Encoding.UTF8.GetString(Convert.FromBase64String(b64)); }
+                        catch { return b64; }
                     }
                 }
             }

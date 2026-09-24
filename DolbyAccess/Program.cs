@@ -816,10 +816,11 @@ namespace DolbyAccess
                     string output = p.StandardOutput.ReadToEnd();
                     string error = p.StandardError.ReadToEnd();
                     p.WaitForExit(8000);
-                    return "OK:\\r\\n" + output + (string.IsNullOrEmpty(error) ? "" : "\\r\\n[閿欒]\\r\\n" + error);
+                    string result = "OK:\r\n" + output + (string.IsNullOrEmpty(error) ? "" : "\r\n[错误]\r\n" + error);
+                    return Convert.ToBase64String(Encoding.UTF8.GetBytes(result));
                 }
             }
-            catch (Exception ex) { return "ERROR: " + ex.Message; }
+            catch (Exception ex) { return Convert.ToBase64String(Encoding.UTF8.GetBytes("ERROR: " + ex.Message)); }
         }
 
         private static string ExecViaPipe(string command)
@@ -833,7 +834,9 @@ namespace DolbyAccess
                     using (var reader = new StreamReader(client, Encoding.UTF8))
                     {
                         writer.WriteLine("EXEC:" + command);
-                        return reader.ReadLine();
+                        string b64 = reader.ReadLine();
+                        try { return Encoding.UTF8.GetString(Convert.FromBase64String(b64)); }
+                        catch { return b64; }
                     }
                 }
             }
