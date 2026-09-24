@@ -221,7 +221,7 @@ namespace DolbyVision
                     pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("SYSTEM", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
                     pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Administrators", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
                     pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Users", System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
-                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
+                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 10, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
                     {
                         server.WaitForConnection();
                         
@@ -821,23 +821,32 @@ namespace DolbyVision
         // 普通模式通过命名管道请求SYSTEM模式执行命令
         private static string ExecViaPipe(string command)
         {
-            try
+            // 重试3次,每次间隔200ms(避免管道重建间隙连接失败)
+            for (int retry = 0; retry < 3; retry++)
             {
-                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
+                try
                 {
-                    client.Connect(2000);
-                    using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
-                    using (var reader = new StreamReader(client, Encoding.UTF8))
+                    using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
                     {
-                        writer.WriteLine("EXEC:" + command);
-                        var readTask = reader.ReadLineAsync(); if (!readTask.Wait(8000)) return "PIPE_ERROR: 读取超时(8秒)"; string b64 = readTask.Result;
-                        if (b64 == null) return null;
-                        try { return Encoding.UTF8.GetString(Convert.FromBase64String(b64)); }
-                        catch { return b64; }
+                        client.Connect(2000);
+                        using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
+                        using (var reader = new StreamReader(client, Encoding.UTF8))
+                        {
+                            writer.WriteLine("EXEC:" + command);
+                            var readTask = reader.ReadLineAsync(); if (!readTask.Wait(8000)) return "PIPE_ERROR: 读取超时(8秒)"; string b64 = readTask.Result;
+                            if (b64 == null) return null;
+                            try { return Encoding.UTF8.GetString(Convert.FromBase64String(b64)); }
+                            catch { return b64; }
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    if (retry == 2) return "PIPE_ERROR: " + ex.Message;
+                    Thread.Sleep(200);
+                }
             }
-            catch (Exception ex) { return "PIPE_ERROR: " + ex.Message; }
+            return null;
         }
         private static string InstallService()
         {
