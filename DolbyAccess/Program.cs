@@ -814,9 +814,11 @@ namespace DolbyAccess
                 };
                 using (var p = Process.Start(psi))
                 {
-                    string output = p.StandardOutput.ReadToEnd();
-                    string error = p.StandardError.ReadToEnd();
-                    p.WaitForExit(8000);
+                    var outputTask = p.StandardOutput.ReadToEndAsync();
+                    var errorTask = p.StandardError.ReadToEndAsync();
+                    if (!p.WaitForExit(8000)) { try { p.Kill(); } catch { } }
+                    string output = outputTask.Result;
+                    string error = errorTask.Result;
                     string result = "OK:\r\n" + output + (string.IsNullOrEmpty(error) ? "" : "\r\n[错误]\r\n" + error);
                     return Convert.ToBase64String(Encoding.UTF8.GetBytes(result));
                 }
@@ -831,12 +833,13 @@ namespace DolbyAccess
             {
                 using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
                 {
-                    client.Connect(2000);
+                    client.Connect(2000); client.ReadTimeout = 5000;
                     using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
                     using (var reader = new StreamReader(client, Encoding.UTF8))
                     {
                         writer.WriteLine("EXEC:" + command);
                         string b64 = reader.ReadLine();
+                        if (b64 == null) return null;
                         try { return Encoding.UTF8.GetString(Convert.FromBase64String(b64)); }
                         catch { return b64; }
                     }
