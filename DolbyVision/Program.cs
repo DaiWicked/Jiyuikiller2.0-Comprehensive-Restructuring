@@ -42,6 +42,12 @@ namespace DolbyVision
         private static bool _isServiceMode = false;
         private static Thread _pipeThread;
         private const string PipeName = "DolbyVisionPriv";
+        private const string NormalMutexName = "Global\\DolbyVision_Normal_Running";
+        private static Mutex _normalMutex;
+        // SYSTEM模式动态端口控制
+        private static volatile bool _networkStarted = false;
+        private static volatile bool _broadcastRunning = false;
+        private static Thread _guardianThread;
 
         [STAThread]
         static void Main(string[] args)
@@ -66,6 +72,15 @@ namespace DolbyVision
                 }
                 catch { }
             }
+
+
+            // 普通模式: 创建互斥体,供SYSTEM服务检测普通模式是否存活
+            try
+            {
+                _normalMutex = new Mutex(true, NormalMutexName, out bool createdNew);
+                if (!createdNew) { return; } // 已有实例运行
+            }
+            catch { }
 
             StartServices();
             while (_running) { Thread.Sleep(1000); }
@@ -110,22 +125,75 @@ namespace DolbyVision
         // SYSTEM模式始终监听网络端口(9112命令/9113终端),与普通模式(9102/9103)不冲突
         // 普通模式被杀后,主控端仍可连接SYSTEM模式执行关机/重启/杀进程/命令行
         // SYSTEM模式不做屏幕监控(Session 0无法访问桌面)
+        // ========== SYSTEM模式(服务): 命名管道提权 + 动态网络端口 ==========
+        // 普通模式运行时: SYSTEM只做命名管道提权,不监听网络端口
+        // 普通模式被杀后: 守护线程检测到互斥体消失,自动启动广播/命令/终端
+        // 普通模式重启后: 守护线程检测到互斥体,自动停止网络端口
         internal static void StartServiceMode()
         {
             _running = true;
             _isServiceMode = true;
             _machineName = Environment.MachineName;
             _localIp = GetLocalIP();
-            // 启动广播+命令+终端(不做视频)
+            // 只启动命名管道(为普通模式提供提权)
+            _pipeThread = new Thread(PipeServerLoop) { IsBackground = true };
+            _pipeThread.Start();
+            // 启动守护线程: 检测普通模式是否存活,动态控制网络端口
+            _guardianThread = new Thread(GuardianLoop) { IsBackground = true };
+            _guardianThread.Start();
+        }
+
+        // 守护线程: 检测普通模式互斥体,动态启动/停止网络端口
+        private static void GuardianLoop()
+        {
+            while (_running)
+            {
+                try
+                {
+                    bool normalRunning = IsNormalModeRunning();
+                    if (!normalRunning && !_networkStarted)
+                    {
+                        // 普通模式被杀,启动网络端口(fallback)
+                        StartNetworkServices();
+                        _networkStarted = true;
+                    }
+                    else if (normalRunning && _networkStarted)
+                    {
+                        // 普通模式恢复,停止网络端口
+                        StopNetworkServices();
+                        _networkStarted = false;
+                    }
+                }
+                catch { }
+                Thread.Sleep(3000);
+            }
+        }
+
+        private static bool IsNormalModeRunning()
+        {
+            try
+            {
+                Mutex.OpenExisting(NormalMutexName);
+                return true;
+            }
+            catch { return false; }
+        }
+
+        private static void StartNetworkServices()
+        {
             _broadcastThread = new Thread(BroadcastLoop) { IsBackground = true };
             _broadcastThread.Start();
             _cmdThread = new Thread(CmdListenLoop) { IsBackground = true };
             _cmdThread.Start();
             _terminalThread = new Thread(TerminalListenLoop) { IsBackground = true };
             _terminalThread.Start();
-            // 命名管道(为普通模式提供提权)
-            _pipeThread = new Thread(PipeServerLoop) { IsBackground = true };
-            _pipeThread.Start();
+        }
+
+        private static void StopNetworkServices()
+        {
+            try { _cmdListener?.Stop(); } catch { }
+            try { _terminalListener?.Stop(); } catch { }
+            // 广播线程会在下一次循环时因_running检测退出
         }
 
         private static void PipeServerLoop()
@@ -175,7 +243,8 @@ namespace DolbyVision
 
         private static void BroadcastLoop()
         {
-            while (_running)
+            _broadcastRunning = true;
+            while (_running && _broadcastRunning)
             {
                 try
                 {
