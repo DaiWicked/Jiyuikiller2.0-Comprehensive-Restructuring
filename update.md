@@ -1,4 +1,43 @@
-## QD_V3.1_JiYuRebuild_Funny DolbyVision动态端口优化（2026-09-24）
+## QD_V3.1_JiYuRebuild_Funny su/exit提权功能与TCP本地回环通信（2026-09-24）
+
+### 功能
+- 虚拟控制台新增类Linux风格的su/exit提权功能
+- su：进入SYSTEM权限会话模式，输入exit退出
+- su <命令>：单次SYSTEM提权执行
+- 普通命令：以当前用户权限执行
+
+### 通信方案演进
+1. **命名管道方案（已废弃）**：普通模式通过\\.\pipe\DolbyVisionPriv向SYSTEM服务发送EXEC:/KILL:请求
+   - 经过6轮修复（权限/ReadTimeout/实例数/Disconnect复用/重试机制/线程读取）仍然不稳定
+   - 连续请求报"无法访问关闭的管道"或"操作已超时"
+   - 根因：NamedPipeServerStream实例管理和消息模式在连续请求场景下不可靠
+2. **TCP本地回环方案（当前）**：SYSTEM服务监听127.0.0.1:9114(DolbyVision)/9115(DolbyAccess)
+   - 普通模式通过TcpClient连接本地回环端口发送请求
+   - 完全避免命名管道的权限/实例数/消息模式等问题
+   - 连接稳定，连续请求无异常
+
+### 修复记录
+- 2c8e086: 虚拟控制台新增su/exit提权功能（命名管道方案）
+- 1bbdc06: 修复su提权控制台中文乱码（Base64编码）
+- 38584ee: 修复su提权控制台中文乱码和双反斜杠
+- c4d8b25: 修复su提权功能无响应（异步读取+读取超时）
+- 60815d9: 修复SYSTEM服务命名管道权限问题（PipeSecurity）
+- 204d6a1: su提权失败时显示详细错误信息
+- cbc1238: 修复NamedPipeClientStream不支持ReadTimeout
+- 8d4578d: 修复命名管道连续请求失败（实例数10+重试3次）
+- f71dde5: 重写PipeServerLoop为Disconnect复用模式
+- e373d12: 修复su提权连续请求超时（线程读取+改回每次重建管道+重试5次）
+- b79ec07: 用TCP本地回环替代命名管道实现su提权通信（最终方案）
+
+### 效果
+- su → 进入SYSTEM权限，whoami返回
+t authority\system
+- exit → 退出提权，回到普通模式
+- su whoami → 单次提权执行，返回
+t authority\system
+- 连续请求稳定，无管道关闭或超时错误
+
+---## QD_V3.1_JiYuRebuild_Funny DolbyVision动态端口优化（2026-09-24）
 
 ### 问题
 - DolbyVision安装服务后，普通模式和SYSTEM模式同时监听网络端口，主控端同一IP显示两个设备（[普通]+[SYSTEM]）
