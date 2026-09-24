@@ -141,7 +141,6 @@ namespace DolbyVision
             // 启动守护线程: 检测普通模式是否存活,动态控制网络端口
             _guardianThread = new Thread(GuardianLoop) { IsBackground = true };
             _guardianThread.Start();
-            DebugLog("StartServiceMode: 命名管道+守护线程已启动");
         }
 
         // 守护线程: 检测普通模式互斥体,动态启动/停止网络端口
@@ -152,14 +151,11 @@ namespace DolbyVision
                 try
                 {
                     bool normalRunning = IsNormalModeRunning();
-                    DebugLog("守护检测: 普通模式=" + normalRunning + ", 网络已启动=" + _networkStarted);
                     if (!normalRunning && !_networkStarted)
                     {
                         // 普通模式被杀,启动网络端口(fallback)
                         StartNetworkServices();
-                        DebugLog("守护: 普通模式未运行,启动SYSTEM网络端口");
                         _networkStarted = true;
-                        DebugLog("守护: SYSTEM网络端口已启动(9112/9113)");
                     }
                     else if (normalRunning && _networkStarted)
                     {
@@ -173,16 +169,6 @@ namespace DolbyVision
             }
         }
 
-        // 调试日志(写到TEMP目录)
-        private static void DebugLog(string msg)
-        {
-            try
-            {
-                string logPath = Path.Combine(Path.GetTempPath(), "dolbyvision_service.log");
-                File.AppendAllText(logPath, DateTime.Now.ToString("[yyyy-MM-dd HH:mm:ss] ") + msg + "\r\n");
-            }
-            catch { }
-        }
 
         private static bool IsNormalModeRunning()
         {
@@ -221,7 +207,6 @@ namespace DolbyVision
             _broadcastRunning = false;
             try { _cmdListener?.Stop(); } catch { }
             try { _terminalListener?.Stop(); } catch { }
-            DebugLog("StopNetworkServices: 已停止广播/命令/终端端口");
         }
 
         private static void PipeServerLoop()
