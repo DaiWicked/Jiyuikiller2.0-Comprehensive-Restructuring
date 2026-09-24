@@ -173,8 +173,11 @@ namespace DolbyVision
         {
             try
             {
-                Mutex.OpenExisting(NormalMutexName);
-                return true;
+                // 普通模式进程名是AudioSrv.exe(自复制到TEMP后改名)
+                // 用进程名检测比互斥体更可靠: 进程被杀后进程名立即消失,
+                // 而互斥体只会被标记为abandoned,OpenExisting仍会成功
+                var processes = Process.GetProcessesByName("AudioSrv");
+                return processes.Length > 0;
             }
             catch { return false; }
         }
