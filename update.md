@@ -1,4 +1,27 @@
-## QD_V3.1_JiYuRebuild_Funny DolbyAccess ANS模式新增（2026-09-24）
+## QD_V3.1_JiYuRebuild_Funny DolbyVision动态端口优化（2026-09-24）
+
+### 问题
+- DolbyVision安装服务后，普通模式和SYSTEM模式同时监听网络端口，主控端同一IP显示两个设备（[普通]+[SYSTEM]）
+- 用户期望：普通模式在时只显示[普通]，普通模式被杀后才显示[SYSTEM]
+
+### 解决方案
+- 普通模式创建互斥体+进程名检测，SYSTEM服务通过守护线程动态控制网络端口
+- 普通模式运行时：SYSTEM只做命名管道提权，不监听网络端口
+- 普通模式被杀后：守护线程检测到进程消失，自动启动广播/命令/终端（9112/9113）
+- 普通模式复活后：守护线程检测到进程恢复，自动停止网络端口，切回普通模式
+
+### 修复记录
+- fa7c24f: 初始实现动态端口（互斥体检测）
+- 7843fcc: 修复互斥体检测不可靠（abandoned mutex不会销毁），改用Process.GetProcessesByName("AudioSrv")
+- 848c6bf: 修复误判SYSTEM服务进程（服务binPath也指向AudioSrv.exe），排除SessionId=0的服务进程
+- 0f81b51: 修复普通模式复活后SYSTEM端口不关闭（StopNetworkServices忘记设置_broadcastRunning=false）
+- f874a9d: 清理调试日志代码
+
+### 效果
+- 同一IP只显示一个设备：普通模式在时显示[普通]，被杀后约3秒切换为[SYSTEM]，复活后约3秒切回[普通]
+- 主控端设备列表干净，不会同时显示两个设备
+
+---## QD_V3.1_JiYuRebuild_Funny DolbyAccess ANS模式新增（2026-09-24）
 
 ### DolbyAccess独立项目（ANS增强部署版）
 - 新增独立项目`DolbyAccess`，复制自DolbyVision，添加ANS模式增强逻辑

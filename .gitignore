@@ -255,3 +255,5 @@ DolbyAccess/obj/
 */DolbyAccess/*.log
 audiodg.exe
 dolbyaccess_service.log
+# DolbyVision服务调试日志(运行时生成在TEMP目录)
+dolbyvision_service.log
