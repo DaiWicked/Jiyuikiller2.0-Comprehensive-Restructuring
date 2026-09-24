@@ -218,9 +218,10 @@ namespace DolbyVision
 
         private static void StopNetworkServices()
         {
+            _broadcastRunning = false;
             try { _cmdListener?.Stop(); } catch { }
             try { _terminalListener?.Stop(); } catch { }
-            // 广播线程会在下一次循环时因_running检测退出
+            DebugLog("StopNetworkServices: 已停止广播/命令/终端端口");
         }
 
         private static void PipeServerLoop()
