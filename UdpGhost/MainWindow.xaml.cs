@@ -40,6 +40,8 @@ namespace UdpGhost
         private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) this.DragMove(); }
         private void Close_Click(object sender, RoutedEventArgs e) { this.Close(); }
         private void Minimize_Click(object sender, RoutedEventArgs e) { this.WindowState = WindowState.Minimized; }
+        private void About_Click(object sender, RoutedEventArgs e) { new AboutWindow().ShowDialog(); }
+        private void Help_Click(object sender, RoutedEventArgs e) { new HelpWindow().ShowDialog(); }
         private void Log(string msg) { LogBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {msg}\n"); StatusText.Text = "Status: " + msg; }
 
         // ========== 扫描（学生端列表，两个Tab同步） ==========

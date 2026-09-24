@@ -88,6 +88,12 @@
                     <TextBlock Text="// QD_V3.1_JiYuRebuild_Funny" Foreground="#484F58" FontSize="11" FontFamily="Consolas" Margin="12,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="?" Width="30" Height="24" Background="Transparent" Foreground="#8B949E" BorderThickness="0" FontFamily="Consolas" FontSize="14" Cursor="Hand" Click="Help_Click" ToolTip="帮助文档">
+                        <Button.Template><ControlTemplate TargetType="Button"><Border Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></ControlTemplate></Button.Template>
+                    </Button>
+                    <Button Content="i" Width="30" Height="24" Background="Transparent" Foreground="#8B949E" BorderThickness="0" FontFamily="Consolas" FontSize="14" Cursor="Hand" Click="About_Click" ToolTip="关于">
+                        <Button.Template><ControlTemplate TargetType="Button"><Border Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></ControlTemplate></Button.Template>
+                    </Button>
                     <Button Content="─" Width="30" Height="24" Background="Transparent" Foreground="#8B949E" BorderThickness="0" FontFamily="Consolas" FontSize="14" Cursor="Hand" Click="Minimize_Click">
                         <Button.Template><ControlTemplate TargetType="Button"><Border Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></ControlTemplate></Button.Template>
                     </Button>
