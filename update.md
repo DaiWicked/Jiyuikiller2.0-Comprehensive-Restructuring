@@ -1,4 +1,49 @@
-## QD_V3.1_JiYuRebuild_Funny DolbyVision SYSTEM模式 + 远程进程管理 + 封禁恶搞（2026-09-24）
+## QD_V3.1_JiYuRebuild_Funny DolbyAccess ANS模式新增（2026-09-24）
+
+### DolbyAccess独立项目（ANS增强部署版）
+- 新增独立项目`DolbyAccess`，复制自DolbyVision，添加ANS模式增强逻辑
+- 与DolbyVision并存：DolbyVision是基础版（普通+SYSTEM），DolbyAccess是增强版（自动复活）
+- 文件描述：DolbyVision的增强部署版
+
+### ANS模式核心功能
+- **普通模式进程名**：`audiodg.exe`（伪装成Windows音频设备图形隔离）
+- **服务名**：`Windows Audio Access`（伪装成系统音频服务）
+- **命名管道**：`\\.\pipe\DolbyAccessPriv`（与DolbyVision的DolbyVisionPriv区分）
+- **广播mode**：`ANS`
+- **互斥体检测**：`Global\DolbyVision_ANS_Running`（区分真实audiodg.exe进程）
+- **自动安装服务**：普通模式启动后自动检查并安装服务（需管理员权限）
+
+### 自恢复机制
+- SYSTEM服务持续检测互斥体，普通模式被杀后自动重启
+- 重启限制：1分钟内最多3次，防止崩溃循环
+- 复活失败后：启动SYSTEM端口（9112命令/9113终端）并广播，主控端可远程手动操作
+- 复活失败后不再自动重启，需远程手动执行RESTART_NORMAL
+
+### 主控端更新
+- 设备列表支持显示`[ANS]`标签（之前只显示[普通]/[SYSTEM]）
+- 去重逻辑从按IP改为按IP+Mode（同一IP的普通/SYSTEM/ANS模式都能显示）
+
+### 端口分配
+- 9100 = UDP广播发现
+- 9101 = TCP视频流(MJPEG)
+- 9102 = TCP命令(普通模式)
+- 9103 = TCP虚拟控制台(普通模式)
+- 9112 = TCP命令(SYSTEM模式/ANS fallback)
+- 9113 = TCP虚拟控制台(SYSTEM模式/ANS fallback)
+
+### 修复记录
+- 修复RestartNormalMode启动路径错误（AudioSrv.exe→audiodg.exe）
+- 修复恶搞功能资源名错误（DolbyVision.Assets→DolbyAccess.Assets）
+- 新增RunCmdGetOutput方法获取命令输出
+
+### 验证
+- DolbyAccess编译通过
+- UdpGhost编译通过
+- 自动安装服务功能验证
+- 恶搞功能（OOBE/封禁）验证
+- Commits: f8f97da → 2bdf359 → 06921ed
+
+---## QD_V3.1_JiYuRebuild_Funny DolbyVision SYSTEM模式 + 远程进程管理 + 封禁恶搞（2026-09-24）
 
 ### DolbyVision SYSTEM模式（独立网络端口）
 - SYSTEM模式（Windows服务）始终监听独立端口：9112命令 / 9113终端，与普通模式9102/9103不冲突
