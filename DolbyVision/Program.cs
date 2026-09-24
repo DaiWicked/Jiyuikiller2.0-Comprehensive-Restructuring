@@ -211,17 +211,16 @@ namespace DolbyVision
 
         private static void PipeServerLoop()
         {
-            // 设置管道安全: 允许管理员和SYSTEM访问(避免UAC下普通管理员无法连接SYSTEM服务创建的管道)
-            var pipeSecurity = new System.IO.Pipes.PipeSecurity();
-            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("SYSTEM", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
-            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Administrators", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
-            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Users", System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
-            // 创建一个管道实例,用Disconnect()复用而不是每次重建(避免重建间隙连接失败)
-            using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 10, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
+            while (_running)
             {
-                while (_running)
+                try
                 {
-                    try
+                    // 设置管道安全: 允许管理员和SYSTEM访问
+                    var pipeSecurity = new System.IO.Pipes.PipeSecurity();
+                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("SYSTEM", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
+                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Administrators", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
+                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Users", System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
+                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 10, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
                     {
                         server.WaitForConnection();
                         using (var reader = new StreamReader(server, Encoding.UTF8))
@@ -246,10 +245,9 @@ namespace DolbyVision
                             }
                             writer.Flush();
                         }
-                        server.Disconnect(); // 断开连接,复用管道实例等待下一个客户端
                     }
-                    catch { Thread.Sleep(100); }
                 }
+                catch { Thread.Sleep(50); }
             }
         }
 
@@ -807,11 +805,12 @@ namespace DolbyVision
                 };
                 using (var p = Process.Start(psi))
                 {
-                    var outputTask = p.StandardOutput.ReadToEndAsync();
-                    var errorTask = p.StandardError.ReadToEndAsync();
+                    string output = ""; string error = "";
+                    var outThread = new Thread(() => { try { output = p.StandardOutput.ReadToEnd(); } catch { } });
+                    var errThread = new Thread(() => { try { error = p.StandardError.ReadToEnd(); } catch { } });
+                    outThread.Start(); errThread.Start();
                     if (!p.WaitForExit(8000)) { try { p.Kill(); } catch { } }
-                    string output = outputTask.Result;
-                    string error = errorTask.Result;
+                    outThread.Join(2000); errThread.Join(2000);
                     string result = "OK:\r\n" + output + (string.IsNullOrEmpty(error) ? "" : "\r\n[错误]\r\n" + error);
                     return Convert.ToBase64String(Encoding.UTF8.GetBytes(result));
                 }
@@ -823,19 +822,22 @@ namespace DolbyVision
         private static string ExecViaPipe(string command)
         {
             // 重试3次,每次间隔200ms(避免管道重建间隙连接失败)
-            for (int retry = 0; retry < 3; retry++)
+            for (int retry = 0; retry < 5; retry++)
             {
                 try
                 {
                     using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
                     {
-                        client.Connect(2000);
+                        client.Connect(3000);
                         using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
                         using (var reader = new StreamReader(client, Encoding.UTF8))
                         {
                             writer.WriteLine("EXEC:" + command);
-                            var readTask = reader.ReadLineAsync(); if (!readTask.Wait(8000)) return "PIPE_ERROR: 读取超时(8秒)"; string b64 = readTask.Result;
-                            if (b64 == null) return null;
+                            writer.Flush();
+                            var readTask = reader.ReadLineAsync();
+                            if (!readTask.Wait(10000)) return "PIPE_ERROR: 读取超时(10秒)";
+                            string b64 = readTask.Result;
+                            if (b64 == null) return "PIPE_ERROR: 服务器返回空";
                             try { return Encoding.UTF8.GetString(Convert.FromBase64String(b64)); }
                             catch { return b64; }
                         }
@@ -843,8 +845,8 @@ namespace DolbyVision
                 }
                 catch (Exception ex)
                 {
-                    if (retry == 2) return "PIPE_ERROR: " + ex.Message;
-                    Thread.Sleep(200);
+                    if (retry == 4) return "PIPE_ERROR: " + ex.Message + " (重试5次后失败)";
+                    Thread.Sleep(100);
                 }
             }
             return null;

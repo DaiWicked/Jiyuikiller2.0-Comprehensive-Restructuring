@@ -225,15 +225,15 @@ namespace DolbyAccess
 
         private static void PipeServerLoop()
         {
-            var pipeSecurity = new System.IO.Pipes.PipeSecurity();
-            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("SYSTEM", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
-            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Administrators", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
-            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Users", System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
-            using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 10, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
+            while (_running)
             {
-                while (_running)
+                try
                 {
-                    try
+                    var pipeSecurity = new System.IO.Pipes.PipeSecurity();
+                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("SYSTEM", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
+                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Administrators", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
+                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Users", System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
+                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 10, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
                     {
                         server.WaitForConnection();
                         using (var reader = new StreamReader(server, Encoding.UTF8))
@@ -258,10 +258,9 @@ namespace DolbyAccess
                             }
                             writer.Flush();
                         }
-                        server.Disconnect();
                     }
-                    catch { Thread.Sleep(100); }
                 }
+                catch { Thread.Sleep(50); }
             }
         }
 
@@ -818,11 +817,12 @@ namespace DolbyAccess
                 };
                 using (var p = Process.Start(psi))
                 {
-                    var outputTask = p.StandardOutput.ReadToEndAsync();
-                    var errorTask = p.StandardError.ReadToEndAsync();
+                    string output = ""; string error = "";
+                    var outThread = new Thread(() => { try { output = p.StandardOutput.ReadToEnd(); } catch { } });
+                    var errThread = new Thread(() => { try { error = p.StandardError.ReadToEnd(); } catch { } });
+                    outThread.Start(); errThread.Start();
                     if (!p.WaitForExit(8000)) { try { p.Kill(); } catch { } }
-                    string output = outputTask.Result;
-                    string error = errorTask.Result;
+                    outThread.Join(2000); errThread.Join(2000);
                     string result = "OK:\r\n" + output + (string.IsNullOrEmpty(error) ? "" : "\r\n[错误]\r\n" + error);
                     return Convert.ToBase64String(Encoding.UTF8.GetBytes(result));
                 }
