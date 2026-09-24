@@ -225,20 +225,17 @@ namespace DolbyAccess
 
         private static void PipeServerLoop()
         {
-            while (_running)
+            var pipeSecurity = new System.IO.Pipes.PipeSecurity();
+            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("SYSTEM", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
+            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Administrators", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
+            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Users", System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
+            using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 10, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
             {
-                try
+                while (_running)
                 {
-                    
-                    // 设置管道安全: 允许管理员和SYSTEM访问(避免UAC下普通管理员无法连接SYSTEM服务创建的管道)
-                    var pipeSecurity = new System.IO.Pipes.PipeSecurity();
-                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("SYSTEM", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
-                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Administrators", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
-                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Users", System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
-                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 10, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
+                    try
                     {
                         server.WaitForConnection();
-                        
                         using (var reader = new StreamReader(server, Encoding.UTF8))
                         using (var writer = new StreamWriter(server, Encoding.UTF8) { AutoFlush = true })
                         {
@@ -259,10 +256,12 @@ namespace DolbyAccess
                             {
                                 writer.WriteLine("ERROR: unknown command");
                             }
+                            writer.Flush();
                         }
+                        server.Disconnect();
                     }
+                    catch { Thread.Sleep(100); }
                 }
-                catch { Thread.Sleep(1000); }
             }
         }
 

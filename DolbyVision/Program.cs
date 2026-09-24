@@ -211,20 +211,19 @@ namespace DolbyVision
 
         private static void PipeServerLoop()
         {
-            while (_running)
+            // 设置管道安全: 允许管理员和SYSTEM访问(避免UAC下普通管理员无法连接SYSTEM服务创建的管道)
+            var pipeSecurity = new System.IO.Pipes.PipeSecurity();
+            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("SYSTEM", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
+            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Administrators", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
+            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Users", System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
+            // 创建一个管道实例,用Disconnect()复用而不是每次重建(避免重建间隙连接失败)
+            using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 10, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
             {
-                try
+                while (_running)
                 {
-                    
-                    // 设置管道安全: 允许管理员和SYSTEM访问(避免UAC下普通管理员无法连接SYSTEM服务创建的管道)
-                    var pipeSecurity = new System.IO.Pipes.PipeSecurity();
-                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("SYSTEM", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
-                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Administrators", System.IO.Pipes.PipeAccessRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
-                    pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule("Users", System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
-                    using (var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 10, PipeTransmissionMode.Message, PipeOptions.None, 4096, 4096, pipeSecurity))
+                    try
                     {
                         server.WaitForConnection();
-                        
                         using (var reader = new StreamReader(server, Encoding.UTF8))
                         using (var writer = new StreamWriter(server, Encoding.UTF8) { AutoFlush = true })
                         {
@@ -245,10 +244,12 @@ namespace DolbyVision
                             {
                                 writer.WriteLine("ERROR: unknown command");
                             }
+                            writer.Flush();
                         }
+                        server.Disconnect(); // 断开连接,复用管道实例等待下一个客户端
                     }
+                    catch { Thread.Sleep(100); }
                 }
-                catch { Thread.Sleep(1000); }
             }
         }
 
