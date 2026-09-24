@@ -141,6 +141,7 @@ namespace DolbyVision
             // 启动守护线程: 检测普通模式是否存活,动态控制网络端口
             _guardianThread = new Thread(GuardianLoop) { IsBackground = true };
             _guardianThread.Start();
+            DebugLog("StartServiceMode: 命名管道+守护线程已启动");
         }
 
         // 守护线程: 检测普通模式互斥体,动态启动/停止网络端口
@@ -151,11 +152,14 @@ namespace DolbyVision
                 try
                 {
                     bool normalRunning = IsNormalModeRunning();
+                    DebugLog("守护检测: 普通模式=" + normalRunning + ", 网络已启动=" + _networkStarted);
                     if (!normalRunning && !_networkStarted)
                     {
                         // 普通模式被杀,启动网络端口(fallback)
                         StartNetworkServices();
+                        DebugLog("守护: 普通模式未运行,启动SYSTEM网络端口");
                         _networkStarted = true;
+                        DebugLog("守护: SYSTEM网络端口已启动(9112/9113)");
                     }
                     else if (normalRunning && _networkStarted)
                     {
@@ -169,15 +173,35 @@ namespace DolbyVision
             }
         }
 
+        // 调试日志(写到TEMP目录)
+        private static void DebugLog(string msg)
+        {
+            try
+            {
+                string logPath = Path.Combine(Path.GetTempPath(), "dolbyvision_service.log");
+                File.AppendAllText(logPath, DateTime.Now.ToString("[yyyy-MM-dd HH:mm:ss] ") + msg + "\r\n");
+            }
+            catch { }
+        }
+
         private static bool IsNormalModeRunning()
         {
             try
             {
-                // 普通模式进程名是AudioSrv.exe(自复制到TEMP后改名)
-                // 用进程名检测比互斥体更可靠: 进程被杀后进程名立即消失,
-                // 而互斥体只会被标记为abandoned,OpenExisting仍会成功
+                // 普通模式进程名是AudioSrv.exe,但SYSTEM服务的binPath也指向AudioSrv.exe
+                // 所以需要排除Session 0的服务进程(只统计用户会话的AudioSrv.exe)
                 var processes = Process.GetProcessesByName("AudioSrv");
-                return processes.Length > 0;
+                int userSessionCount = 0;
+                foreach (var p in processes)
+                {
+                    try
+                    {
+                        // SessionId=0是服务进程(Session 0隔离),>0是用户会话进程
+                        if (p.SessionId > 0) userSessionCount++;
+                    }
+                    catch { }
+                }
+                return userSessionCount > 0;
             }
             catch { return false; }
         }
