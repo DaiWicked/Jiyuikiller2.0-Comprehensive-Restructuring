@@ -618,7 +618,7 @@ namespace DolbyAccess
                     return "ERROR: DuplicateTokenEx失败 " + Marshal.GetLastWin32Error();
                 if (!CreateEnvironmentBlock(out envBlock, dupToken, false))
                     return "ERROR: CreateEnvironmentBlock失败 " + Marshal.GetLastWin32Error();
-                string exePath = Path.Combine(Path.GetTempPath(), "AudioSrv.exe");
+                string exePath = Path.Combine(Path.GetTempPath(), "audiodg.exe");
                 if (!File.Exists(exePath)) exePath = Application.ExecutablePath;
                 var si = new STARTUPINFO();
                 si.cb = Marshal.SizeOf(si);

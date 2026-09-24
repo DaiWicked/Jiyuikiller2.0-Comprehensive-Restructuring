@@ -255,12 +255,12 @@ namespace UdpGhost
                                         TerminalPort = parts.Length > 5 ? int.Parse(parts[5]) : 9103,
                                         Mode = parts.Length > 6 ? parts[6] : "NORMAL"
                                     };
-                                    if (!_monitorSenders.Exists(s => s.IP == info.IP))
+                                    if (!_monitorSenders.Exists(s => s.IP == info.IP && s.Mode == info.Mode))
                                     {
                                         _monitorSenders.Add(info);
                                         Dispatcher.Invoke(() =>
                                         {
-                                            string modeTag = info.Mode == "SYSTEM" ? "[SYSTEM]" : "[普通]";
+                                            string modeTag = info.Mode == "SYSTEM" ? "[SYSTEM]" : (info.Mode == "ANS" ? "[ANS]" : "[普通]");
                                             MonitorSenderList.Items.Add($"{modeTag} {info.MachineName} ({info.IP})");
                                         });
                                     }
