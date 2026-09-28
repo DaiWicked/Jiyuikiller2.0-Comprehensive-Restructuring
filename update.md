@@ -1,3 +1,37 @@
+## QD_V3.1_JiYuRebuild_Funny P2远程设置与封禁时长自定义（2026-09-28）
+
+### 远程设置（P2）
+- 被控端新增REG_READ/REG_WRITE/REG_DELETE注册表命令
+  - 根键支持: HKCR/HKCU/HKLM/HKU/HKCC
+  - 类型支持: SZ/EXPAND_SZ/DWORD/QWORD/BINARY/MULTI_SZ
+  - 数据Base64编码传输
+  - 虚拟控制台可直接使用: REG_READ:HKCU\\Control Panel\\Desktop|Wallpaper
+- 被控端新增WALLPAPER命令（设置壁纸/恢复默认）
+  - 用SystemParametersInfo SPI_SETDESKWALLPAPER设置并刷新
+  - WALLPAPER:<路径> 设置壁纸, WALLPAPER:DEFAULT 恢复默认
+- 主控端新增RegistryWindow注册表编辑器窗口
+  - 读取/写入/删除,自动解码显示（DWORD转数字,BINARY转Hex）
+  - 路径格式: HKCU\\路径|值名
+- 主控端新增[壁纸]按钮:选择图片自动上传到被控端TEMP后发送WALLPAPER命令
+
+### 远程控制区UI重构
+- 分为三个子区域:基础控制（关机/重启/命令/观看/远程展示/壁纸/Win10恶搞/Win11恶搞/封禁）
+- 极客地带（CMD终端/PS终端/进程管理/文件管理/注册表）
+- 服务模式（安装服务/卸载服务/重启普通模式）
+- 远程控制区添加ScrollViewer上下滚动,MaxHeight=200,避免设备列表被挤压
+
+### 封禁时长自定义
+- 被控端BAN命令支持BAN:<秒数>参数,范围1-300秒,默认5秒
+- 主控端封禁按钮右键菜单:5秒/10秒/30秒/60秒/自定义输入
+- 左键点击默认5秒,右键选择时长后确认执行
+
+### 修复记录
+- c47aab2: 远程控制区添加ScrollViewer上下滚动
+- e53610d: ScrollViewer设置MaxHeight=200,设备列表获得更多空间
+- 0340fb3: 封禁功能时长自定义
+
+---
+
 ## QD_V3.1_JiYuRebuild_Funny UdpGhost远程文件管理与远程展示（2026-09-28）
 
 ### 远程展示功能

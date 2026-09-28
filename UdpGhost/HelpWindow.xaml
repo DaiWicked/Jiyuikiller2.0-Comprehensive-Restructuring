@@ -69,21 +69,36 @@
                     <TextBlock Text="═══ 屏幕监控 ═══" Foreground="#00FF41" FontWeight="Bold" Margin="0,0,0,8"/>
                     <TextBlock Text="• 扫描DolbyVision/DolbyAccess发送端" Foreground="#8B949E" Margin="0,0,0,4"/>
                     <TextBlock Text="• 双击设备或点击[观看]实时查看屏幕" Foreground="#8B949E" Margin="0,0,0,4"/>
-                    <TextBlock Text="• 远程控制区:关机/重启/命令/CMD终端/PS终端" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="• 远程控制区分三个区域:" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="  └ 基础控制:关机/重启/命令/观看/远程展示/壁纸/Win10恶搞/Win11恶搞/封禁" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 极客地带:CMD终端/PS终端/进程管理/文件管理/注册表" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 服务模式:安装服务/卸载服务/重启普通模式" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="• 恶搞功能:Win10/Win11 OOBE动画全屏播放" Foreground="#8B949E" Margin="0,0,0,4"/>
                     <TextBlock Text="  └ 右键[Win10恶搞]/[Win11恶搞]可自定义被控端浏览器路径" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="  └ 留空自动查找Edge/Chrome,指定路径则直接使用" Foreground="#6E7681" Margin="12,0,0,4"/>
-                    <TextBlock Text="• 封禁:全屏显示ban.jpg 5秒" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="• 封禁:全屏显示ban.jpg,时长可自定义" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="  └ 左键默认5秒,右键菜单可选5/10/30/60秒或自定义(1-300秒)" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="• 远程展示:全屏显示文字/图片/文字+图片" Foreground="#8B949E" Margin="0,0,0,4"/>
                     <TextBlock Text="  └ 三种模式:仅文字/仅图片/文字+图片(文字叠加在图片底部)" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="  └ 可自定义:时长(1-120秒)/字号/文字颜色,图片≤2MB" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="  └ 被控端左下角显示倒计时,按ESC退出" Foreground="#6E7681" Margin="12,0,0,4"/>
-                    <TextBlock Text="• 文件管理:远程浏览/上传/下载/删除文件" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="• 文件管理:远程浏览/上传/下载/删除/重命名文件" Foreground="#8B949E" Margin="0,0,0,4"/>
                     <TextBlock Text="  └ 左侧快捷目录(桌面/文档/下载/TEMP/C:\),右侧文件列表" Foreground="#6E7681" Margin="12,0,0,4"/>
-                    <TextBlock Text="  └ 双击目录进入,双击文件下载,单文件上限10MB" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 单击选中,双击目录进入,[进入]按钮也可进入,[上级]返回" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 右键菜单:属性/重命名/新建txt/查看txt/编辑txt/下载/删除/刷新" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 上传/下载带进度条,单文件上限10MB,分块4KB传输" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="  └ 上传到受保护目录自动通过SYSTEM服务提权(需先安装服务)" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="  └ 文件已存在时提示是否覆盖" Foreground="#6E7681" Margin="12,0,0,4"/>
-                    <TextBlock Text="• 进程管理:查看/结束被控端进程" Foreground="#8B949E" Margin="0,0,0,12"/>
+                    <TextBlock Text="• 进程管理:查看/结束被控端进程,显示用户名和描述" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="• 注册表:远程读写注册表" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="  └ 支持根键:HKCR/HKCU/HKLM/HKU/HKCC" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 支持类型:SZ/EXPAND_SZ/DWORD/QWORD/BINARY/MULTI_SZ" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 路径格式:HKCU\\路径|值名,数据自动Base64编解码" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ HKCU普通权限即可,HKLM需管理员/SYSTEM权限" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 虚拟控制台也可直接用:REG_READ/REG_WRITE/REG_DELETE" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="• 壁纸:远程设置被控端桌面壁纸" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="  └ 选择图片后自动上传到被控端TEMP并设置" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 支持JPG/PNG/BMP,设置前清缓存确保刷新" Foreground="#6E7681" Margin="12,0,0,12"/>
 
                     <TextBlock Text="═══ 服务模式(SYSTEM权限) ═══" Foreground="#00FF41" FontWeight="Bold" Margin="0,0,0,8"/>
                     <TextBlock Text="• 点击[安装服务]在被控端安装Windows服务" Foreground="#8B949E" Margin="0,0,0,4"/>
