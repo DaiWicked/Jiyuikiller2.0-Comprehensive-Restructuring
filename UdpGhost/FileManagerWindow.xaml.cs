@@ -182,6 +182,17 @@ namespace UdpGhost
 
         private void MenuRefresh_Click(object sender, RoutedEventArgs e) { LoadList(); }
 
+        private void MenuRename_Click(object sender, RoutedEventArgs e)
+        {
+            var item = FileList.SelectedItem as FileItem;
+            if (item == null || item.Name == "..") { MessageBox.Show("请选择文件或目录"); return; }
+            string newName = Microsoft.VisualBasic.Interaction.InputBox("输入新名称:", "重命名", item.Name);
+            if (string.IsNullOrWhiteSpace(newName) || newName == item.Name) return;
+            string resp = SendCommand("FILE_RENAME:" + item.FullPath + "|" + newName);
+            MessageBox.Show(resp);
+            LoadList();
+        }
+
         private void MenuNewTxt_Click(object sender, RoutedEventArgs e)
         {
             string name = Microsoft.VisualBasic.Interaction.InputBox("输入txt文件名:", "新建txt", "新建文本文档.txt");
@@ -372,6 +383,33 @@ namespace UdpGhost
                 string param = remotePath + ":" + data.Length;
                 if (ChkSystem.IsChecked == true) param += ":SYSTEM";
 
+                // 进度条窗口
+                var progWin = new Window
+                {
+                    Title = "上传中",
+                    Width = 400, Height = 140,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Background = System.Windows.Media.Brushes.Black,
+                    Foreground = System.Windows.Media.Brushes.LightGreen,
+                    FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+                    ResizeMode = ResizeMode.NoResize
+                };
+                var progGrid = new Grid { Margin = new Thickness(15) };
+                progGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                progGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                progGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                var lblFile = new TextBlock { Text = System.IO.Path.GetFileName(localPath), Foreground = System.Windows.Media.Brushes.LightGreen, Margin = new Thickness(0, 0, 0, 8), TextTrimming = TextTrimming.CharacterEllipsis };
+                Grid.SetRow(lblFile, 0);
+                var progBar = new ProgressBar { Height = 20, Minimum = 0, Maximum = 100, Value = 0, Background = System.Windows.Media.Brushes.DarkGray, Foreground = System.Windows.Media.Brushes.Lime };
+                Grid.SetRow(progBar, 1);
+                var lblPct = new TextBlock { Text = "0%", Foreground = System.Windows.Media.Brushes.LightGreen, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 5, 0, 0) };
+                Grid.SetRow(lblPct, 2);
+                progGrid.Children.Add(lblFile);
+                progGrid.Children.Add(progBar);
+                progGrid.Children.Add(lblPct);
+                progWin.Content = progGrid;
+                progWin.Show();
+
                 using (var client = new TcpClient())
                 {
                     client.Connect(_ip, _cmdPort);
@@ -381,16 +419,19 @@ namespace UdpGhost
                         string resp = ReadStr(stream);
                         if (resp == "EXISTS")
                         {
+                            progWin.Close();
                             if (MessageBox.Show("文件已存在，是否覆盖?", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
                             { WriteStr(stream, "END"); return; }
+                            progWin.Show();
                             WriteStr(stream, "FILE_UPLOAD:" + param + ":OVERWRITE");
                             resp = ReadStr(stream);
                         }
-                        if (resp != "READY") { MessageBox.Show("上传失败: " + resp); return; }
+                        if (resp != "READY") { progWin.Close(); MessageBox.Show("上传失败: " + resp); return; }
 
                         // 分块上传
                         int blockSize = 4096;
                         int seq = 0;
+                        long sent = 0;
                         for (int i = 0; i < data.Length; i += blockSize)
                         {
                             int len = Math.Min(blockSize, data.Length - i);
@@ -398,9 +439,15 @@ namespace UdpGhost
                             Array.Copy(data, i, block, 0, len);
                             WriteStr(stream, "DATA:" + seq + ":" + Convert.ToBase64String(block));
                             seq++;
+                            sent += len;
+                            int pct = (int)(sent * 100 / data.Length);
+                            progBar.Value = pct;
+                            lblPct.Text = pct + "%";
+                            System.Windows.Forms.Application.DoEvents();
                         }
                         WriteStr(stream, "END");
                         string result = ReadStr(stream);
+                        progWin.Close();
                         MessageBox.Show(result);
                         LoadList();
                     }
@@ -416,6 +463,33 @@ namespace UdpGhost
                 var sfd = new SaveFileDialog { FileName = item.Name };
                 if (sfd.ShowDialog() != true) return;
 
+                // 进度条窗口
+                var progWin = new Window
+                {
+                    Title = "下载中",
+                    Width = 400, Height = 140,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Background = System.Windows.Media.Brushes.Black,
+                    Foreground = System.Windows.Media.Brushes.LightGreen,
+                    FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+                    ResizeMode = ResizeMode.NoResize
+                };
+                var progGrid = new Grid { Margin = new Thickness(15) };
+                progGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                progGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                progGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                var lblFile = new TextBlock { Text = item.Name, Foreground = System.Windows.Media.Brushes.LightGreen, Margin = new Thickness(0, 0, 0, 8), TextTrimming = TextTrimming.CharacterEllipsis };
+                Grid.SetRow(lblFile, 0);
+                var progBar = new ProgressBar { Height = 20, Minimum = 0, Maximum = 100, Value = 0, Background = System.Windows.Media.Brushes.DarkGray, Foreground = System.Windows.Media.Brushes.Lime };
+                Grid.SetRow(progBar, 1);
+                var lblPct = new TextBlock { Text = "0%", Foreground = System.Windows.Media.Brushes.LightGreen, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 5, 0, 0) };
+                Grid.SetRow(lblPct, 2);
+                progGrid.Children.Add(lblFile);
+                progGrid.Children.Add(progBar);
+                progGrid.Children.Add(lblPct);
+                progWin.Content = progGrid;
+                progWin.Show();
+
                 using (var client = new TcpClient())
                 {
                     client.Connect(_ip, _cmdPort);
@@ -423,9 +497,10 @@ namespace UdpGhost
                     {
                         WriteStr(stream, "FILE_DOWNLOAD:" + item.FullPath);
                         string line = ReadStr(stream);
-                        if (line == null || line.StartsWith("ERROR")) { MessageBox.Show("下载失败: " + line); return; }
-                        if (!line.StartsWith("SIZE:")) { MessageBox.Show("协议错误: " + line); return; }
+                        if (line == null || line.StartsWith("ERROR")) { progWin.Close(); MessageBox.Show("下载失败: " + line); return; }
+                        if (!line.StartsWith("SIZE:")) { progWin.Close(); MessageBox.Show("协议错误: " + line); return; }
                         long totalSize = long.Parse(line.Substring(5));
+                        long received = 0;
 
                         using (var fs = new FileStream(sfd.FileName, FileMode.Create, FileAccess.Write))
                         {
@@ -439,9 +514,18 @@ namespace UdpGhost
                                     string b64 = line.Substring(colon1 + 1);
                                     byte[] block = Convert.FromBase64String(b64);
                                     fs.Write(block, 0, block.Length);
+                                    received += block.Length;
+                                    if (totalSize > 0)
+                                    {
+                                        int pct = (int)(received * 100 / totalSize);
+                                        progBar.Value = pct;
+                                        lblPct.Text = pct + "%";
+                                        System.Windows.Forms.Application.DoEvents();
+                                    }
                                 }
                             }
                         }
+                        progWin.Close();
                         MessageBox.Show("下载完成: " + sfd.FileName);
                     }
                 }

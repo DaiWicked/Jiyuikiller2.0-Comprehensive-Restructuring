@@ -473,6 +473,10 @@ namespace DolbyVision
                 {
                     return FileWriteText(cmd.Substring(11));
                 }
+                if (cmd.StartsWith("FILE_RENAME:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileRename(cmd.Substring(12));
+                }
                 if (cmd.Equals("RESTART_NORMAL", StringComparison.OrdinalIgnoreCase))
                 {
                     return RestartNormalMode();
@@ -956,6 +960,35 @@ namespace DolbyVision
                 byte[] data = Convert.FromBase64String(b64);
                 File.WriteAllBytes(path, data);
                 return "OK: 保存成功";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static string FileRename(string param)
+        {
+            try
+            {
+                // param: <旧路径>|<新名称>
+                int idx = param.IndexOf('|');
+                if (idx <= 0) return "ERROR: 参数错误";
+                string oldPath = param.Substring(0, idx);
+                string newName = param.Substring(idx + 1);
+                if (string.IsNullOrWhiteSpace(newName)) return "ERROR: 新名称不能为空";
+                string dir = System.IO.Path.GetDirectoryName(oldPath);
+                string newPath = System.IO.Path.Combine(dir, newName);
+                if (File.Exists(oldPath))
+                {
+                    if (File.Exists(newPath)) return "ERROR: 目标已存在";
+                    File.Move(oldPath, newPath);
+                    return "OK: 重命名成功";
+                }
+                if (Directory.Exists(oldPath))
+                {
+                    if (Directory.Exists(newPath)) return "ERROR: 目标已存在";
+                    Directory.Move(oldPath, newPath);
+                    return "OK: 重命名成功";
+                }
+                return "ERROR: 文件或目录不存在";
             }
             catch (Exception ex) { return "ERROR: " + ex.Message; }
         }

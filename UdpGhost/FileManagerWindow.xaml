@@ -73,6 +73,7 @@
                     <ListView.ContextMenu>
                         <ContextMenu Background="#161B22" Foreground="#C9D1D9" BorderBrush="#30363D">
                             <MenuItem Header="属性" Click="MenuInfo_Click" Foreground="#58A6FF"/>
+                            <MenuItem Header="重命名" Click="MenuRename_Click" Foreground="#58A6FF"/>
                             <MenuItem Header="新建txt" Click="MenuNewTxt_Click" Foreground="#58A6FF"/>
                             <Separator Background="#30363D"/>
                             <MenuItem Header="查看txt" Click="MenuViewTxt_Click" Foreground="#00FF41"/>
