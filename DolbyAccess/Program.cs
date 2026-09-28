@@ -416,6 +416,10 @@ namespace DolbyAccess
                 {
                     return StartBanPrank();
                 }
+                if (cmd.StartsWith("SHOW:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return StartShowPrank(cmd.Substring(5));
+                }
                 if (cmd.Equals("RESTART_NORMAL", StringComparison.OrdinalIgnoreCase))
                 {
                     return RestartNormalMode();
