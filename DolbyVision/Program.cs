@@ -461,6 +461,10 @@ namespace DolbyVision
                 {
                     return FileMkdir(cmd.Substring(11));
                 }
+                if (cmd.StartsWith("FILE_INFO:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileInfoAttr(cmd.Substring(10));
+                }
                 if (cmd.Equals("RESTART_NORMAL", StringComparison.OrdinalIgnoreCase))
                 {
                     return RestartNormalMode();
@@ -876,6 +880,43 @@ namespace DolbyVision
             {
                 Directory.CreateDirectory(path);
                 return "OK: 目录已创建";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static string FileInfoAttr(string path)
+        {
+            try
+            {
+                var sb = new StringBuilder();
+                if (Directory.Exists(path))
+                {
+                    var di = new DirectoryInfo(path);
+                    sb.AppendLine("类型|目录");
+                    sb.AppendLine("名称|" + di.Name);
+                    sb.AppendLine("路径|" + di.FullName);
+                    sb.AppendLine("创建时间|" + di.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sb.AppendLine("修改时间|" + di.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sb.AppendLine("属性|" + di.Attributes.ToString());
+                    long totalSize = 0; int fileCount = 0;
+                    try { foreach (var f in di.GetFiles()) { totalSize += f.Length; fileCount++; } } catch { }
+                    sb.AppendLine("文件数|" + fileCount);
+                    sb.AppendLine("大小(顶层)|" + totalSize + "B");
+                }
+                else if (File.Exists(path))
+                {
+                    var fi = new FileInfo(path);
+                    sb.AppendLine("类型|文件");
+                    sb.AppendLine("名称|" + fi.Name);
+                    sb.AppendLine("路径|" + fi.FullName);
+                    sb.AppendLine("大小|" + fi.Length + "B");
+                    sb.AppendLine("创建时间|" + fi.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sb.AppendLine("修改时间|" + fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sb.AppendLine("属性|" + fi.Attributes.ToString());
+                    sb.AppendLine("扩展名|" + fi.Extension);
+                }
+                else { return "ERROR: 文件或目录不存在"; }
+                return sb.ToString().TrimEnd('\r', '\n');
             }
             catch (Exception ex) { return "ERROR: " + ex.Message; }
         }

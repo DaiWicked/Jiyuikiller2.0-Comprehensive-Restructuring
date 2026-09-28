@@ -72,6 +72,8 @@
                 <ListView x:Name="FileList" Background="Transparent" Foreground="#C9D1D9" BorderThickness="0" FontSize="11" MouseDoubleClick="FileList_MouseDoubleClick">
                     <ListView.ContextMenu>
                         <ContextMenu Background="#161B22" Foreground="#C9D1D9" BorderBrush="#30363D">
+                            <MenuItem Header="属性" Click="MenuInfo_Click" Foreground="#58A6FF"/>
+                            <Separator Background="#30363D"/>
                             <MenuItem Header="下载" Click="MenuDownload_Click" Foreground="#00FF41"/>
                             <MenuItem Header="删除" Click="MenuDelete_Click" Foreground="#FF6B6B"/>
                             <Separator Background="#30363D"/>

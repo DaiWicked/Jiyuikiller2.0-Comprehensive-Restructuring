@@ -182,6 +182,34 @@ namespace UdpGhost
 
         private void MenuRefresh_Click(object sender, RoutedEventArgs e) { LoadList(); }
 
+        private void MenuInfo_Click(object sender, RoutedEventArgs e)
+        {
+            var item = FileList.SelectedItem as FileItem;
+            if (item == null || item.Name == "..") { MessageBox.Show("请选择文件或目录"); return; }
+            try
+            {
+                string resp = SendCommand("FILE_INFO:" + item.FullPath);
+                if (resp.StartsWith("ERROR")) { MessageBox.Show(resp, "属性", MessageBoxButton.OK, MessageBoxImage.Error); return; }
+                var sb = new StringBuilder();
+                string[] lines = resp.Split('\n');
+                foreach (string line in lines)
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    string trimmed = line.TrimEnd('\r');
+                    int idx = trimmed.IndexOf('|');
+                    if (idx > 0)
+                    {
+                        string key = trimmed.Substring(0, idx);
+                        string val = trimmed.Substring(idx + 1);
+                        sb.AppendLine(key + ": " + val);
+                    }
+                    else sb.AppendLine(trimmed);
+                }
+                MessageBox.Show(sb.ToString(), "属性 - " + item.Name, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex) { MessageBox.Show("获取属性失败: " + ex.Message); }
+        }
+
         private void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
             var ofd = new OpenFileDialog { Title = "选择要上传的文件" };
