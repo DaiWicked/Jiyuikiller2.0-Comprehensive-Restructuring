@@ -42,9 +42,10 @@
         <!-- 顶部工具栏 -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
             <Button Content="[上级]" Width="60" Height="26" Click="BtnUp_Click" Style="{StaticResource HackerButton}" Margin="0,0,5,0"/>
+            <Button Content="[进入]" Width="60" Height="26" Click="BtnEnter_Click" Style="{StaticResource HackerButton}" Margin="0,0,5,0"/>
             <Button Content="[刷新]" Width="60" Height="26" Click="BtnRefresh_Click" Style="{StaticResource HackerButton}" Margin="0,0,5,0"/>
             <TextBlock Text="路径:" VerticalAlignment="Center" Margin="5,0,5,0" Foreground="#8B949E"/>
-            <TextBox x:Name="PathBox" Height="26" Width="400" Background="#161B22" Foreground="#C9D1D9" BorderBrush="#00FF41" BorderThickness="1" Padding="4" FontSize="11" KeyDown="PathBox_KeyDown"/>
+            <TextBox x:Name="PathBox" Height="26" Width="340" Background="#161B22" Foreground="#C9D1D9" BorderBrush="#00FF41" BorderThickness="1" Padding="4" FontSize="11" KeyDown="PathBox_KeyDown"/>
         </StackPanel>
 
         <!-- 主体：左侧快捷目录 + 右侧文件列表 -->
@@ -68,7 +69,7 @@
 
             <!-- 右侧文件列表 -->
             <Border Grid.Column="1" Background="#161B22" BorderBrush="#00FF41" BorderThickness="1" CornerRadius="4">
-                <ListView x:Name="FileList" Background="Transparent" Foreground="#C9D1D9" BorderThickness="0" FontSize="11" MouseDoubleClick="FileList_MouseDoubleClick">
+                <ListView x:Name="FileList" Background="Transparent" Foreground="#C9D1D9" BorderThickness="0" FontSize="11">
                     <ListView.ContextMenu>
                         <ContextMenu Background="#161B22" Foreground="#C9D1D9" BorderBrush="#30363D">
                             <MenuItem Header="下载" Click="MenuDownload_Click" Foreground="#00FF41"/>

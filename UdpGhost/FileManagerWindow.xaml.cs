@@ -112,6 +112,17 @@ namespace UdpGhost
             if (parent != null) { _currentPath = parent.FullName; PathBox.Text = _currentPath; LoadList(); }
         }
 
+        private void BtnEnter_Click(object sender, RoutedEventArgs e)
+        {
+            var item = FileList.SelectedItem as FileItem;
+            if (item == null) { MessageBox.Show("请先选择目录"); return; }
+            if (!item.IsDir) { MessageBox.Show("选中的不是目录"); return; }
+            if (item.FullPath == null) { MessageBox.Show("无法获取路径"); return; }
+            _currentPath = item.FullPath;
+            PathBox.Text = _currentPath;
+            LoadList();
+        }
+
         private void BtnRefresh_Click(object sender, RoutedEventArgs e) { LoadList(); }
 
         private void PathBox_KeyDown(object sender, KeyEventArgs e)
@@ -137,16 +148,6 @@ namespace UdpGhost
                 case "Temp": _currentPath = Path.GetTempPath(); break;
                 case "C:\\": _currentPath = "C:\\"; break;
             }
-            PathBox.Text = _currentPath;
-            LoadList();
-        }
-
-        private void FileList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            // 双击只进入目录,文件双击不下载(下载走右键菜单或底部按钮)
-            var item = FileList.SelectedItem as FileItem;
-            if (item == null || !item.IsDir || item.FullPath == null) return;
-            _currentPath = item.FullPath;
             PathBox.Text = _currentPath;
             LoadList();
         }
