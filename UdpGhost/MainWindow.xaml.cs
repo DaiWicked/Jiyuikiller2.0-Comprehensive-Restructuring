@@ -441,6 +441,102 @@ namespace UdpGhost
             Log("[设置] " + version + "恶搞浏览器路径已清除(恢复自动查找)");
         }
 
+        private void RemoteShow_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+
+            // 创建设置弹窗
+            var dlg = new Window
+            {
+                Title = "远程展示 - " + info.MachineName,
+                Width = 480,
+                Height = 420,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                ResizeMode = ResizeMode.NoResize,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(13, 17, 23)),
+                Foreground = System.Windows.Media.Brushes.White,
+                FontFamily = new System.Windows.Media.FontFamily("Consolas")
+            };
+            var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(15) };
+
+            // 模式选择
+            var modeLabel = new System.Windows.Controls.TextBlock { Text = "展示模式：", Foreground = System.Windows.Media.Brushes.LightGray, FontSize = 11, Margin = new Thickness(0, 0, 0, 6) };
+            var modePanel = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+            var rbText = new System.Windows.Controls.RadioButton { Content = "仅文字", IsChecked = true, Foreground = System.Windows.Media.Brushes.White, FontSize = 11, Margin = new Thickness(0, 0, 15, 0) };
+            var rbImage = new System.Windows.Controls.RadioButton { Content = "仅图片", Foreground = System.Windows.Media.Brushes.White, FontSize = 11, Margin = new Thickness(0, 0, 15, 0) };
+            var rbBoth = new System.Windows.Controls.RadioButton { Content = "文字+图片", Foreground = System.Windows.Media.Brushes.White, FontSize = 11 };
+            modePanel.Children.Add(rbText); modePanel.Children.Add(rbImage); modePanel.Children.Add(rbBoth);
+
+            // 文字输入
+            var textLabel = new System.Windows.Controls.TextBlock { Text = "展示文字：", Foreground = System.Windows.Media.Brushes.LightGray, FontSize = 11, Margin = new Thickness(0, 0, 0, 4) };
+            var textBox = new System.Windows.Controls.TextBox { Height = 50, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(22, 27, 34)), Foreground = System.Windows.Media.Brushes.White, BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 65)), BorderThickness = new Thickness(1), Padding = new Thickness(6), FontSize = 11, TextWrapping = System.Windows.TextWrapping.Wrap, AcceptsReturn = true, VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto };
+            textBox.Text = "你好";
+
+            // 图片选择
+            var imgLabel = new System.Windows.Controls.TextBlock { Text = "展示图片（≤2MB）：", Foreground = System.Windows.Media.Brushes.LightGray, FontSize = 11, Margin = new Thickness(0, 10, 0, 4) };
+            var imgPanel = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+            var imgPathBox = new System.Windows.Controls.TextBox { Width = 300, Height = 26, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(22, 27, 34)), Foreground = System.Windows.Media.Brushes.White, BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 65)), BorderThickness = new Thickness(1), Padding = new Thickness(4), FontSize = 10, IsReadOnly = true };
+            var browseBtn = new System.Windows.Controls.Button { Content = "浏览...", Width = 60, Height = 26, Margin = new Thickness(8, 0, 0, 0), Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(48, 54, 61)), Foreground = System.Windows.Media.Brushes.White, FontSize = 10, Cursor = System.Windows.Input.Cursors.Hand };
+            string selectedImgPath = "";
+            browseBtn.Click += (s, args) =>
+            {
+                var ofd = new Microsoft.Win32.OpenFileDialog { Filter = "图片文件|*.jpg;*.jpeg;*.png;*.bmp;*.gif" };
+                if (ofd.ShowDialog() == true)
+                {
+                    var fi = new System.IO.FileInfo(ofd.FileName);
+                    if (fi.Length > 2 * 1024 * 1024) { MessageBox.Show("图片超过2MB限制"); return; }
+                    selectedImgPath = ofd.FileName;
+                    imgPathBox.Text = ofd.FileName;
+                }
+            };
+            imgPanel.Children.Add(imgPathBox); imgPanel.Children.Add(browseBtn);
+
+            // 参数设置
+            var paramLabel = new System.Windows.Controls.TextBlock { Text = "参数设置：", Foreground = System.Windows.Media.Brushes.LightGray, FontSize = 11, Margin = new Thickness(0, 5, 0, 4) };
+            var paramPanel = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+            var durLabel = new System.Windows.Controls.TextBlock { Text = "时长(秒,1-120):", Foreground = System.Windows.Media.Brushes.Gray, FontSize = 10, VerticalAlignment = System.Windows.VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) };
+            var durBox = new System.Windows.Controls.TextBox { Width = 50, Height = 24, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(22, 27, 34)), Foreground = System.Windows.Media.Brushes.White, BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 65)), BorderThickness = new Thickness(1), Padding = new Thickness(4), FontSize = 10, Text = "5" };
+            var fsLabel = new System.Windows.Controls.TextBlock { Text = "字号:", Foreground = System.Windows.Media.Brushes.Gray, FontSize = 10, VerticalAlignment = System.Windows.VerticalAlignment.Center, Margin = new Thickness(10, 0, 4, 0) };
+            var fsBox = new System.Windows.Controls.TextBox { Width = 45, Height = 24, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(22, 27, 34)), Foreground = System.Windows.Media.Brushes.White, BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 65)), BorderThickness = new Thickness(1), Padding = new Thickness(4), FontSize = 10, Text = "36" };
+            var tcLabel = new System.Windows.Controls.TextBlock { Text = "字色:", Foreground = System.Windows.Media.Brushes.Gray, FontSize = 10, VerticalAlignment = System.Windows.VerticalAlignment.Center, Margin = new Thickness(10, 0, 4, 0) };
+            var tcBox = new System.Windows.Controls.TextBox { Width = 60, Height = 24, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(22, 27, 34)), Foreground = System.Windows.Media.Brushes.White, BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 65)), BorderThickness = new Thickness(1), Padding = new Thickness(4), FontSize = 10, Text = "#FFFFFF" };
+            paramPanel.Children.Add(durLabel); paramPanel.Children.Add(durBox); paramPanel.Children.Add(fsLabel); paramPanel.Children.Add(fsBox); paramPanel.Children.Add(tcLabel); paramPanel.Children.Add(tcBox);
+
+            // 按钮
+            var btnPanel = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right, Margin = new Thickness(0, 15, 0, 0) };
+            var okBtn = new System.Windows.Controls.Button { Content = "发送", Width = 70, Height = 28, Margin = new Thickness(0, 0, 8, 0), Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 65)), Foreground = System.Windows.Media.Brushes.Black, FontSize = 11, Cursor = System.Windows.Input.Cursors.Hand };
+            var cancelBtn = new System.Windows.Controls.Button { Content = "取消", Width = 70, Height = 28, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(48, 54, 61)), Foreground = System.Windows.Media.Brushes.White, FontSize = 11, Cursor = System.Windows.Input.Cursors.Hand };
+            okBtn.Click += (s, args) =>
+            {
+                string mode = rbText.IsChecked == true ? "TEXT" : (rbImage.IsChecked == true ? "IMAGE" : "BOTH");
+                string text = textBox.Text;
+                string imgBase64 = "";
+                if ((mode == "IMAGE" || mode == "BOTH") && !string.IsNullOrEmpty(selectedImgPath))
+                {
+                    try { imgBase64 = Convert.ToBase64String(System.IO.File.ReadAllBytes(selectedImgPath)); }
+                    catch { MessageBox.Show("图片读取失败"); return; }
+                }
+                int duration = 5; int.TryParse(durBox.Text, out duration);
+                int fontSize = 36; int.TryParse(fsBox.Text, out fontSize);
+                string textColor = tcBox.Text;
+                string cmd = "SHOW:" + mode + "|" + text + "|" + imgBase64 + "|" + duration + "|" + fontSize + "|" + textColor + "|";
+                string result = SendMonitorCommand(info, cmd);
+                Log("[远程] 远程展示: " + result);
+                dlg.DialogResult = true; dlg.Close();
+            };
+            cancelBtn.Click += (s, args) => { dlg.DialogResult = false; dlg.Close(); };
+            btnPanel.Children.Add(okBtn); btnPanel.Children.Add(cancelBtn);
+
+            panel.Children.Add(modeLabel); panel.Children.Add(modePanel);
+            panel.Children.Add(textLabel); panel.Children.Add(textBox);
+            panel.Children.Add(imgLabel); panel.Children.Add(imgPanel);
+            panel.Children.Add(paramLabel); panel.Children.Add(paramPanel);
+            panel.Children.Add(btnPanel);
+            dlg.Content = panel;
+            dlg.ShowDialog();
+        }
         private void RemoteProcess_Click(object sender, RoutedEventArgs e)
         {
             var info = GetMonitorSelected();

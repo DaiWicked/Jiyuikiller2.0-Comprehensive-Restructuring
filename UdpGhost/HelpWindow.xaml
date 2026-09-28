@@ -74,6 +74,10 @@
                     <TextBlock Text="  └ 右键[Win10恶搞]/[Win11恶搞]可自定义被控端浏览器路径" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="  └ 留空自动查找Edge/Chrome,指定路径则直接使用" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="• 封禁:全屏显示ban.jpg 5秒" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="• 远程展示:全屏显示文字/图片/文字+图片" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="  └ 三种模式:仅文字/仅图片/文字+图片(文字叠加在图片底部)" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 可自定义:时长(1-120秒)/字号/文字颜色,图片≤2MB" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 被控端左下角显示倒计时,按ESC退出" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="• 进程管理:查看/结束被控端进程" Foreground="#8B949E" Margin="0,0,0,12"/>
 
                     <TextBlock Text="═══ 服务模式(SYSTEM权限) ═══" Foreground="#00FF41" FontWeight="Bold" Margin="0,0,0,8"/>
