@@ -141,21 +141,26 @@ namespace UdpGhost
             LoadList();
         }
 
-        private void FileList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void FileList_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            // 单击目录直接进入
             var item = FileList.SelectedItem as FileItem;
-            if (item == null) return;
-            if (item.IsDir)
+            if (item == null || !item.IsDir) return;
+            if (item.FullPath != null)
             {
                 _currentPath = item.FullPath;
                 PathBox.Text = _currentPath;
                 LoadList();
             }
-            else
-            {
-                if (MessageBox.Show("下载文件 " + item.Name + " ?", "确认", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                    DownloadFile(item);
-            }
+        }
+
+        private void FileList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            // 双击文件下载(目录单击已进入,双击忽略)
+            var item = FileList.SelectedItem as FileItem;
+            if (item == null || item.IsDir) return;
+            if (MessageBox.Show("下载文件 " + item.Name + " ?", "确认", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                DownloadFile(item);
         }
 
         private void BtnUpload_Click(object sender, RoutedEventArgs e)
