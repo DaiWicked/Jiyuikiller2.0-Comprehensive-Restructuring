@@ -51,7 +51,8 @@
 
 <p align="center">
   <a href="#">
-    <img alt="JiYu Trainer" src="boli.png" width="200*180">
+    <img alt="JiYu Trainer" src="boli1.png" width="200*180">
+    <img alt="JiYu Trainer" src="boli2.png" width="200*180">
   </a>
 </p>
 
