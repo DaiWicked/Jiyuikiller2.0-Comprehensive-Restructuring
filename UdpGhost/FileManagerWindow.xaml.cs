@@ -124,6 +124,16 @@ namespace UdpGhost
             LoadList();
         }
 
+        private void FileList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            // 双击目录直接进入,文件双击无操作(下载走右键菜单或底部按钮)
+            var item = FileList.SelectedItem as FileItem;
+            if (item == null || !item.IsDir || item.FullPath == null) return;
+            _currentPath = item.FullPath;
+            PathBox.Text = _currentPath;
+            LoadList();
+        }
+
         private void BtnRefresh_Click(object sender, RoutedEventArgs e) { LoadList(); }
 
         private void PathBox_KeyDown(object sender, KeyEventArgs e)

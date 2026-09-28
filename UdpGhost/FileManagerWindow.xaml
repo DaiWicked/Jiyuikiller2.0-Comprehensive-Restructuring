@@ -69,7 +69,7 @@
 
             <!-- 右侧文件列表 -->
             <Border Grid.Column="1" Background="#161B22" BorderBrush="#00FF41" BorderThickness="1" CornerRadius="4">
-                <ListView x:Name="FileList" Background="Transparent" Foreground="#C9D1D9" BorderThickness="0" FontSize="11">
+                <ListView x:Name="FileList" Background="Transparent" Foreground="#C9D1D9" BorderThickness="0" FontSize="11" MouseDoubleClick="FileList_MouseDoubleClick">
                     <ListView.ContextMenu>
                         <ContextMenu Background="#161B22" Foreground="#C9D1D9" BorderBrush="#30363D">
                             <MenuItem Header="下载" Click="MenuDownload_Click" Foreground="#00FF41"/>
