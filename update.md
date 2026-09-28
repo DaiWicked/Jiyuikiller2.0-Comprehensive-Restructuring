@@ -1,3 +1,33 @@
+## QD_V3.1_JiYuRebuild_Funny UdpGhost远程文件管理与远程展示（2026-09-28）
+
+### 远程展示功能
+- 屏幕监控区新增[远程展示]按钮，被控端全屏展示文字/图片/文字+图片
+- 协议：SHOW:<模式>|<文字>|<图片Base64>|<时长秒>|<字号>|<文字颜色>|<背景色>
+- 模式自动检测：有文字+有图片=BOTH，只有图片=IMAGE，只有文字=TEXT
+- 仅文字模式文字全屏居中，左下角倒计时提示，ESC退出，时长上限120秒
+- 被控端命令读取缓冲区改为MemoryStream循环读取（16KB+3秒超时），解决图片Base64截断解码失败
+
+### 远程文件管理（P1）
+- 屏幕监控区新增[文件管理]按钮，打开FileManagerWindow
+- 协议：FILE_LIST/FILE_DOWNLOAD/FILE_UPLOAD/FILE_DELETE/FILE_MKDIR/FILE_INFO/FILE_READ/FILE_WRITE/FILE_RENAME
+- 操作逻辑：单击选中，双击目录进入，[进入]按钮也可进入，[上级]返回，右键菜单下载/删除/刷新/属性/重命名/新建txt/查看txt/编辑txt
+- 上传文件两级落盘：先存%TEMP%\dv_upload_*.tmp，尝试移动到目标，权限不足走SYSTEM服务提权移动
+- 文件已存在返回EXISTS，主控端弹窗确认后加:OVERWRITE重发
+- 单文件上限10MB，分块4KB传输（Base64后约5.3KB）
+- 上传/下载带进度条弹窗（黑底绿字，显示文件名/进度条/百分比）
+- txt查看/编辑：内容Base64编码传输，查看为只读弹窗，编辑为可编辑弹窗带保存按钮
+
+### 修复记录
+- 32738ff: 修复严重bug：选中目录点击[进入]提示"选中的不是目录"。根因：被控端FileList用AppendLine返回(\r\n)，主控端用\n分割后每行残留\r，parts[3]实际是"D\r"而非"D"，IsDir永远为false。修复：解析前TrimEnd('\r')
+- 349e06d: 修复上传文件"输入的字符串格式不正确"bug。根因：FileUpload用param.Split(':')解析，Windows路径含冒号(C:\)导致拆分错误。修复：改用LastIndexOf(':')分离路径和大小
+- ca1943b: 新增文件传输进度条和重命名功能
+
+### OOBE恶搞自定义浏览器路径
+- 右键菜单新增[自定义浏览器路径]，支持被控端浏览器不在预设路径时手动指定
+- 预设路径包含：Edge、Chrome（含C:\Program Files\Google Chrome\Chrome\App）、Firefox
+
+---
+
 ## QD_V3.1_JiYuRebuild_Funny su/exit提权功能与TCP本地回环通信（2026-09-24）
 
 ### 功能
