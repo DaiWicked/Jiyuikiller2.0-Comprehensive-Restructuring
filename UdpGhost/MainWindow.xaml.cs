@@ -539,6 +539,66 @@ namespace UdpGhost
             Log("[远程] 打开文件管理: " + info.MachineName);
         }
 
+        private void RemoteRegistry_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            var win = new RegistryWindow(info.IP, info.CmdPort, info.MachineName) { Owner = this };
+            win.Show();
+            Log("[远程] 打开注册表: " + info.MachineName);
+        }
+
+        private void RemoteWallpaper_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            var ofd = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "选择壁纸图片",
+                Filter = "图片文件|*.jpg;*.jpeg;*.png;*.bmp|所有文件|*.*"
+            };
+            if (ofd.ShowDialog() != true) return;
+            // 先上传图片到被控端TEMP
+            try
+            {
+                byte[] data = System.IO.File.ReadAllBytes(ofd.FileName);
+                string remotePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "dv_wallpaper" + System.IO.Path.GetExtension(ofd.FileName));
+                using (var client = new System.Net.Sockets.TcpClient())
+                {
+                    client.Connect(info.IP, info.CmdPort);
+                    using (var stream = client.GetStream())
+                    {
+                        byte[] cmd = System.Text.Encoding.UTF8.GetBytes("FILE_UPLOAD:" + remotePath + ":" + data.Length + ":OVERWRITE\n");
+                        stream.Write(cmd, 0, cmd.Length);
+                        stream.Flush();
+                        // 读READY
+                        var ms = new System.IO.MemoryStream();
+                        byte[] buf = new byte[256];
+                        stream.ReadTimeout = 3000;
+                        try { int r = stream.Read(buf, 0, buf.Length); ms.Write(buf, 0, r); } catch { }
+                        // 分块上传
+                        int blockSize = 4096;
+                        for (int i = 0; i < data.Length; i += blockSize)
+                        {
+                            int len = Math.Min(blockSize, data.Length - i);
+                            byte[] block = new byte[len];
+                            Array.Copy(data, i, block, 0, len);
+                            byte[] d = System.Text.Encoding.UTF8.GetBytes("DATA:0:" + Convert.ToBase64String(block) + "\n");
+                            stream.Write(d, 0, d.Length);
+                        }
+                        byte[] end = System.Text.Encoding.UTF8.GetBytes("END\n");
+                        stream.Write(end, 0, end.Length);
+                        stream.Flush();
+                    }
+                }
+                // 发送壁纸命令
+                string resp = SendMonitorCommand(info, "WALLPAPER:" + remotePath);
+                MessageBox.Show(resp);
+                Log("[远程] 设置壁纸: " + info.MachineName);
+            }
+            catch (Exception ex) { MessageBox.Show("设置壁纸失败: " + ex.Message); }
+        }
+
         private void RemoteProcess_Click(object sender, RoutedEventArgs e)
         {
             var info = GetMonitorSelected();

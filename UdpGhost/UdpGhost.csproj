@@ -114,6 +114,13 @@
     <Compile Include="FileManagerWindow.xaml.cs">
       <DependentUpon>FileManagerWindow.xaml</DependentUpon>
     </Compile>
+    <Page Include="RegistryWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="RegistryWindow.xaml.cs">
+      <DependentUpon>RegistryWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ProcessManagerWindow.xaml.cs">
       <DependentUpon>ProcessManagerWindow.xaml</DependentUpon>
     </Compile>

