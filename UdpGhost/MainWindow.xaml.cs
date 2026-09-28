@@ -6,7 +6,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using Microsoft.VisualBasic;
 using System.Windows.Media.Imaging;
 using UdpGhost.Services;
 
@@ -333,11 +335,35 @@ namespace UdpGhost
         }
         private void RemoteBan_Click(object sender, RoutedEventArgs e)
         {
+            ExecuteBan(5);
+        }
+
+        private void BanCustom_Click(object sender, RoutedEventArgs e)
+        {
+            var mi = sender as MenuItem;
+            if (mi == null) return;
+            int sec = int.Parse(mi.Tag.ToString());
+            ExecuteBan(sec);
+        }
+
+        private void BanCustomInput_Click(object sender, RoutedEventArgs e)
+        {
+            string input = Microsoft.VisualBasic.Interaction.InputBox("输入封禁时长（秒，1-300）：", "自定义封禁时长", "10");
+            if (string.IsNullOrWhiteSpace(input)) return;
+            int sec;
+            if (!int.TryParse(input, out sec)) { MessageBox.Show("请输入有效数字"); return; }
+            if (sec < 1) sec = 1;
+            if (sec > 300) sec = 300;
+            ExecuteBan(sec);
+        }
+
+        private void ExecuteBan(int seconds)
+        {
             var info = GetMonitorSelected();
             if (info == null) { MessageBox.Show("请先选择设备"); return; }
-            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上执行封禁？\n\n将全屏显示封禁图片5秒，对方无法操作。", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-            string result = SendMonitorCommand(info, "BAN");
-            Log("[远程] 封禁: " + result);
+            if (MessageBox.Show($"确认在 {info.MachineName} ({info.IP}) 上执行封禁？\n\n将全屏显示封禁图片{seconds}秒，对方无法操作。", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            string result = SendMonitorCommand(info, "BAN:" + seconds);
+            Log("[远程] 封禁(" + seconds + "秒): " + result);
         }
         private void RemoteOobeWin11_Click(object sender, RoutedEventArgs e)
         {

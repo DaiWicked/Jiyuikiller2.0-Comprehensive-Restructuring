@@ -239,7 +239,17 @@
                                                     </ContextMenu>
                                                 </Button.ContextMenu>
                                             </Button>
-                                            <Button Content="[封禁]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Foreground="#FF6B6B" Click="RemoteBan_Click"/>
+                                            <Button Content="[封禁]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Foreground="#FF6B6B" Click="RemoteBan_Click">
+                                                <Button.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="5秒 (默认)" Click="BanCustom_Click" Tag="5"/>
+                                                        <MenuItem Header="10秒" Click="BanCustom_Click" Tag="10"/>
+                                                        <MenuItem Header="30秒" Click="BanCustom_Click" Tag="30"/>
+                                                        <MenuItem Header="60秒" Click="BanCustom_Click" Tag="60"/>
+                                                        <MenuItem Header="自定义..." Click="BanCustomInput_Click"/>
+                                                    </ContextMenu>
+                                                </Button.ContextMenu>
+                                            </Button>
                                         </UniformGrid>
                                         <TextBlock Text="── 极客地带 ──" Foreground="#FFD700" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,8,0,6"/>
                                         <UniformGrid Columns="3" Rows="2">
