@@ -446,12 +446,11 @@ namespace UdpGhost
             var info = GetMonitorSelected();
             if (info == null) { MessageBox.Show("请先选择设备"); return; }
 
-            // 创建设置弹窗
             var dlg = new Window
             {
                 Title = "远程展示 - " + info.MachineName,
                 Width = 480,
-                Height = 420,
+                Height = 360,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = this,
                 ResizeMode = ResizeMode.NoResize,
@@ -461,21 +460,12 @@ namespace UdpGhost
             };
             var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(15) };
 
-            // 模式选择
-            var modeLabel = new System.Windows.Controls.TextBlock { Text = "展示模式：", Foreground = System.Windows.Media.Brushes.LightGray, FontSize = 11, Margin = new Thickness(0, 0, 0, 6) };
-            var modePanel = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
-            var rbText = new System.Windows.Controls.RadioButton { Content = "仅文字", IsChecked = true, Foreground = System.Windows.Media.Brushes.White, FontSize = 11, Margin = new Thickness(0, 0, 15, 0) };
-            var rbImage = new System.Windows.Controls.RadioButton { Content = "仅图片", Foreground = System.Windows.Media.Brushes.White, FontSize = 11, Margin = new Thickness(0, 0, 15, 0) };
-            var rbBoth = new System.Windows.Controls.RadioButton { Content = "文字+图片", Foreground = System.Windows.Media.Brushes.White, FontSize = 11 };
-            modePanel.Children.Add(rbText); modePanel.Children.Add(rbImage); modePanel.Children.Add(rbBoth);
-
             // 文字输入
-            var textLabel = new System.Windows.Controls.TextBlock { Text = "展示文字：", Foreground = System.Windows.Media.Brushes.LightGray, FontSize = 11, Margin = new Thickness(0, 0, 0, 4) };
+            var textLabel = new System.Windows.Controls.TextBlock { Text = "展示文字（留空则只展示图片）：", Foreground = System.Windows.Media.Brushes.LightGray, FontSize = 11, Margin = new Thickness(0, 0, 0, 4) };
             var textBox = new System.Windows.Controls.TextBox { Height = 50, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(22, 27, 34)), Foreground = System.Windows.Media.Brushes.White, BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 65)), BorderThickness = new Thickness(1), Padding = new Thickness(6), FontSize = 11, TextWrapping = System.Windows.TextWrapping.Wrap, AcceptsReturn = true, VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto };
-            textBox.Text = "你好";
 
             // 图片选择
-            var imgLabel = new System.Windows.Controls.TextBlock { Text = "展示图片（≤2MB）：", Foreground = System.Windows.Media.Brushes.LightGray, FontSize = 11, Margin = new Thickness(0, 10, 0, 4) };
+            var imgLabel = new System.Windows.Controls.TextBlock { Text = "展示图片（≤2MB，留空则只展示文字）：", Foreground = System.Windows.Media.Brushes.LightGray, FontSize = 11, Margin = new Thickness(0, 10, 0, 4) };
             var imgPanel = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
             var imgPathBox = new System.Windows.Controls.TextBox { Width = 300, Height = 26, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(22, 27, 34)), Foreground = System.Windows.Media.Brushes.White, BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 65)), BorderThickness = new Thickness(1), Padding = new Thickness(4), FontSize = 10, IsReadOnly = true };
             var browseBtn = new System.Windows.Controls.Button { Content = "浏览...", Width = 60, Height = 26, Margin = new Thickness(8, 0, 0, 0), Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(48, 54, 61)), Foreground = System.Windows.Media.Brushes.White, FontSize = 10, Cursor = System.Windows.Input.Cursors.Hand };
@@ -510,10 +500,14 @@ namespace UdpGhost
             var cancelBtn = new System.Windows.Controls.Button { Content = "取消", Width = 70, Height = 28, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(48, 54, 61)), Foreground = System.Windows.Media.Brushes.White, FontSize = 11, Cursor = System.Windows.Input.Cursors.Hand };
             okBtn.Click += (s, args) =>
             {
-                string mode = rbText.IsChecked == true ? "TEXT" : (rbImage.IsChecked == true ? "IMAGE" : "BOTH");
-                string text = textBox.Text;
+                string text = textBox.Text.Trim();
+                bool hasText = !string.IsNullOrEmpty(text);
+                bool hasImage = !string.IsNullOrEmpty(selectedImgPath);
+                if (!hasText && !hasImage) { MessageBox.Show("请输入文字或选择图片"); return; }
+                // 自动检测模式
+                string mode = hasText && hasImage ? "BOTH" : (hasImage ? "IMAGE" : "TEXT");
                 string imgBase64 = "";
-                if ((mode == "IMAGE" || mode == "BOTH") && !string.IsNullOrEmpty(selectedImgPath))
+                if (hasImage)
                 {
                     try { imgBase64 = Convert.ToBase64String(System.IO.File.ReadAllBytes(selectedImgPath)); }
                     catch { MessageBox.Show("图片读取失败"); return; }
@@ -529,7 +523,6 @@ namespace UdpGhost
             cancelBtn.Click += (s, args) => { dlg.DialogResult = false; dlg.Close(); };
             btnPanel.Children.Add(okBtn); btnPanel.Children.Add(cancelBtn);
 
-            panel.Children.Add(modeLabel); panel.Children.Add(modePanel);
             panel.Children.Add(textLabel); panel.Children.Add(textBox);
             panel.Children.Add(imgLabel); panel.Children.Add(imgPanel);
             panel.Children.Add(paramLabel); panel.Children.Add(paramPanel);
