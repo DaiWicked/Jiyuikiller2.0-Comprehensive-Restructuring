@@ -68,7 +68,15 @@
 
             <!-- 右侧文件列表 -->
             <Border Grid.Column="1" Background="#161B22" BorderBrush="#00FF41" BorderThickness="1" CornerRadius="4">
-                <ListView x:Name="FileList" Background="Transparent" Foreground="#C9D1D9" BorderThickness="0" FontSize="11" MouseLeftButtonUp="FileList_MouseLeftButtonUp" MouseDoubleClick="FileList_MouseDoubleClick">
+                <ListView x:Name="FileList" Background="Transparent" Foreground="#C9D1D9" BorderThickness="0" FontSize="11" MouseDoubleClick="FileList_MouseDoubleClick">
+                    <ListView.ContextMenu>
+                        <ContextMenu Background="#161B22" Foreground="#C9D1D9" BorderBrush="#30363D">
+                            <MenuItem Header="下载" Click="MenuDownload_Click" Foreground="#00FF41"/>
+                            <MenuItem Header="删除" Click="MenuDelete_Click" Foreground="#FF6B6B"/>
+                            <Separator Background="#30363D"/>
+                            <MenuItem Header="刷新" Click="MenuRefresh_Click" Foreground="#8B949E"/>
+                        </ContextMenu>
+                    </ListView.ContextMenu>
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="名称" Width="250" DisplayMemberBinding="{Binding Name}"/>

@@ -141,27 +141,45 @@ namespace UdpGhost
             LoadList();
         }
 
-        private void FileList_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void FileList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            // 单击目录直接进入
+            // Windows标准:双击目录进入,双击文件下载
             var item = FileList.SelectedItem as FileItem;
-            if (item == null || !item.IsDir) return;
-            if (item.FullPath != null)
+            if (item == null) return;
+            if (item.IsDir)
             {
-                _currentPath = item.FullPath;
-                PathBox.Text = _currentPath;
-                LoadList();
+                if (item.FullPath != null)
+                {
+                    _currentPath = item.FullPath;
+                    PathBox.Text = _currentPath;
+                    LoadList();
+                }
+            }
+            else
+            {
+                if (MessageBox.Show("下载文件 " + item.Name + " ?", "确认", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    DownloadFile(item);
             }
         }
 
-        private void FileList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void MenuDownload_Click(object sender, RoutedEventArgs e)
         {
-            // 双击文件下载(目录单击已进入,双击忽略)
             var item = FileList.SelectedItem as FileItem;
-            if (item == null || item.IsDir) return;
-            if (MessageBox.Show("下载文件 " + item.Name + " ?", "确认", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                DownloadFile(item);
+            if (item == null || item.IsDir) { MessageBox.Show("请选择文件"); return; }
+            DownloadFile(item);
         }
+
+        private void MenuDelete_Click(object sender, RoutedEventArgs e)
+        {
+            var item = FileList.SelectedItem as FileItem;
+            if (item == null || item.Name == "..") { MessageBox.Show("请选择文件或目录"); return; }
+            if (MessageBox.Show("确认删除 " + item.Name + " ?", "确认", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            string resp = SendCommand("FILE_DELETE:" + item.FullPath);
+            MessageBox.Show(resp);
+            LoadList();
+        }
+
+        private void MenuRefresh_Click(object sender, RoutedEventArgs e) { LoadList(); }
 
         private void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
