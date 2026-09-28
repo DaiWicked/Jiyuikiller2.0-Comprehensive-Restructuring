@@ -530,6 +530,15 @@ namespace UdpGhost
             dlg.Content = panel;
             dlg.ShowDialog();
         }
+        private void RemoteFileManager_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            var win = new FileManagerWindow(info.IP, info.CmdPort, info.MachineName) { Owner = this };
+            win.Show();
+            Log("[远程] 打开文件管理: " + info.MachineName);
+        }
+
         private void RemoteProcess_Click(object sender, RoutedEventArgs e)
         {
             var info = GetMonitorSelected();

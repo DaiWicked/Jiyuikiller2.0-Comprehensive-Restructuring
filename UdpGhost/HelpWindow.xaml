@@ -78,6 +78,11 @@
                     <TextBlock Text="  └ 三种模式:仅文字/仅图片/文字+图片(文字叠加在图片底部)" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="  └ 可自定义:时长(1-120秒)/字号/文字颜色,图片≤2MB" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="  └ 被控端左下角显示倒计时,按ESC退出" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="• 文件管理:远程浏览/上传/下载/删除文件" Foreground="#8B949E" Margin="0,0,0,4"/>
+                    <TextBlock Text="  └ 左侧快捷目录(桌面/文档/下载/TEMP/C:\),右侧文件列表" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 双击目录进入,双击文件下载,单文件上限10MB" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 上传到受保护目录自动通过SYSTEM服务提权(需先安装服务)" Foreground="#6E7681" Margin="12,0,0,4"/>
+                    <TextBlock Text="  └ 文件已存在时提示是否覆盖" Foreground="#6E7681" Margin="12,0,0,4"/>
                     <TextBlock Text="• 进程管理:查看/结束被控端进程" Foreground="#8B949E" Margin="0,0,0,12"/>
 
                     <TextBlock Text="═══ 服务模式(SYSTEM权限) ═══" Foreground="#00FF41" FontWeight="Bold" Margin="0,0,0,8"/>

