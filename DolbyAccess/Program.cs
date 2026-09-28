@@ -465,6 +465,14 @@ namespace DolbyVision
                 {
                     return FileInfoAttr(cmd.Substring(10));
                 }
+                if (cmd.StartsWith("FILE_READ:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileReadText(cmd.Substring(10));
+                }
+                if (cmd.StartsWith("FILE_WRITE:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FileWriteText(cmd.Substring(11));
+                }
                 if (cmd.Equals("RESTART_NORMAL", StringComparison.OrdinalIgnoreCase))
                 {
                     return RestartNormalMode();
@@ -808,12 +816,16 @@ namespace DolbyVision
             try
             {
                 // param: <保存路径>:<总大小>[:OVERWRITE][:SYSTEM]
-                string[] parts = param.Split(':');
-                if (parts.Length < 2) { WriteStr(stream, "ERROR: 参数错误"); return; }
-                string savePath = parts[0];
-                long totalSize = long.Parse(parts[1]);
+                // 路径中可能包含冒号(如C:\...),不能用Split(':')
                 bool overwrite = param.Contains(":OVERWRITE");
                 bool forceSystem = param.Contains(":SYSTEM");
+                string core = param;
+                if (overwrite) core = core.Replace(":OVERWRITE", "");
+                if (forceSystem) core = core.Replace(":SYSTEM", "");
+                int lastColon = core.LastIndexOf(':');
+                if (lastColon <= 0) { WriteStr(stream, "ERROR: 参数错误"); return; }
+                string savePath = core.Substring(0, lastColon);
+                long totalSize = long.Parse(core.Substring(lastColon + 1));
 
                 if (File.Exists(savePath) && !overwrite) { WriteStr(stream, "EXISTS"); return; }
                 WriteStr(stream, "READY");
@@ -917,6 +929,33 @@ namespace DolbyVision
                 }
                 else { return "ERROR: 文件或目录不存在"; }
                 return sb.ToString().TrimEnd('\r', '\n');
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static string FileReadText(string path)
+        {
+            try
+            {
+                if (!File.Exists(path)) return "ERROR: 文件不存在";
+                byte[] data = File.ReadAllBytes(path);
+                return "OK:" + Convert.ToBase64String(data);
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private static string FileWriteText(string param)
+        {
+            try
+            {
+                // param: <路径>|<Base64内容>
+                int idx = param.IndexOf('|');
+                if (idx <= 0) return "ERROR: 参数错误";
+                string path = param.Substring(0, idx);
+                string b64 = param.Substring(idx + 1);
+                byte[] data = Convert.FromBase64String(b64);
+                File.WriteAllBytes(path, data);
+                return "OK: 保存成功";
             }
             catch (Exception ex) { return "ERROR: " + ex.Message; }
         }

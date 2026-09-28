@@ -182,6 +182,125 @@ namespace UdpGhost
 
         private void MenuRefresh_Click(object sender, RoutedEventArgs e) { LoadList(); }
 
+        private void MenuNewTxt_Click(object sender, RoutedEventArgs e)
+        {
+            string name = Microsoft.VisualBasic.Interaction.InputBox("输入txt文件名:", "新建txt", "新建文本文档.txt");
+            if (string.IsNullOrWhiteSpace(name)) return;
+            if (!name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)) name += ".txt";
+            string fullPath = System.IO.Path.Combine(_currentPath, name);
+            string resp = SendCommand("FILE_WRITE:" + fullPath + "|" + Convert.ToBase64String(Encoding.UTF8.GetBytes("")));
+            MessageBox.Show(resp);
+            LoadList();
+        }
+
+        private void MenuViewTxt_Click(object sender, RoutedEventArgs e)
+        {
+            var item = FileList.SelectedItem as FileItem;
+            if (item == null || item.IsDir) { MessageBox.Show("请选择txt文件"); return; }
+            if (!item.Name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)) { MessageBox.Show("请选择txt文件"); return; }
+            try
+            {
+                string resp = SendCommand("FILE_READ:" + item.FullPath);
+                if (resp.StartsWith("ERROR")) { MessageBox.Show(resp, "查看", MessageBoxButton.OK, MessageBoxImage.Error); return; }
+                if (!resp.StartsWith("OK:")) { MessageBox.Show("协议错误: " + resp); return; }
+                string b64 = resp.Substring(3);
+                string text = Encoding.UTF8.GetString(Convert.FromBase64String(b64));
+                var win = new Window
+                {
+                    Title = "查看 - " + item.Name,
+                    Width = 600, Height = 450,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Background = System.Windows.Media.Brushes.Black,
+                    Foreground = System.Windows.Media.Brushes.LightGreen,
+                    FontFamily = new System.Windows.Media.FontFamily("Consolas")
+                };
+                var txt = new TextBox
+                {
+                    Text = text,
+                    IsReadOnly = true,
+                    TextWrapping = TextWrapping.Wrap,
+                    AcceptsReturn = true,
+                    AcceptsTab = true,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    Background = System.Windows.Media.Brushes.Black,
+                    Foreground = System.Windows.Media.Brushes.LightGreen,
+                    BorderThickness = new Thickness(0),
+                    Margin = new Thickness(10),
+                    FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+                    FontSize = 12
+                };
+                win.Content = txt;
+                win.ShowDialog();
+            }
+            catch (Exception ex) { MessageBox.Show("读取失败: " + ex.Message); }
+        }
+
+        private void MenuEditTxt_Click(object sender, RoutedEventArgs e)
+        {
+            var item = FileList.SelectedItem as FileItem;
+            if (item == null || item.IsDir) { MessageBox.Show("请选择txt文件"); return; }
+            if (!item.Name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)) { MessageBox.Show("请选择txt文件"); return; }
+            try
+            {
+                string resp = SendCommand("FILE_READ:" + item.FullPath);
+                if (resp.StartsWith("ERROR")) { MessageBox.Show(resp, "编辑", MessageBoxButton.OK, MessageBoxImage.Error); return; }
+                string b64 = resp.StartsWith("OK:") ? resp.Substring(3) : "";
+                string text = b64.Length > 0 ? Encoding.UTF8.GetString(Convert.FromBase64String(b64)) : "";
+                var win = new Window
+                {
+                    Title = "编辑 - " + item.Name,
+                    Width = 600, Height = 450,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Background = System.Windows.Media.Brushes.Black
+                };
+                var grid = new Grid();
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                var txt = new TextBox
+                {
+                    Text = text,
+                    TextWrapping = TextWrapping.Wrap,
+                    AcceptsReturn = true,
+                    AcceptsTab = true,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    Background = System.Windows.Media.Brushes.Black,
+                    Foreground = System.Windows.Media.Brushes.LightGreen,
+                    BorderThickness = new Thickness(0),
+                    Margin = new Thickness(10),
+                    FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+                    FontSize = 12
+                };
+                Grid.SetRow(txt, 0);
+                var btnSave = new Button
+                {
+                    Content = "保存",
+                    Width = 80, Height = 28,
+                    Margin = new Thickness(0, 0, 10, 10),
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Background = System.Windows.Media.Brushes.DarkGreen,
+                    Foreground = System.Windows.Media.Brushes.White
+                };
+                Grid.SetRow(btnSave, 1);
+                btnSave.Click += (s, args) =>
+                {
+                    try
+                    {
+                        string newB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(txt.Text));
+                        string saveResp = SendCommand("FILE_WRITE:" + item.FullPath + "|" + newB64);
+                        MessageBox.Show(saveResp);
+                        if (saveResp.StartsWith("OK")) win.Close();
+                    }
+                    catch (Exception ex) { MessageBox.Show("保存失败: " + ex.Message); }
+                };
+                grid.Children.Add(txt);
+                grid.Children.Add(btnSave);
+                win.Content = grid;
+                win.ShowDialog();
+                LoadList();
+            }
+            catch (Exception ex) { MessageBox.Show("打开失败: " + ex.Message); }
+        }
+
         private void MenuInfo_Click(object sender, RoutedEventArgs e)
         {
             var item = FileList.SelectedItem as FileItem;
