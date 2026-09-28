@@ -23,6 +23,10 @@ namespace UdpGhost
         private volatile bool _monitorWatching = false;
         private Thread _monitorWatchThread;
 
+        // OOBE恶搞自定义浏览器路径
+        private string _oobeWin10BrowserPath = "";
+        private string _oobeWin11BrowserPath = "";
+
         public MainWindow()
         {
             InitializeComponent();
@@ -343,6 +347,100 @@ namespace UdpGhost
             string result = SendMonitorCommand(info, "OOBE11");
             Log("[远程] Win11恶搞: " + result);
         }
+        private void OobeCustomBrowserPath_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as System.Windows.Controls.MenuItem;
+            string version = menuItem?.Tag?.ToString() ?? "Win10";
+            string currentPath = version == "Win10" ? _oobeWin10BrowserPath : _oobeWin11BrowserPath;
+
+            // 简单的输入对话框
+            var inputDlg = new Window
+            {
+                Title = "自定义浏览器路径 - " + version,
+                Width = 450,
+                Height = 160,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                ResizeMode = ResizeMode.NoResize,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(13, 17, 23)),
+                Foreground = System.Windows.Media.Brushes.White,
+                FontFamily = new System.Windows.Media.FontFamily("Consolas")
+            };
+            var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(15) };
+            var label = new System.Windows.Controls.TextBlock
+            {
+                Text = "被控端浏览器exe路径（留空则自动查找）：",
+                Foreground = System.Windows.Media.Brushes.LightGray,
+                FontSize = 11,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+            var textBox = new System.Windows.Controls.TextBox
+            {
+                Text = currentPath,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(22, 27, 34)),
+                Foreground = System.Windows.Media.Brushes.White,
+                BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 65)),
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(6),
+                FontSize = 11,
+                Height = 28
+            };
+            var btnPanel = new System.Windows.Controls.StackPanel
+            {
+                Orientation = System.Windows.Controls.Orientation.Horizontal,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+                Margin = new Thickness(0, 12, 0, 0)
+            };
+            var okBtn = new System.Windows.Controls.Button
+            {
+                Content = "确定",
+                Width = 70,
+                Height = 26,
+                Margin = new Thickness(0, 0, 8, 0),
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 65)),
+                Foreground = System.Windows.Media.Brushes.Black,
+                FontSize = 11,
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            var cancelBtn = new System.Windows.Controls.Button
+            {
+                Content = "取消",
+                Width = 70,
+                Height = 26,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(48, 54, 61)),
+                Foreground = System.Windows.Media.Brushes.White,
+                FontSize = 11,
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            okBtn.Click += (s, args) => { inputDlg.DialogResult = true; inputDlg.Close(); };
+            cancelBtn.Click += (s, args) => { inputDlg.DialogResult = false; inputDlg.Close(); };
+            btnPanel.Children.Add(okBtn);
+            btnPanel.Children.Add(cancelBtn);
+            panel.Children.Add(label);
+            panel.Children.Add(textBox);
+            panel.Children.Add(btnPanel);
+            inputDlg.Content = panel;
+            textBox.SelectAll();
+            textBox.Focus();
+
+            if (inputDlg.ShowDialog() == true)
+            {
+                string path = textBox.Text.Trim();
+                if (version == "Win10") _oobeWin10BrowserPath = path;
+                else _oobeWin11BrowserPath = path;
+                Log("[设置] " + version + "恶搞浏览器路径: " + (string.IsNullOrEmpty(path) ? "(自动查找)" : path));
+            }
+        }
+
+        private void OobeClearBrowserPath_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as System.Windows.Controls.MenuItem;
+            string version = menuItem?.Tag?.ToString() ?? "Win10";
+            if (version == "Win10") _oobeWin10BrowserPath = "";
+            else _oobeWin11BrowserPath = "";
+            Log("[设置] " + version + "恶搞浏览器路径已清除(恢复自动查找)");
+        }
+
         private void RemoteProcess_Click(object sender, RoutedEventArgs e)
         {
             var info = GetMonitorSelected();

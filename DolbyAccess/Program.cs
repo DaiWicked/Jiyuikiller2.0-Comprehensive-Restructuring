@@ -496,7 +496,7 @@ namespace DolbyAccess
         }
 
         // ========== OOBE恶搞 ==========
-        private static string StartOobePrank(string version)
+        private static string StartOobePrank(string version, string browserPath = "")
         {
             try
             {
