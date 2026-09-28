@@ -216,13 +216,13 @@
                                     <StackPanel>
                                         <TextBlock Text="── 远程控制 ──" Foreground="#00FF41" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
                                         <UniformGrid Columns="3" Rows="4">
-                                            <Button Content="[关机]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,0,3,3" Click="RemoteShutdown_Click"/>
-                                            <Button Content="[重启]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,0,3,3" Click="RemoteReboot_Click"/>
-                                            <Button Content="[命令]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,0,0,3" Click="RemoteCmd_Click"/>
-                                            <Button Content="[观看]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,3,3,3" Click="RemoteWatch_Click"/>
+                                            <Button Content="[关机]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteShutdown_Click"/>
+                                            <Button Content="[重启]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteReboot_Click"/>
+                                            <Button Content="[命令]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteCmd_Click"/>
+                                            <Button Content="[观看]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteWatch_Click"/>
                                             <Button Content="[CMD终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteCmdTerminal_Click"/>
-                                            <Button Content="[PS终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,3" Click="RemotePsTerminal_Click"/>
-                                            <Button Content="[Win10恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,3,3,0" Click="RemoteOobeWin10_Click">
+                                            <Button Content="[PS终端]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemotePsTerminal_Click"/>
+                                            <Button Content="[Win10恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteOobeWin10_Click">
                                                 <Button.ContextMenu>
                                                     <ContextMenu>
                                                         <MenuItem Header="自定义浏览器路径..." Click="OobeCustomBrowserPath_Click" Tag="Win10"/>
@@ -230,7 +230,7 @@
                                                     </ContextMenu>
                                                 </Button.ContextMenu>
                                             </Button>
-                                            <Button Content="[Win11恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,0" Click="RemoteOobeWin11_Click">
+                                            <Button Content="[Win11恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteOobeWin11_Click">
                                                 <Button.ContextMenu>
                                                     <ContextMenu>
                                                         <MenuItem Header="自定义浏览器路径..." Click="OobeCustomBrowserPath_Click" Tag="Win11"/>
@@ -238,9 +238,9 @@
                                                     </ContextMenu>
                                                 </Button.ContextMenu>
                                             </Button>
-                                            <Button Content="[封禁]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="0,3,3,0" Foreground="#FF6B6B" Click="RemoteBan_Click"/>
-                                            <Button Content="[进程管理]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,0" Click="RemoteProcess_Click"/>
-                                            <Button Content="[远程展示]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,0,0" Click="RemoteShow_Click" ToolTip="全屏展示文字/图片/文字+图片"/>
+                                            <Button Content="[封禁]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Foreground="#FF6B6B" Click="RemoteBan_Click"/>
+                                            <Button Content="[进程管理]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteProcess_Click"/>
+                                            <Button Content="[远程展示]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteShow_Click" ToolTip="全屏展示文字/图片/文字+图片"/>
                                         </UniformGrid>
                                         <TextBlock Text="── 服务模式 ──" Foreground="#FFD700" FontFamily="Consolas" FontSize="10" FontWeight="Bold" Margin="0,8,0,4"/>
                                         <UniformGrid Columns="2" Rows="2">

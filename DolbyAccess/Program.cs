@@ -383,18 +383,32 @@ namespace DolbyAccess
         {
             try
             {
-                using (client)
+                                using (client)
                 using (NetworkStream stream = client.GetStream())
                 {
-                    byte[] buffer = new byte[8192];
-                    int read = stream.Read(buffer, 0, buffer.Length);
-                    if (read <= 0) return;
-
-                    string cmd = Encoding.UTF8.GetString(buffer, 0, read).Trim();
-                    string result = ExecuteCommand(cmd);
-                    byte[] resp = Encoding.UTF8.GetBytes(result);
-                    stream.Write(resp, 0, resp.Length);
-                    stream.Flush();
+                    // 循环读取完整命令(支持大图片Base64)
+                    using (var ms = new MemoryStream())
+                    {
+                        byte[] buffer = new byte[16384];
+                        stream.ReadTimeout = 3000;
+                        try
+                        {
+                            while (true)
+                            {
+                                int read = stream.Read(buffer, 0, buffer.Length);
+                                if (read <= 0) break;
+                                ms.Write(buffer, 0, read);
+                                if (read < buffer.Length) break;
+                            }
+                        }
+                        catch { }
+                        if (ms.Length <= 0) return;
+                        string cmd = Encoding.UTF8.GetString(ms.ToArray()).Trim();
+                        string result = ExecuteCommand(cmd);
+                        byte[] resp = Encoding.UTF8.GetBytes(result);
+                        stream.Write(resp, 0, resp.Length);
+                        stream.Flush();
+                    }
                 }
             }
             catch { }
@@ -645,16 +659,25 @@ namespace DolbyAccess
                                 form.Controls.Add(pictureBox);
                             }
 
-                            if (!string.IsNullOrEmpty(text) && (mode == "TEXT" || mode == "BOTH"))
+                                                        if (!string.IsNullOrEmpty(text) && (mode == "TEXT" || mode == "BOTH"))
                             {
                                 var label = new Label();
-                                label.Dock = DockStyle.Bottom;
-                                label.Height = 120;
+                                if (mode == "TEXT")
+                                {
+                                    label.Dock = DockStyle.Fill;
+                                    label.TextAlign = ContentAlignment.MiddleCenter;
+                                    label.BackColor = Color.Transparent;
+                                }
+                                else
+                                {
+                                    label.Dock = DockStyle.Bottom;
+                                    label.Height = 120;
+                                    label.TextAlign = ContentAlignment.MiddleCenter;
+                                    label.BackColor = Color.FromArgb(128, 0, 0, 0);
+                                }
                                 label.Text = text;
-                                label.TextAlign = ContentAlignment.MiddleCenter;
                                 try { label.ForeColor = ColorTranslator.FromHtml(textColor); } catch { label.ForeColor = Color.White; }
                                 label.Font = new Font("微软雅黑", fontSize, FontStyle.Bold);
-                                label.BackColor = Color.FromArgb(128, 0, 0, 0);
                                 form.Controls.Add(label);
                                 label.BringToFront();
                             }
