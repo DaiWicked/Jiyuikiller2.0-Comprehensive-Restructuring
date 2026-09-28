@@ -143,7 +143,7 @@ namespace UdpGhost
 
         private void FileList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            // 用命中测试获取双击的item(避免SelectedItem时序问题导致双击目录变成下载)
+            // 双击只进入目录,文件双击不下载(下载走右键菜单或底部按钮)
             var hit = System.Windows.Media.VisualTreeHelper.HitTest(FileList, e.GetPosition(FileList));
             if (hit == null) return;
             var dep = hit.VisualHit as System.Windows.DependencyObject;
@@ -151,22 +151,11 @@ namespace UdpGhost
                 dep = System.Windows.Media.VisualTreeHelper.GetParent(dep);
             if (!(dep is ListViewItem lvi)) return;
             var item = lvi.DataContext as FileItem;
-            if (item == null) return;
+            if (item == null || !item.IsDir || item.FullPath == null) return;
 
-            if (item.IsDir)
-            {
-                if (item.FullPath != null)
-                {
-                    _currentPath = item.FullPath;
-                    PathBox.Text = _currentPath;
-                    LoadList();
-                }
-            }
-            else
-            {
-                if (MessageBox.Show("下载文件 " + item.Name + " ?", "确认", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                    DownloadFile(item);
-            }
+            _currentPath = item.FullPath;
+            PathBox.Text = _currentPath;
+            LoadList();
         }
 
         private void MenuDownload_Click(object sender, RoutedEventArgs e)
