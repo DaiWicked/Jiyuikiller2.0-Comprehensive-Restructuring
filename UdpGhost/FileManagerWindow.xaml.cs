@@ -144,15 +144,8 @@ namespace UdpGhost
         private void FileList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             // 双击只进入目录,文件双击不下载(下载走右键菜单或底部按钮)
-            var hit = System.Windows.Media.VisualTreeHelper.HitTest(FileList, e.GetPosition(FileList));
-            if (hit == null) return;
-            var dep = hit.VisualHit as System.Windows.DependencyObject;
-            while (dep != null && !(dep is ListViewItem))
-                dep = System.Windows.Media.VisualTreeHelper.GetParent(dep);
-            if (!(dep is ListViewItem lvi)) return;
-            var item = lvi.DataContext as FileItem;
+            var item = FileList.SelectedItem as FileItem;
             if (item == null || !item.IsDir || item.FullPath == null) return;
-
             _currentPath = item.FullPath;
             PathBox.Text = _currentPath;
             LoadList();
