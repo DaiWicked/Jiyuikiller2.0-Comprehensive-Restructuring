@@ -51,7 +51,8 @@ namespace UdpGhost
                 foreach (string line in lines)
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
-                    string[] parts = line.Split('|');
+                    string trimmed = line.TrimEnd('\r'); // 去掉被控端AppendLine残留的\r
+                    string[] parts = trimmed.Split('|');
                     if (parts.Length < 4) continue;
                     var item = new FileItem
                     {
