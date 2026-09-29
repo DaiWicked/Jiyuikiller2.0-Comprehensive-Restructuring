@@ -1205,12 +1205,8 @@ namespace DolbyVision
             private readonly string _videoPath;
             private readonly bool _fullscreen;
             private readonly bool _mute;
-            private IntPtr _mcidev = IntPtr.Zero;
-            private Label _hintLabel;
-            private System.Windows.Forms.Timer _hintTimer;
-
-            [System.Runtime.InteropServices.DllImport("winmm.dll")]
-            private static extern int mciSendString(string lpstrCommand, StringBuilder lpstrReturnString, int uReturnLength, IntPtr hwndCallback);
+            private Process _wmpProcess;
+            private System.Windows.Forms.Timer _endTimer;
 
             public VideoPlayerForm(string videoPath, bool fullscreen, bool mute)
             {
@@ -1222,87 +1218,92 @@ namespace DolbyVision
 
             private void InitForm()
             {
-                FormBorderStyle = _fullscreen ? FormBorderStyle.None : FormBorderStyle.Sizable;
-                WindowState = _fullscreen ? FormWindowState.Maximized : FormWindowState.Normal;
-                TopMost = true;
+                // 隐藏窗口,仅用于进程管理和定时关闭
+                FormBorderStyle = FormBorderStyle.None;
                 ShowInTaskbar = false;
-                StartPosition = FormStartPosition.CenterScreen;
-                BackColor = Color.Black;
+                StartPosition = FormStartPosition.Manual;
+                Location = new Point(-10000, -10000);
+                Size = new Size(1, 1);
                 ShowIcon = false;
-                if (!_fullscreen) { Size = new Size(800, 600); Text = ""; }
-
-                // ESC退出提示
-                _hintLabel = new Label
-                {
-                    Text = "按 ESC 退出",
-                    ForeColor = Color.FromArgb(180, Color.White),
-                    BackColor = Color.FromArgb(120, 0, 0, 0),
-                    Font = new Font("Consolas", 12f, FontStyle.Bold),
-                    AutoSize = true,
-                    Padding = new Padding(8, 4, 8, 4),
-                    Visible = true
-                };
-                _hintLabel.Location = new Point(10, _fullscreen ? Screen.PrimaryScreen.Bounds.Height - 40 : Height - 50);
-                Controls.Add(_hintLabel);
-
-                _hintTimer = new System.Windows.Forms.Timer { Interval = 3000 };
-                _hintTimer.Tick += (s, e) => { _hintTimer.Stop(); _hintLabel.Visible = false; };
-                _hintTimer.Start();
-
-                KeyPreview = true;
-                KeyDown += (s, e) => { if (e.KeyCode == Keys.Escape) Close(); };
-                FormClosed += (s, e) => StopVideo();
+                Opacity = 0;
                 Shown += (s, e) => StartVideo();
+                FormClosed += (s, e) => StopVideo();
+            }
+
+            private int GetVideoDurationSeconds()
+            {
+                try
+                {
+                    Type shellType = Type.GetTypeFromProgID("Shell.Application");
+                    object shell = Activator.CreateInstance(shellType);
+                    object folder = shellType.InvokeMember("NameSpace", System.Reflection.BindingFlags.InvokeMethod, null, shell, new object[] { Path.GetDirectoryName(_videoPath) });
+                    object file = folder.GetType().InvokeMember("ParseName", System.Reflection.BindingFlags.InvokeMethod, null, folder, new object[] { Path.GetFileName(_videoPath) });
+                    string dur = (string)folder.GetType().InvokeMember("GetDetailsOf", System.Reflection.BindingFlags.InvokeMethod, null, folder, new object[] { file, 27 });
+                    if (!string.IsNullOrEmpty(dur) && dur.Contains(":"))
+                    {
+                        string[] parts = dur.Split(':');
+                        if (parts.Length == 3)
+                        {
+                            return int.Parse(parts[0]) * 3600 + int.Parse(parts[1]) * 60 + int.Parse(parts[2]) + 2;
+                        }
+                    }
+                }
+                catch { }
+                return 0;
             }
 
             private void StartVideo()
             {
                 try
                 {
-                    string alias = "dvvideo" + DateTime.Now.Ticks;
-                    string cmd = "open \"" + _videoPath + "\" type mpegvideo alias " + alias;
-                    var sb = new StringBuilder(256);
-                    mciSendString(cmd, sb, 256, IntPtr.Zero);
-                    _mcidev = (IntPtr)1; // 标记已打开
-                    // 把视频输出到当前窗口
-                    mciSendString("window " + alias + " handle " + Handle.ToInt32(), sb, 256, IntPtr.Zero);
-                    mciSendString("put " + alias + " destination at 0 0 " + Width + " " + Height, sb, 256, IntPtr.Zero);
-                    if (_mute) mciSendString("setaudio " + alias + " off", sb, 256, IntPtr.Zero);
-                    mciSendString("play " + alias + " notify", sb, 256, IntPtr.Zero);
-                    // 保存alias用于关闭
-                    Tag = alias;
+                    // 关闭旧的WMP
+                    foreach (var p in Process.GetProcessesByName("wmplayer"))
+                    {
+                        try { p.Kill(); } catch { }
+                    }
+                    // 启动WMP
+                    string args = _fullscreen ? "/fullscreen /play \"" + _videoPath + "\"" : "/play \"" + _videoPath + "\"";
+                    _wmpProcess = Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "wmplayer.exe",
+                        Arguments = args,
+                        UseShellExecute = true
+                    });
+                    // 获取时长,播完自动关闭
+                    int duration = GetVideoDurationSeconds();
+                    if (duration > 0)
+                    {
+                        _endTimer = new System.Windows.Forms.Timer { Interval = duration * 1000 };
+                        _endTimer.Tick += (s, e) =>
+                        {
+                            _endTimer.Stop();
+                            Close();
+                        };
+                        _endTimer.Start();
+                    }
+                    else
+                    {
+                        // 无法获取时长,60秒后强制关闭(兜底)
+                        _endTimer = new System.Windows.Forms.Timer { Interval = 60000 };
+                        _endTimer.Tick += (s, e) => { _endTimer.Stop(); Close(); };
+                        _endTimer.Start();
+                    }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine("WMP启动失败: " + ex.Message);
+                    Close();
+                }
             }
 
             private void StopVideo()
             {
                 try
                 {
-                    if (Tag != null)
+                    if (_wmpProcess != null && !_wmpProcess.HasExited)
                     {
-                        string alias = Tag.ToString();
-                        var sb = new StringBuilder(256);
-                        mciSendString("stop " + alias, sb, 256, IntPtr.Zero);
-                        mciSendString("close " + alias, sb, 256, IntPtr.Zero);
+                        _wmpProcess.Kill();
                     }
-                }
-                catch { }
-            }
-
-            protected override void OnResize(EventArgs e)
-            {
-                base.OnResize(e);
-                try
-                {
-                    if (Tag != null && _mcidev != IntPtr.Zero)
-                    {
-                        string alias = Tag.ToString();
-                        var sb = new StringBuilder(256);
-                        mciSendString("put " + alias + " destination at 0 0 " + Width + " " + Height, sb, 256, IntPtr.Zero);
-                    }
-                    if (_hintLabel != null)
-                        _hintLabel.Location = new Point(10, Height - 50);
                 }
                 catch { }
             }
