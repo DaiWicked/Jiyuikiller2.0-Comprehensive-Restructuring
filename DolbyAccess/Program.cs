@@ -590,7 +590,7 @@ namespace DolbyVision
             {
                 bool isWin11 = version.Equals("Win11", StringComparison.OrdinalIgnoreCase);
                 string fileName = isWin11 ? "Win11_OOBE.html" : "Win10_OOBE.html";
-                string resourceName = isWin11 ? "DolbyVision.Assets.Win11_OOBE_Prank.html" : "DolbyVision.Assets.Win10_OOBE_Prank.html";
+                string resourceName = isWin11 ? "DolbyAccess.Assets.Win11_OOBE_Prank.html" : "DolbyAccess.Assets.Win10_OOBE_Prank.html";
                 // 从嵌入资源释放HTML到TEMP
                 string htmlPath = Path.Combine(Path.GetTempPath(), fileName);
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
@@ -630,7 +630,7 @@ namespace DolbyVision
             {
                 // 从嵌入资源加载ban.jpg
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                using (var stream = assembly.GetManifestResourceStream("DolbyVision.Assets.ban.jpg"))
+                using (var stream = assembly.GetManifestResourceStream("DolbyAccess.Assets.ban.jpg"))
                 {
                     if (stream == null) return "ERROR: ban.jpg资源未找到";
                     Image banImage = Image.FromStream(stream);
