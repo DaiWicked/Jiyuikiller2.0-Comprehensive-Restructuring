@@ -216,13 +216,14 @@
                                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True" MaxHeight="200">
                                     <StackPanel>
                                         <TextBlock Text="── 基础控制 ──" Foreground="#00FF41" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                                        <UniformGrid Columns="3" Rows="3">
+                                        <UniformGrid Columns="3" Rows="4">
                                             <Button Content="[关机]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteShutdown_Click"/>
                                             <Button Content="[重启]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteReboot_Click"/>
                                             <Button Content="[命令]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteCmd_Click"/>
                                             <Button Content="[观看]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteWatch_Click"/>
                                             <Button Content="[远程展示]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteShow_Click" ToolTip="全屏展示文字/图片/文字+图片"/>
                                             <Button Content="[壁纸]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteWallpaper_Click" ToolTip="设置被控端桌面壁纸"/>
+                                            <Button Content="[远程播放]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemotePlay_Click" ToolTip="远程播放视频(AVI/WMV/MP4,≤50MB)"/>
                                             <Button Content="[Win10恶搞]" Style="{StaticResource HackerButton}" Height="26" FontSize="10" Margin="3,3,3,3" Click="RemoteOobeWin10_Click">
                                                 <Button.ContextMenu>
                                                     <ContextMenu>

