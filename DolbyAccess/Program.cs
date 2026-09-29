@@ -290,7 +290,7 @@ namespace DolbyVision
                     using (var client = new UdpClient())
                     {
                         client.EnableBroadcast = true;
-                        string mode = _isServiceMode ? "SYSTEM" : "NORMAL";
+                        string mode = _isServiceMode ? "SYSTEM" : "ANS";
                         int cmdPort = _isServiceMode ? CmdPortSystem : CmdPort;
                         int termPort = _isServiceMode ? TerminalPortSystem : TerminalPort;
                         string msg = $"DV|{_machineName}|{_localIp}|{VideoPort}|{cmdPort}|{termPort}|{mode}";
