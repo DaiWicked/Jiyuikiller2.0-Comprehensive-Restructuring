@@ -1152,12 +1152,11 @@ namespace DolbyVision
         {
             try
             {
-                // param: <文件名>|<模式FULL/WINDOW>|<静音0/1>
+                // param: <文件名>|<模式FULL/WINDOW>
                 string[] parts = param.Split('|');
-                if (parts.Length < 2) return "ERROR: 参数错误,格式: 文件名|模式|静音";
+                if (parts.Length < 2) return "ERROR: 参数错误,格式: 文件名|模式";
                 string fileName = parts[0];
                 string mode = parts.Length > 1 ? parts[1].ToUpper() : "FULL";
-                bool mute = parts.Length > 2 && parts[2] == "1";
 
                 // 文件名不含路径则加TEMP
                 string videoPath = fileName;
@@ -1180,7 +1179,7 @@ namespace DolbyVision
                 {
                     try
                     {
-                        using (var form = new VideoPlayerForm(videoPath, mode == "FULL", mute))
+                        using (var form = new VideoPlayerForm(videoPath, mode == "FULL"))
                         {
                             lock (_videoLock) { _currentVideoForm = form; }
                             form.ShowDialog();
@@ -1195,7 +1194,7 @@ namespace DolbyVision
                 t.IsBackground = true;
                 t.SetApartmentState(ApartmentState.STA);
                 t.Start();
-                return "OK: 视频播放已启动(" + mode + (mute ? ",静音" : "") + ")";
+                return "OK: 视频播放已启动(" + mode + ")";
             }
             catch (Exception ex) { return "ERROR: " + ex.Message; }
         }
@@ -1204,15 +1203,13 @@ namespace DolbyVision
         {
             private readonly string _videoPath;
             private readonly bool _fullscreen;
-            private readonly bool _mute;
             private Process _wmpProcess;
             private System.Windows.Forms.Timer _endTimer;
 
-            public VideoPlayerForm(string videoPath, bool fullscreen, bool mute)
+            public VideoPlayerForm(string videoPath, bool fullscreen)
             {
                 _videoPath = videoPath;
                 _fullscreen = fullscreen;
-                _mute = mute;
                 InitForm();
             }
 
