@@ -144,6 +144,7 @@
                                         <Button x:Name="BtnSingleMsg" Content="[发消息]" Style="{StaticResource HackerButton}" Margin="0,3" Click="SingleMsg_Click" IsEnabled="False"/>
                                         <Button x:Name="BtnSingleShutdown" Content="[关机]" Style="{StaticResource HackerButton}" Margin="0,3" Click="SingleShutdown_Click" IsEnabled="False"/>
                                         <Button x:Name="BtnSingleReboot" Content="[重启]" Style="{StaticResource HackerButton}" Margin="0,3" Click="SingleReboot_Click" IsEnabled="False"/>
+                                        <Button x:Name="BtnSingleStudentInfo" Content="[查询信息]" Style="{StaticResource HackerButton}" Margin="0,3" Click="SingleStudentInfo_Click" IsEnabled="False"/>
                                     </StackPanel>
                                 </ScrollViewer>
                             </Border>

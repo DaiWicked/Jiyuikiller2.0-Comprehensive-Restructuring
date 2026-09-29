@@ -35,6 +35,7 @@ namespace UdpGhost.Services
         public event Action<string> OnLog;
         public event Action<string> OnConnected;
         public event Action<string> OnDisconnected;
+        public event Action<string> OnStudentInfo; // 学生信息查询结果
 
         public bool IsConnected => _connected;
         public string TargetIP => _targetIP;
@@ -339,6 +340,28 @@ namespace UdpGhost.Services
                     if (sip == _localIP) continue;
 
                     Log($"[会话接收] {magicName} from {sip}:{remote.Port}, len={data.Length}");
+
+                    // MESS: 学生端回复（包括学生信息查询结果）
+                    // 回复payload: +0长度(4) +4 msg_type(4)=0 +8 category(4)=0x800000 +12 subtype(4)=5 +16数据
+                    if (magic == 0x5353454D && sip == _targetIP && data.Length > 32)
+                    {
+                        try
+                        {
+                            uint msgType = BitConverter.ToUInt32(data, 20);   // payload+4
+                            uint category = BitConverter.ToUInt32(data, 24);  // payload+8
+                            uint subType = BitConverter.ToUInt32(data, 28);   // payload+12
+                            if (msgType == 0 && category == 0x800000 && subType == 5)
+                            {
+                                string info = ParseStudentInfo(data, 16); // payload从16开始
+                                if (!string.IsNullOrEmpty(info))
+                                {
+                                    OnStudentInfo?.Invoke(info);
+                                    Log("[信息] 收到学生信息回复");
+                                }
+                            }
+                        }
+                        catch { }
+                    }
 
                     // LOGI: 学生端登录请求（在会话端口接收），只处理目标学生
                     if (magic == 0x49474F4C && (sip == _targetIP || _targetIP == "0.0.0.0"))
@@ -839,6 +862,101 @@ namespace UdpGhost.Services
             for (int i = 0; i < bytes.Length; i++)
                 bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
             return bytes;
+        }
+
+        /// <summary>
+        /// 请求学生信息（MESS协议，rtype=0）
+        /// </summary>
+        public bool RequestStudentInfo()
+        {
+            if (!_connected || _sessionSock == null)
+            {
+                Log("[操作] 未连接，无法查询信息");
+                return false;
+            }
+            try
+            {
+                int sessionPort = SESSION_PORT_BASE + _channel * 512;
+                byte[] payload;
+                using (var ms = new MemoryStream())
+                using (var bw = new BinaryWriter(ms))
+                {
+                    bw.Write((uint)16);
+                    bw.Write((uint)0x100000);
+                    bw.Write((uint)0);
+                    bw.Write((uint)0); // rtype=0 全部
+                    payload = ms.ToArray();
+                }
+                byte[] mess;
+                using (var ms = new MemoryStream())
+                using (var bw = new BinaryWriter(ms))
+                {
+                    bw.Write((uint)0x5353454D);
+                    bw.Write((uint)1);
+                    bw.Write((uint)1);
+                    bw.Write(IPAddress.Parse(_targetIP).GetAddressBytes());
+                    bw.Write(payload);
+                    mess = ms.ToArray();
+                }
+                _sessionSock.Send(mess, mess.Length, _targetIP, sessionPort);
+                Log("[查询信息] -> " + _targetIP);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log("[查询信息] 失败: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 解析type 5学生信息结构体
+        /// </summary>
+        private string ParseStudentInfo(byte[] data, int payloadOffset)
+        {
+            try
+            {
+                if (data.Length < payloadOffset + 0x2EA) return null;
+                string ReadWStr(int off, int maxLen)
+                {
+                    if (off + 2 > data.Length) return "";
+                    int end = off;
+                    while (end + 2 <= data.Length && (end - off) < maxLen * 2)
+                    {
+                        if (data[end] == 0 && data[end + 1] == 0) break;
+                        end += 2;
+                    }
+                    return Encoding.Unicode.GetString(data, off, end - off);
+                }
+                string computerName = ReadWStr(payloadOffset + 0x10, 32);
+                uint studentId = BitConverter.ToUInt32(data, payloadOffset + 0x50);
+                byte[] mac = new byte[6];
+                Array.Copy(data, payloadOffset + 0x54, mac, 0, 6);
+                string macStr = BitConverter.ToString(mac).Replace("-", ":");
+                string loginUser = ReadWStr(payloadOffset + 0x5A, 32);
+                string osName = ReadWStr(payloadOffset + 0x9A, 32);
+                string osVersion = ReadWStr(payloadOffset + 0xDA, 64);
+                string cpuVendor = ReadWStr(payloadOffset + 0x21A, 32);
+                string cpuModel = ReadWStr(payloadOffset + 0x25A, 64);
+                string memory = ReadWStr(payloadOffset + 0x2DA, 16);
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("=== 学生端信息 ===");
+                sb.AppendLine("计算机名: " + computerName);
+                sb.AppendLine("学生ID: " + studentId);
+                sb.AppendLine("MAC地址: " + macStr);
+                sb.AppendLine("登录用户: " + loginUser);
+                sb.AppendLine("操作系统: " + osName);
+                sb.AppendLine("OS版本: " + osVersion);
+                sb.AppendLine("CPU厂商: " + cpuVendor);
+                sb.AppendLine("CPU型号: " + cpuModel);
+                sb.AppendLine("内存: " + memory);
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "解析失败: " + ex.Message;
+            }
         }
 
         public void Dispose()

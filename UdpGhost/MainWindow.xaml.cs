@@ -148,6 +148,11 @@ namespace UdpGhost
             {
                 _singleService = new SingleStudentService(_localIP, channel);
                 _singleService.OnLog += (msg) => Dispatcher.Invoke(() => Log(msg));
+                _singleService.OnStudentInfo += (info) => Dispatcher.Invoke(() =>
+                {
+                    var dlg = new StudentInfoDialog(info) { Owner = this };
+                    dlg.ShowDialog();
+                });
                 _singleService.OnConnected += (tgt) => Dispatcher.Invoke(() =>
                 {
                     SingleConnStatus.Text = "已连接 " + tgt;
@@ -189,6 +194,7 @@ namespace UdpGhost
             BtnSingleMsg.IsEnabled = enabled;
             BtnSingleShutdown.IsEnabled = enabled;
             BtnSingleReboot.IsEnabled = enabled;
+            BtnSingleStudentInfo.IsEnabled = enabled;
         }
 
         private void SingleBlack_Click(object sender, RoutedEventArgs e)
@@ -228,6 +234,13 @@ namespace UdpGhost
             if (MessageBox.Show("确认向目标发送重启？", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
             bool ok = _singleService.SendReboot();
             Log(ok ? "[单播] 重启已发送" : "[单播] 重启发送失败");
+        }
+
+        private void SingleStudentInfo_Click(object sender, RoutedEventArgs e)
+        {
+            if (_singleService == null || !_singleService.IsConnected) { MessageBox.Show("未连接"); return; }
+            bool ok = _singleService.RequestStudentInfo();
+            Log(ok ? "[单播] 信息请求已发送" : "[单播] 信息请求发送失败");
         }
 
         // ========== 屏幕监控（集成在主界面） ==========
