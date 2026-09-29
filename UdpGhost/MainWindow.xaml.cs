@@ -400,7 +400,7 @@ namespace UdpGhost
 
             string mode = rbFull.IsChecked == true ? "FULL" : "WINDOW";
             string mute = ckMute.IsChecked == true ? "1" : "0";
-            string remoteName = "dv_video_" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + "_" + new Random().Next(1000, 9999) + fi.Extension;
+            string remoteName = "dv_video" + fi.Extension;
 
             // 上传视频
             try

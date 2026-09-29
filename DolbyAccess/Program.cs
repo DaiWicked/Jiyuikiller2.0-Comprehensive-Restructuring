@@ -1190,8 +1190,6 @@ namespace DolbyVision
                     finally
                     {
                         lock (_videoLock) { _currentVideoForm = null; }
-                        // 播放完删除视频文件
-                        try { if (File.Exists(videoPath)) File.Delete(videoPath); } catch { }
                     }
                 });
                 t.IsBackground = true;
