@@ -11,8 +11,8 @@
             <Color x:Key="SuccessColor">#FF2ECC71</Color>
             <Color x:Key="WarningColor">#FFF39C12</Color>
             <Color x:Key="DangerColor">#FFE74C3C</Color>
-            <Color x:Key="TextColor">#FF0A0A0A</Color>
-            <Color x:Key="TextSubColor">#FF606060</Color>
+            <Color x:Key="TextColor">#FFE8E8E8</Color>
+            <Color x:Key="TextSubColor">#FFA0A0A0</Color>
 
             <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
             <SolidColorBrush x:Key="PrimaryLightBrush" Color="{StaticResource PrimaryColorLight}" />
@@ -22,12 +22,12 @@
             <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}" />
             <SolidColorBrush x:Key="TextSubBrush" Color="{StaticResource TextSubColor}" />
 
-            <!-- ========== 卡片画刷 ========== -->
+            <!-- ========== 卡片画刷（深色半透明） ========== -->
             <LinearGradientBrush x:Key="GlassCardBrush" StartPoint="0,0" EndPoint="0,1">
-                <GradientStop Color="#22FFFFFF" Offset="0" />
-                <GradientStop Color="#0FFFFFFF" Offset="1" />
+                <GradientStop Color="#33FFFFFF" Offset="0" />
+                <GradientStop Color="#18FFFFFF" Offset="1" />
             </LinearGradientBrush>
-            <SolidColorBrush x:Key="GlassCardBorderBrush" Color="#33FFFFFF" />
+            <SolidColorBrush x:Key="GlassCardBorderBrush" Color="#40FFFFFF" />
 
             <!-- ========== 状态图标 Path 几何 ========== -->
             <!-- 盾牌 -->
@@ -134,11 +134,11 @@
                 </Setter>
             </Style>
 
-            <!-- ========== 次要按钮（透明背景玻璃描边） ========== -->
+            <!-- ========== 次要按钮（深色半透明背景） ========== -->
             <Style x:Key="GlassButtonSecondary" TargetType="Button" BasedOn="{StaticResource GlassButton}">
-                <Setter Property="Background" Value="#30FFFFFF" />
+                <Setter Property="Background" Value="#25FFFFFF" />
                 <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-                <Setter Property="BorderBrush" Value="#50FFFFFF" />
+                <Setter Property="BorderBrush" Value="#40FFFFFF" />
             </Style>
 
             <!-- ========== 玻璃文本框 ========== -->
@@ -151,10 +151,10 @@
                 <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
             </Style>
 
-            <!-- ========== 列表项容器 ========== -->
+            <!-- ========== 列表项容器（深色半透明） ========== -->
             <Style x:Key="ThreatItemContainer" TargetType="Border">
-                <Setter Property="Background" Value="#18FFFFFF" />
-                <Setter Property="BorderBrush" Value="#25FFFFFF" />
+                <Setter Property="Background" Value="#20FFFFFF" />
+                <Setter Property="BorderBrush" Value="#30FFFFFF" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="Padding" Value="10,8" />

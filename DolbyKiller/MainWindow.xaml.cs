@@ -6,7 +6,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using DolbyKiller.Effects;
 using DolbyKiller.Models;
 using DolbyKiller.Services;
 
@@ -16,7 +15,6 @@ namespace DolbyKiller
 
     public partial class MainWindow : Window
     {
-        private GlassyWindowManager _glassyManager;
         private readonly Scanner _scanner = new Scanner();
         private readonly Cleaner _cleaner = new Cleaner();
         private ScanReport _report;
@@ -50,11 +48,7 @@ namespace DolbyKiller
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            // 初始化液态玻璃（降低模糊强度，让极光透出来）
-            _glassyManager = new GlassyWindowManager(this, BackdropLayer, GlassyLayer);
-            _glassyManager.BlurIntensity = 0.3;
-
-            // 应用圆角裁剪（修复子元素直角溢出）
+            // 应用圆角裁剪
             UpdateGlassClip();
             SizeChanged += (s, args) => UpdateGlassClip();
 
@@ -403,7 +397,6 @@ namespace DolbyKiller
                     return;
                 }
             }
-            _glassyManager?.Dispose();
         }
 
         #endregion

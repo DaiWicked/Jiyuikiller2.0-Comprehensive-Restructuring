@@ -34,38 +34,34 @@
 
             <!-- 圆角裁剪根 -->
             <Grid x:Name="GlassClipRoot" ClipToBounds="True">
-                <!-- 层1：桌面截图 + 白色覆盖 -->
-                <Border x:Name="BackdropContainer" CornerRadius="16" ClipToBounds="True">
-                    <Grid>
-                        <Border x:Name="BackdropLayer" />
-                        <Border x:Name="WhiteOverlayLayer" Background="#55FFFFFF" />
-                    </Grid>
-                </Border>
-
-                <!-- 层2：玻璃效果层 -->
-                <Border x:Name="GlassyLayer" CornerRadius="16" ClipToBounds="True">
+                <!-- 层1：深色渐变背景（代替液态玻璃，Win7兼容） -->
+                <Border x:Name="BackgroundLayer" CornerRadius="16" ClipToBounds="True">
                     <Border.Background>
-                        <VisualBrush Visual="{Binding ElementName=BackdropContainer}" />
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#FF0F0F1A" Offset="0" />
+                            <GradientStop Color="#FF1A1A2E" Offset="0.5" />
+                            <GradientStop Color="#FF16213E" Offset="1" />
+                        </LinearGradientBrush>
                     </Border.Background>
                 </Border>
 
-                <!-- 层2.5：极光色相循环层 -->
+                <!-- 层2：极光色相循环层 -->
                 <Border CornerRadius="16" ClipToBounds="True" IsHitTestVisible="False">
                     <effects:AuroraLayer x:Name="AuroraLayer" />
                 </Border>
 
-                <!-- 层2.6：顶部光感层 -->
+                <!-- 层3：顶部光感层 -->
                 <Border x:Name="GlowLayer" CornerRadius="16" ClipToBounds="True" IsHitTestVisible="False">
                     <Border.Background>
                         <RadialGradientBrush Center="0.5,0.1" RadiusX="0.8" RadiusY="0.6" GradientOrigin="0.5,0.1">
-                            <GradientStop Color="#40FFFFFF" Offset="0" />
-                            <GradientStop Color="#15FFFFFF" Offset="0.5" />
+                            <GradientStop Color="#30FFFFFF" Offset="0" />
+                            <GradientStop Color="#10FFFFFF" Offset="0.5" />
                             <GradientStop Color="#00FFFFFF" Offset="1" />
                         </RadialGradientBrush>
                     </Border.Background>
                 </Border>
 
-                <!-- 层3：内容层 -->
+                <!-- 层4：内容层 -->
                 <Border x:Name="ContentLayer" Background="Transparent" CornerRadius="16" ClipToBounds="True">
                     <Grid ClipToBounds="True">
                         <Grid.RowDefinitions>
@@ -85,13 +81,13 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
                                 <Path Data="{StaticResource IconShield}" Width="16" Height="16" Fill="#FFE85D3A" Stretch="Uniform" />
-                                <TextBlock Text="反制工具" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Foreground="#FF0A0A0A" Margin="6,0,0,0" />
-                                <TextBlock Text="DolbyKiller v1.0" FontSize="11" VerticalAlignment="Center" Foreground="#FF808080" Margin="8,0,0,0" />
+                                <TextBlock Text="反制工具" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Foreground="#FFE8E8E8" Margin="6,0,0,0" />
+                                <TextBlock Text="DolbyKiller v1.0" FontSize="11" VerticalAlignment="Center" Foreground="#FF909090" Margin="8,0,0,0" />
                             </StackPanel>
                             <Button Grid.Column="2" x:Name="BtnClose" Content="✕" Width="32" Height="28"
                                     Click="BtnClose_Click" Style="{StaticResource GlassButtonSecondary}"
                                     Padding="0" FontSize="14" FontWeight="Bold"
-                                    Background="Transparent" Foreground="#FF1A1A1A" BorderBrush="Transparent" />
+                                    Background="Transparent" Foreground="#FFE0E0E0" BorderBrush="Transparent" />
                         </Grid>
 
                         <!-- ===== 状态卡片 ===== -->
@@ -111,9 +107,9 @@
                                 </Viewbox>
                                 <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
                                     <TextBlock x:Name="StatusTitle" Text="等待扫描"
-                                               FontSize="18" FontWeight="Bold" Foreground="#FF0A0A0A" />
+                                               FontSize="18" FontWeight="Bold" Foreground="#FFE8E8E8" />
                                     <TextBlock x:Name="StatusSubtitle" Text="点击下方按钮开始检测您的电脑"
-                                               FontSize="12" Foreground="#FF606060" Margin="0,4,0,0" TextWrapping="Wrap" />
+                                               FontSize="12" Foreground="#FFA0A0A0" Margin="0,4,0,0" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -174,12 +170,12 @@
                                                 <!-- 威胁信息 -->
                                                 <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="#FF0A0A0A" />
-                                                        <Border Background="#20000000" CornerRadius="4" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding TypeLabel}" FontSize="10" Foreground="#FF606060" />
+                                                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="#FFE8E8E8" />
+                                                        <Border Background="#25FFFFFF" CornerRadius="4" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding TypeLabel}" FontSize="10" Foreground="#FFA0A0A0" />
                                                         </Border>
                                                     </StackPanel>
-                                                    <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#FF808080" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#FF909090" Margin="0,3,0,0" TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </Grid>
                                         </Border>
@@ -214,12 +210,12 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="操作日志" FontSize="12" FontWeight="SemiBold" Foreground="#FF606060" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" x:Name="LogArrow" Text="▼" FontSize="10" Foreground="#FF808080" VerticalAlignment="Center" />
+                                <TextBlock Text="操作日志" FontSize="12" FontWeight="SemiBold" Foreground="#FFA0A0A0" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" x:Name="LogArrow" Text="▼" FontSize="10" Foreground="#FF909090" VerticalAlignment="Center" />
                             </Grid>
                             <!-- 日志内容 -->
                             <Border Grid.Row="1" x:Name="LogBorder" Margin="0,6,0,0"
-                                    Background="#15000000" CornerRadius="8" Padding="10,8"
+                                    Background="#18FFFFFF" CornerRadius="8" Padding="10,8"
                                     MaxHeight="120">
                                 <ScrollViewer x:Name="LogScrollViewer" VerticalScrollBarVisibility="Auto">
                                     <ListBox x:Name="LogItemsControl" Background="Transparent" BorderThickness="0">
@@ -252,7 +248,7 @@
                                         </ListBox.ItemContainerStyle>
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding}" FontSize="11" Foreground="#FF404040"
+                                                <TextBlock Text="{Binding}" FontSize="11" Foreground="#FFB0B0B0"
                                                            TextWrapping="Wrap" Margin="0,0,0,2" />
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>

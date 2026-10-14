@@ -73,9 +73,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Effects\AuroraLayer.cs" />
-    <Compile Include="Effects\GlassyEffect.cs" />
-    <Compile Include="Effects\GlassyWindowManager.cs" />
-    <Compile Include="Effects\ScreenCaptureHelper.cs" />
     <Compile Include="Services\Logger.cs" />
     <Compile Include="Services\PortHelper.cs" />
     <Compile Include="Services\ProcessHelper.cs" />
@@ -89,7 +86,6 @@
     <None Include="app.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Effects\GlassyEffect.ps" />
     <Resource Include="Assets\DolbyKiller.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
