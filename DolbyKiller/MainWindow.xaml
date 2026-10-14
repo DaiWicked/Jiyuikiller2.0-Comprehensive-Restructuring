@@ -5,7 +5,7 @@
         Title="反制工具 DolbyKiller"
         Height="620" Width="480"
         WindowStartupLocation="CenterScreen"
-        Icon="pack://application:,,,/DolbyKiller;component/Assets/app.ico"
+        Icon="pack://application:,,,/DolbyKiller;component/Assets/DolbyKiller.ico"
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
