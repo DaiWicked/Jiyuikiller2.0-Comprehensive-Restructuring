@@ -7,21 +7,22 @@ using System.Windows.Media.Animation;
 namespace DolbyKiller.Effects
 {
     /// <summary>
-    /// 极光色相循环背景层
-    /// 3个径向渐变光斑，10秒色相互换循环 + 中心点漂移
-    /// 位于背景层之上、内容层之下，Opacity=0.5 色相明显
+    /// Win11 OOBE 风格流动渐变背景
+    /// 4个大尺寸柔和光斑，低饱和蓝紫粉色调，缓慢流动融合
     /// </summary>
     public class AuroraLayer : Grid
     {
-        private const double AuroraOpacity = 0.5;
-        private const int CycleSeconds = 10;
+        private const double AuroraOpacity = 0.65;
+        private const int CycleSeconds = 16;
 
-        private readonly Border _spotA; // 青紫→蓝
-        private readonly Border _spotB; // 粉橙→金
-        private readonly Border _spotC; // 青绿→紫
+        private readonly Border _spotA; // 深蓝
+        private readonly Border _spotB; // 紫
+        private readonly Border _spotC; // 粉
+        private readonly Border _spotD; // 青
         private readonly TranslateTransform _transA;
         private readonly TranslateTransform _transB;
         private readonly TranslateTransform _transC;
+        private readonly TranslateTransform _transD;
         private Storyboard _storyboard;
         private bool _isRunning;
 
@@ -33,37 +34,44 @@ namespace DolbyKiller.Effects
             _transA = new TranslateTransform();
             _transB = new TranslateTransform();
             _transC = new TranslateTransform();
+            _transD = new TranslateTransform();
 
+            // Win11 OOBE 风格：大尺寸、低饱和、柔和过渡
             _spotA = CreateSpot(
-                Colors.BlueViolet, Colors.RoyalBlue,
-                new Point(0.2, 0.25), _transA);
+                Color.FromRgb(0x1E, 0x3A, 0x5F), Color.FromRgb(0x2D, 0x5A, 0x8A),
+                new Point(0.15, 0.2), 1.2, 0.9, _transA);
             _spotB = CreateSpot(
-                Color.FromRgb(0xFF, 0x6B, 0x9D), Color.FromRgb(0xFF, 0x8C, 0x42),
-                new Point(0.8, 0.75), _transB);
+                Color.FromRgb(0x4A, 0x2E, 0x6B), Color.FromRgb(0x6B, 0x3E, 0x8A),
+                new Point(0.85, 0.3), 1.0, 1.1, _transB);
             _spotC = CreateSpot(
-                Color.FromRgb(0x00, 0xD4, 0xAA), Color.FromRgb(0x00, 0xB4, 0xD8),
-                new Point(0.5, 0.9), _transC);
+                Color.FromRgb(0x7B, 0x3B, 0x6B), Color.FromRgb(0x9B, 0x4B, 0x7B),
+                new Point(0.5, 0.85), 1.1, 0.8, _transC);
+            _spotD = CreateSpot(
+                Color.FromRgb(0x1E, 0x5A, 0x6B), Color.FromRgb(0x2E, 0x7A, 0x8A),
+                new Point(0.7, 0.65), 0.9, 1.0, _transD);
 
             Children.Add(_spotA);
             Children.Add(_spotB);
             Children.Add(_spotC);
+            Children.Add(_spotD);
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
         }
 
-        private static Border CreateSpot(Color color1, Color color2, Point center, TranslateTransform trans)
+        private static Border CreateSpot(Color color1, Color color2, Point center,
+            double radiusX, double radiusY, TranslateTransform trans)
         {
             var brush = new RadialGradientBrush
             {
                 Center = center,
                 GradientOrigin = center,
-                RadiusX = 0.9,
-                RadiusY = 0.7,
+                RadiusX = radiusX,
+                RadiusY = radiusY,
                 GradientStops = new GradientStopCollection
                 {
                     new GradientStop(color1, 0.0),
-                    new GradientStop(color2, 0.5),
+                    new GradientStop(color2, 0.4),
                     new GradientStop(Colors.Transparent, 1.0)
                 }
             };
@@ -79,7 +87,7 @@ namespace DolbyKiller.Effects
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            // 渲染层级不足时降级为静态渐变（不循环）
+            // 渲染层级不足时降级为静态
             if (RenderCapability.Tier >> 16 < 2)
             {
                 return;
@@ -92,14 +100,10 @@ namespace DolbyKiller.Effects
             Stop();
         }
 
-        /// <summary>
-        /// 启动极光动画
-        /// </summary>
         public void Start()
         {
             if (_isRunning) return;
             _isRunning = true;
-
             if (_storyboard == null)
             {
                 _storyboard = BuildStoryboard();
@@ -107,9 +111,6 @@ namespace DolbyKiller.Effects
             _storyboard.Begin(this, true);
         }
 
-        /// <summary>
-        /// 停止极光动画
-        /// </summary>
         public void Stop()
         {
             _isRunning = false;
@@ -127,32 +128,40 @@ namespace DolbyKiller.Effects
             var duration = new Duration(TimeSpan.FromSeconds(CycleSeconds));
             var ease = new SineEase { EasingMode = EasingMode.EaseInOut };
 
-            // === 光斑A：青紫 → 蓝 → 青 ===
-            AddColorAnimation(sb, _spotA, 0, Colors.BlueViolet, Colors.RoyalBlue, Color.FromRgb(0x00, 0xCE, 0xD1), duration, ease);
-            AddTranslateAnimation(sb, _transA, -70, -40, 60, 35, duration, ease);
+            // 光斑A：深蓝 → 蓝紫 → 深青，左上→右下大弧线
+            AddColorAnimation(sb, _spotA,
+                Color.FromRgb(0x1E, 0x3A, 0x5F), Color.FromRgb(0x3A, 0x2E, 0x6B), Color.FromRgb(0x1E, 0x5A, 0x6B),
+                duration, ease);
+            AddTranslateAnimation(sb, _transA, -80, -50, 100, 70, duration, ease);
 
-            // === 光斑B：粉 → 橙 → 金 ===
-            AddColorAnimation(sb, _spotB, 0, Color.FromRgb(0xFF, 0x6B, 0x9D), Color.FromRgb(0xFF, 0x8C, 0x42), Color.FromRgb(0xFF, 0xD7, 0x00), duration, ease);
-            AddTranslateAnimation(sb, _transB, 60, 40, -60, -35, duration, ease);
+            // 光斑B：紫 → 深紫 → 蓝紫，右上→左下
+            AddColorAnimation(sb, _spotB,
+                Color.FromRgb(0x4A, 0x2E, 0x6B), Color.FromRgb(0x2E, 0x3A, 0x6B), Color.FromRgb(0x5A, 0x2E, 0x7B),
+                duration, ease);
+            AddTranslateAnimation(sb, _transB, 90, -30, -90, 60, duration, ease);
 
-            // === 光斑C：青绿 → 蓝绿 → 紫 ===
-            AddColorAnimation(sb, _spotC, 0, Color.FromRgb(0x00, 0xD4, 0xAA), Color.FromRgb(0x00, 0xB4, 0xD8), Color.FromRgb(0x7B, 0x68, 0xEE), duration, ease);
-            AddTranslateAnimation(sb, _transC, 0, 55, 0, -50, duration, ease);
+            // 光斑C：粉 → 紫红 → 暗粉，底部横向流动
+            AddColorAnimation(sb, _spotC,
+                Color.FromRgb(0x7B, 0x3B, 0x6B), Color.FromRgb(0x6B, 0x2E, 0x5B), Color.FromRgb(0x8B, 0x3B, 0x5B),
+                duration, ease);
+            AddTranslateAnimation(sb, _transC, -100, 40, 100, -50, duration, ease);
+
+            // 光斑D：青 → 蓝青 → 深青，右中→左中
+            AddColorAnimation(sb, _spotD,
+                Color.FromRgb(0x1E, 0x5A, 0x6B), Color.FromRgb(0x2E, 0x4A, 0x7B), Color.FromRgb(0x1E, 0x6A, 0x5B),
+                duration, ease);
+            AddTranslateAnimation(sb, _transD, 70, 50, -70, -60, duration, ease);
 
             return sb;
         }
 
-        /// <summary>
-        /// 给 RadialGradientBrush 的第0、第1个 GradientStop 添加色相关键帧动画
-        /// </summary>
-        private static void AddColorAnimation(Storyboard sb, Border spot, int stopIndex,
+        private static void AddColorAnimation(Storyboard sb, Border spot,
             Color c1, Color c2, Color c3, Duration duration, IEasingFunction ease)
         {
             var brush = (RadialGradientBrush)spot.Background;
             var stop0 = brush.GradientStops[0];
             var stop1 = brush.GradientStops[1];
 
-            // 第0个色标：c1 → c2 → c3
             var anim0 = new ColorAnimationUsingKeyFrames
             {
                 Duration = duration,
@@ -167,7 +176,6 @@ namespace DolbyKiller.Effects
             Storyboard.SetTargetProperty(anim0, new PropertyPath(GradientStop.ColorProperty));
             sb.Children.Add(anim0);
 
-            // 第1个色标：c2 → c3 → c1（错开相位，避免同步）
             var anim1 = new ColorAnimationUsingKeyFrames
             {
                 Duration = duration,
@@ -183,9 +191,6 @@ namespace DolbyKiller.Effects
             sb.Children.Add(anim1);
         }
 
-        /// <summary>
-        /// 给 TranslateTransform 添加 X/Y 漂移动画
-        /// </summary>
         private static void AddTranslateAnimation(Storyboard sb, TranslateTransform trans,
             double fromX, double fromY, double toX, double toY, Duration duration, IEasingFunction ease)
         {

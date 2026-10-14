@@ -308,8 +308,31 @@ namespace DolbyKiller
                 {
                     SetState(AppState.Cleared);
                     AppendLog("=== 清除完成：全部成功 ===");
-                    MessageBox.Show("已成功清除所有威胁！\n\n建议重启电脑以确保完全生效。",
-                        "清除完成", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    // 弹出自定义确认框：左是，右取消
+                    var dlg = new RestartDialog { Owner = this };
+                    dlg.ShowDialog();
+
+                    if (dlg.ShouldRestart)
+                    {
+                        AppendLog("用户选择重启电脑");
+                        try
+                        {
+                            System.Diagnostics.Process.Start("shutdown.exe", "/r /t 3 /c \"DolbyKiller 清除完成，3秒后重启\"");
+                        }
+                        catch (Exception ex)
+                        {
+                            AppendLog($"重启命令执行失败: {ex.Message}");
+                            MessageBox.Show("重启命令执行失败，请手动重启电脑。", "提示",
+                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                    }
+                    else
+                    {
+                        AppendLog("用户取消重启");
+                        // 重新扫描验证
+                        StartScan();
+                    }
                 }
                 else
                 {
@@ -317,9 +340,9 @@ namespace DolbyKiller
                     AppendLog($"=== 清除完成：{failures} 项失败/残留 ===");
                     MessageBox.Show($"清除完成，但仍有 {failures} 项残留。\n\n建议重启电脑后再次运行本工具扫描。",
                         "部分清除", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    // 重新扫描验证
+                    StartScan();
                 }
-                // 重新扫描验证
-                StartScan();
             });
         }
 
