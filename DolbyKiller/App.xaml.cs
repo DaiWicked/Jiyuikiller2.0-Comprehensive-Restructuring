@@ -25,6 +25,8 @@ namespace DolbyKiller
         {
             try { _singleInstanceMutex?.ReleaseMutex(); } catch { }
             base.OnExit(e);
+            // 兜底：强制退出，防止WPF渲染线程或后台线程卡住导致僵尸进程
+            Environment.Exit(0);
         }
     }
 }
