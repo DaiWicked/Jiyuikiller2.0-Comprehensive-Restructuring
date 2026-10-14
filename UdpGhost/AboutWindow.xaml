@@ -49,7 +49,7 @@
             <!-- 内容 -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Foreground="#8B949E" FontFamily="Consolas" FontSize="12">
                 <StackPanel>
-                    <TextBlock Text="版本: QD_V3.1_JiYuRebuild_Funny-5" Foreground="#00FF41" Margin="0,0,0,8"/>
+                    <TextBlock Text="版本: QD_V3.1_JiYuRebuild_Funny" Foreground="#00FF41" Margin="0,0,0,8"/>
                     <TextBlock Text="极域电子教室UDP伪造攻击工具" Foreground="#8B949E" Margin="0,0,0,12" TextWrapping="Wrap"/>
                     <TextBlock Text="功能模块:" Foreground="#00FF41" Margin="0,0,0,6" FontWeight="Bold"/>
                     <TextBlock Text="  • 单学生连接: 一对一指定学生端连接,单播发送指令" Foreground="#8B949E" Margin="0,0,0,4"/>
