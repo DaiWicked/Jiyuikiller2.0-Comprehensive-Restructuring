@@ -5,6 +5,7 @@
         Title="反制工具 DolbyKiller"
         Height="620" Width="480"
         WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/DolbyKiller;component/Assets/app.ico"
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
@@ -37,7 +38,7 @@
                 <Border x:Name="BackdropContainer" CornerRadius="16" ClipToBounds="True">
                     <Grid>
                         <Border x:Name="BackdropLayer" />
-                        <Border x:Name="WhiteOverlayLayer" Background="#FFFFFFFF" />
+                        <Border x:Name="WhiteOverlayLayer" Background="#55FFFFFF" />
                     </Grid>
                 </Border>
 

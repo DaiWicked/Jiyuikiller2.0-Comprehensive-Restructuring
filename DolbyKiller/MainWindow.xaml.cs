@@ -50,18 +50,39 @@ namespace DolbyKiller
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            // 初始化液态玻璃
+            // 初始化液态玻璃（降低模糊强度，让极光透出来）
             _glassyManager = new GlassyWindowManager(this, BackdropLayer, GlassyLayer);
+            _glassyManager.BlurIntensity = 0.3;
+
+            // 应用圆角裁剪（修复子元素直角溢出）
+            UpdateGlassClip();
+            SizeChanged += (s, args) => UpdateGlassClip();
 
             // 窗口淡入动画
             var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.3));
             BeginAnimation(OpacityProperty, fadeIn);
+        }
 
-            // 启动后延迟500ms自动扫描
-            var timer = new Timer(_ => Dispatcher.Invoke(() =>
+        /// <summary>
+        /// 给 GlassClipRoot 设置圆角 RectangleGeometry，
+        /// 确保玻璃层/极光层/内容层都被圆角裁剪
+        /// </summary>
+        private void UpdateGlassClip()
+        {
+            if (GlassClipRoot == null) return;
+            double w = GlassClipRoot.ActualWidth;
+            double h = GlassClipRoot.ActualHeight;
+            if (w <= 0 || h <= 0) return;
+
+            var geo = GlassClipRoot.Clip as System.Windows.Media.RectangleGeometry;
+            if (geo == null)
             {
-                if (_state == AppState.Idle) StartScan();
-            }), null, 500, Timeout.Infinite);
+                geo = new System.Windows.Media.RectangleGeometry();
+                GlassClipRoot.Clip = geo;
+            }
+            geo.Rect = new System.Windows.Rect(0, 0, w, h);
+            geo.RadiusX = 16;
+            geo.RadiusY = 16;
         }
 
         #region 状态管理

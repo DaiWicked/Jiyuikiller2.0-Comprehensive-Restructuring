@@ -9,11 +9,11 @@ namespace DolbyKiller.Effects
     /// <summary>
     /// 极光色相循环背景层
     /// 3个径向渐变光斑，24秒慢周期色相循环 + 中心点漂移
-    /// 位于玻璃折射层之上、内容层之下，Opacity=0.18 不影响文字可读性
+    /// 位于玻璃折射层之上、内容层之下，Opacity=0.35 色相清晰但不影响文字可读性
     /// </summary>
     public class AuroraLayer : Grid
     {
-        private const double AuroraOpacity = 0.18;
+        private const double AuroraOpacity = 0.35;
         private const int CycleSeconds = 24;
 
         private readonly Border _spotA; // 青紫→蓝
