@@ -1,3 +1,34 @@
+# 学习不通2.0 (JiYuKiller 2.0) - 更新日志
+
+## DolbyKiller 反制工具 v1.2（2026-10-14）
+
+### 项目背景
+- 针对 DolbyVision/DolbyAccess 远控代理被滥用（上课期间偷偷安装到同学电脑）的问题，制作专杀清除工具
+- 只清理本机，不做免疫，不做局域网扫描
+- 目标特征：服务名 DolbyVision，伪装进程 AudioSrv.exe（%TEMP%下），原始进程 DolbyVision.exe/DolbyAccess.exe，端口 9100/UDP + 9101-9103/TCP + 9112-9114/TCP
+
+### 核心功能
+- **五项扫描**：服务(WMI) / 进程(WMI含Session0) / 端口(IPHelper API) / 文件(%TEMP%\AudioSrv.exe) / 注册表(Run/RunOnce)
+- **六步清除**：停服务 → 杀进程(三级兜底: Process.Kill/TerminateProcess/NtTerminateProcess) → 删服务(WMI Delete) → 删文件(重试3次) → 清注册表 → 验证重扫
+- **进程双保险**：AudioSrv.exe 必须路径含 TEMP 或命令行含 /service 才判定为代理，不误杀系统进程
+- **清除后重启确认**：自定义对话框，左"是"右"取消"，点是执行 shutdown /r /t 3
+
+### UI 演进
+- v1.0：液态玻璃背景（桌面截图+HLSL像素着色器折射）+ 极光色相循环，全动画过渡
+- v1.1：取消启动自动扫描（增加仪式感），降低白色覆盖层透明度，修复圆角裁剪，应用程序图标
+- v1.2：移除液态玻璃（Win7不支持3D导致卡顿），改用深蓝紫渐变背景 + Win11 OOBE 风格流动极光（4个大尺寸低饱和光斑，16秒周期），修复结果列表鼠标滚轮
+
+### 技术栈
+- WPF + .NET Framework 4.7.2 + AnyCPU
+- 管理员提权（app.manifest requireAdministrator）
+- 单实例 Mutex（Global\DolbyKiller_SingleInstance）
+- Release 单文件 exe（约70KB，无外部依赖）
+
+### Commits
+- 初版提交 → 修复UI视觉 → 修正图标 → 移除玻璃改深色背景 → 极光加快+滚轮修复 → Win11 OOBE极光+重启确认
+
+---
+
 ## QD_V3.1_JiYuRebuild_Funny 单学生连接学生信息查询与远程播放视频（2026-09-29）
 
 ### 单学生连接 - 学生信息查询
