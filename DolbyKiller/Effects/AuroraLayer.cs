@@ -8,13 +8,13 @@ namespace DolbyKiller.Effects
 {
     /// <summary>
     /// 极光色相循环背景层
-    /// 3个径向渐变光斑，24秒慢周期色相循环 + 中心点漂移
-    /// 位于玻璃折射层之上、内容层之下，Opacity=0.35 色相清晰但不影响文字可读性
+    /// 3个径向渐变光斑，10秒色相互换循环 + 中心点漂移
+    /// 位于背景层之上、内容层之下，Opacity=0.5 色相明显
     /// </summary>
     public class AuroraLayer : Grid
     {
-        private const double AuroraOpacity = 0.35;
-        private const int CycleSeconds = 24;
+        private const double AuroraOpacity = 0.5;
+        private const int CycleSeconds = 10;
 
         private readonly Border _spotA; // 青紫→蓝
         private readonly Border _spotB; // 粉橙→金
@@ -129,15 +129,15 @@ namespace DolbyKiller.Effects
 
             // === 光斑A：青紫 → 蓝 → 青 ===
             AddColorAnimation(sb, _spotA, 0, Colors.BlueViolet, Colors.RoyalBlue, Color.FromRgb(0x00, 0xCE, 0xD1), duration, ease);
-            AddTranslateAnimation(sb, _transA, -40, -25, 35, 20, duration, ease);
+            AddTranslateAnimation(sb, _transA, -70, -40, 60, 35, duration, ease);
 
             // === 光斑B：粉 → 橙 → 金 ===
             AddColorAnimation(sb, _spotB, 0, Color.FromRgb(0xFF, 0x6B, 0x9D), Color.FromRgb(0xFF, 0x8C, 0x42), Color.FromRgb(0xFF, 0xD7, 0x00), duration, ease);
-            AddTranslateAnimation(sb, _transB, 35, 25, -35, -20, duration, ease);
+            AddTranslateAnimation(sb, _transB, 60, 40, -60, -35, duration, ease);
 
             // === 光斑C：青绿 → 蓝绿 → 紫 ===
             AddColorAnimation(sb, _spotC, 0, Color.FromRgb(0x00, 0xD4, 0xAA), Color.FromRgb(0x00, 0xB4, 0xD8), Color.FromRgb(0x7B, 0x68, 0xEE), duration, ease);
-            AddTranslateAnimation(sb, _transC, 0, 35, 0, -30, duration, ease);
+            AddTranslateAnimation(sb, _transC, 0, 55, 0, -50, duration, ease);
 
             return sb;
         }
