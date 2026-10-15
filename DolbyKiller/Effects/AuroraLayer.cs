@@ -75,7 +75,8 @@ namespace DolbyKiller.Effects
                     new GradientStop(Colors.Transparent, 1.0)
                 }
             };
-            brush.Freeze();
+            // 注意：不能 Freeze 画刷，因为后续要对 GradientStop.Color 做颜色动画
+            // brush.Freeze() 会导致 Win10 下抛出"无法对不可变对象进行动画处理"异常
 
             return new Border
             {
