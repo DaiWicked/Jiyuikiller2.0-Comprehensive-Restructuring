@@ -27,6 +27,30 @@
 ### Commits
 - 初版提交 → 修复UI视觉 → 修正图标 → 移除玻璃改深色背景 → 极光加快+滚轮修复 → Win11 OOBE极光+重启确认
 
+## DolbyKiller 反制工具 v1.3（2026-10-15）
+
+### 修复 Win10 启动崩溃（关键）
+- **根因**：`AuroraLayer.CreateSpot()` 中调用 `brush.Freeze()` 将 `RadialGradientBrush` 冻结为不可变对象，但后续 `AddColorAnimation()` 要对 `GradientStop.Color` 做颜色循环动画，冻结对象无法动画
+- **现象**：Win10 双击后白屏/无响应，抛出 `InvalidOperationException: 无法对不可变对象实例上的"(0)"进行动画处理`
+- **Win7 正常原因**：渲染层级 `Tier < 2`，`OnLoaded` 直接 return 不启动动画，不触发异常
+- **修复**：移除 `brush.Freeze()`，加注释说明不能冻结的原因
+
+### 修复 Win7 清除失败
+- **根因**：WMI 查询（`ManagementObjectSearcher.Get()`）无超时，Win7 上 WMI 服务响应慢时无限卡住，清除流程假死
+- **修复**：所有 WMI 查询添加 5 秒超时（ProcessHelper / Cleaner / Scanner 共4处）
+- 服务停止后等待：300ms → 500ms
+- 杀进程后等待：300ms → 800ms（等文件句柄释放）
+- 文件删除重试：3次/500ms → 5次/1000ms
+
+### 健壮性提升
+- 单实例检测改进：检测到已有实例时先尝试激活已有窗口（恢复最小化+置顶），而非只弹 MessageBox
+- 添加全局异常捕获：`DispatcherUnhandledException` + `AppDomain.UnhandledException`，异常写入桌面 `DolbyKiller_crash.log`
+- 移除 `OnExit` 中的 `Environment.Exit(0)`（可能干扰 Mutex 正常释放）
+
+### Commits
+- c58e5dd: 修复Win10启动失败 + Win7清除失败（WMI超时+单实例改进+全局异常）
+- 1272e53: 移除AuroraLayer中brush.Freeze()，修复Win10启动崩溃
+
 ---
 
 ## QD_V3.1_JiYuRebuild_Funny 单学生连接学生信息查询与远程播放视频（2026-09-29）
