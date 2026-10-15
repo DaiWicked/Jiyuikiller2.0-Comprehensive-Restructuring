@@ -43,7 +43,7 @@ namespace DolbyKiller.Services
                 {
                     OnProgress?.Invoke("  ✅ 服务已停止");
                 }
-                Thread.Sleep(300); // 等服务进程退出
+                Thread.Sleep(500); // 等服务进程退出
 
                 // 步骤2：杀进程
                 OnProgress?.Invoke("[2/6] 正在终止代理进程...");
@@ -55,7 +55,7 @@ namespace DolbyKiller.Services
                         OnProgress?.Invoke($"  ⚠ {f}");
                 }
                 OnProgress?.Invoke($"  ✅ 已终止 {killed} 个进程");
-                Thread.Sleep(300);
+                Thread.Sleep(800); // 等进程完全退出、文件句柄释放
 
                 // 步骤3：删除服务
                 OnProgress?.Invoke("[3/6] 正在删除 DolbyVision 服务...");
@@ -145,6 +145,7 @@ namespace DolbyKiller.Services
                 using (var searcher = new ManagementObjectSearcher(
                     $"SELECT * FROM Win32_Service WHERE Name='{ServiceName}'"))
                 {
+                    searcher.Options.Timeout = TimeSpan.FromSeconds(5);
                     foreach (ManagementObject obj in searcher.Get())
                     {
                         obj.Delete();
@@ -180,6 +181,7 @@ namespace DolbyKiller.Services
                 using (var searcher = new ManagementObjectSearcher(
                     $"SELECT PathName FROM Win32_Service WHERE Name='{ServiceName}'"))
                 {
+                    searcher.Options.Timeout = TimeSpan.FromSeconds(5);
                     foreach (ManagementObject obj in searcher.Get())
                     {
                         string pathName = obj["PathName"]?.ToString() ?? "";
@@ -205,9 +207,9 @@ namespace DolbyKiller.Services
             {
                 if (string.IsNullOrEmpty(path) || !File.Exists(path)) continue;
 
-                // 重试3次（等进程释放文件句柄）
+                // 重试5次（等进程释放文件句柄），每次间隔1秒
                 bool ok = false;
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < 5; i++)
                 {
                     try
                     {
@@ -218,7 +220,7 @@ namespace DolbyKiller.Services
                     }
                     catch
                     {
-                        Thread.Sleep(500);
+                        Thread.Sleep(1000);
                     }
                 }
                 if (ok) deleted++;

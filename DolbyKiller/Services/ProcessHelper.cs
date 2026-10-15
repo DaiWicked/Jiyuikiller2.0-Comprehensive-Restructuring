@@ -65,6 +65,8 @@ namespace DolbyKiller.Services
                     "SELECT ProcessId, Name, ExecutablePath, SessionId, CommandLine " +
                     $"FROM Win32_Process WHERE {nameFilter}"))
                 {
+                    // WMI 查询超时：5秒，防止Win7下WMI服务卡住导致整个清除流程无响应
+                    searcher.Options.Timeout = TimeSpan.FromSeconds(5);
                     foreach (ManagementObject obj in searcher.Get())
                     {
                         var info = new ProcessInfo

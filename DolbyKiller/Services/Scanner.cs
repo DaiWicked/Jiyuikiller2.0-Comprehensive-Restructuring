@@ -98,6 +98,7 @@ namespace DolbyKiller.Services
                     "SELECT Name, DisplayName, State, StartMode, PathName, ProcessId " +
                     "FROM Win32_Service WHERE Name='DolbyVision'"))
                 {
+                    searcher.Options.Timeout = TimeSpan.FromSeconds(5);
                     foreach (ManagementObject obj in searcher.Get())
                     {
                         string state = obj["State"]?.ToString() ?? "未知";
